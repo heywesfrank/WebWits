@@ -8,7 +8,11 @@ export default function Header({ session }) {
       {/* Left: Brand & Logo */}
       <div className="flex items-center gap-3 group cursor-default">
         <div className="bg-yellow-100 p-2 rounded-xl border border-yellow-200 group-hover:rotate-12 transition-transform duration-300">
-          <span className="text-2xl leading-none filter drop-shadow-sm">🤡</span>
+          <img 
+            src="/logo.png" 
+            alt="WebWits Logo" 
+            className="w-8 h-8 object-contain filter drop-shadow-sm" 
+          />
         </div>
         <div className="flex flex-col">
           <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">
