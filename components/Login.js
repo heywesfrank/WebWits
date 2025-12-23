@@ -7,9 +7,9 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const [isSignUp, setIsSignUp] = useState(false); // Toggle between Login and Sign Up
+  const [isSignUp, setIsSignUp] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
-  const [infoMsg, setInfoMsg] = useState(""); // For signup confirmation messages
+  const [infoMsg, setInfoMsg] = useState("");
 
   const handleAuth = async (e) => {
     e.preventDefault();
@@ -20,21 +20,18 @@ export default function Login() {
     let error;
     
     if (isSignUp) {
-      // Handle Sign Up
       const { error: signUpError, data } = await supabase.auth.signUp({
         email,
         password,
       });
       error = signUpError;
       
-      // If signup was successful but no session (email confirmation required)
       if (!error && !data.session) {
         setInfoMsg("Signup successful! Please check your email to confirm your account.");
         setLoading(false);
         return;
       }
     } else {
-      // Handle Sign In
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -46,7 +43,6 @@ export default function Login() {
       setErrorMsg(error.message);
       setLoading(false);
     }
-    // On success, the onAuthStateChange in page.js will automatically redirect to MainApp
   };
 
   return (
@@ -54,16 +50,12 @@ export default function Login() {
       <div className="w-full max-w-md bg-gray-800/50 backdrop-blur-md border border-gray-700 p-8 rounded-2xl shadow-2xl">
         
         <div className="text-center mb-8">
-          <div className="inline-block p-3 bg-yellow-400/10 rounded-full mb-4">
-            <img 
-              src="/logo.png" 
-              alt="WebWits Logo" 
-              className="w-12 h-12 object-contain" 
-            />
-          </div>
-          <h1 className="text-4xl font-black text-yellow-400 tracking-tight mb-2">
-            WebWits
-          </h1>
+          {/* Logo Updated for Wide Aspect Ratio */}
+          <img 
+            src="/logo.png" 
+            alt="WebWits" 
+            className="w-64 h-auto object-contain mx-auto mb-6" 
+          />
           <p className="text-gray-400 text-sm">
             Daily memes. Witty captions. Eternal glory.
           </p>
@@ -116,7 +108,7 @@ export default function Login() {
             </div>
           )}
 
-          {/* Info Message (for Email Confirmation) */}
+          {/* Info Message */}
           {infoMsg && (
             <div className="p-3 rounded bg-green-500/10 border border-green-500/20 flex items-center gap-2 text-green-400 text-sm">
               <Send size={16} />
