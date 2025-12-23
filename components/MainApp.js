@@ -6,6 +6,7 @@ import {
   Share2, Flag, AlertTriangle, X, History, Award 
 } from "lucide-react";
 import Header from "./Header";
+import ArchiveSection from "./ArchiveSection"; // <--- Imported here
 
 // --- Sub-components ---
 
@@ -179,7 +180,7 @@ export default function MainApp({ session }) {
       
       setMeme(activeMeme);
 
-      // 2. Fetch Archived Memes (Simulated by fetching non-active)
+      // 2. Fetch Archived Memes
       let { data: archives } = await supabase
         .from("memes")
         .select("*")
@@ -372,7 +373,6 @@ export default function MainApp({ session }) {
                         {caption.user_id === session.user.id && (
                           <span className="bg-yellow-400/20 text-yellow-400 text-[10px] px-1.5 py-0.5 rounded border border-yellow-400/30 font-bold">YOU</span>
                         )}
-                        {/* Example Badge Logic */}
                         {caption.vote_count > 10 && <span className="text-[10px] bg-red-500/20 text-red-400 px-1 rounded">🔥 Hot</span>}
                       </div>
                       <p className="text-lg text-gray-200 leading-snug">{caption.content}</p>
@@ -400,19 +400,8 @@ export default function MainApp({ session }) {
               </div>
             </>
           ) : (
-            // Archive View
-            <div className="grid grid-cols-2 gap-4">
-              {archivedMemes.map((m) => (
-                <div key={m.id} className="bg-gray-800 rounded-xl border border-gray-700 overflow-hidden hover:scale-[1.02] transition cursor-pointer opacity-70 hover:opacity-100">
-                  <img src={m.image_url} alt="Archive" className="w-full h-32 object-cover" />
-                  <div className="p-3">
-                    <p className="text-xs text-gray-400">{new Date(m.created_at).toLocaleDateString()}</p>
-                    <p className="text-sm font-bold text-gray-200">Winner: TBD</p>
-                  </div>
-                </div>
-              ))}
-              {archivedMemes.length === 0 && <p className="text-gray-500 col-span-2 text-center py-10">The archives are empty.</p>}
-            </div>
+            // Archive View using the new component
+            <ArchiveSection archives={archivedMemes} />
           )}
         </div>
 
@@ -442,6 +431,14 @@ export default function MainApp({ session }) {
               ))}
             </ul>
           </div>
+          
+          {/* Helpful Link to How It Works (Optional but recommended) */}
+           <div className="bg-gray-800/50 border border-gray-700 p-4 rounded-xl text-center">
+             <a href="/how-it-works" className="text-sm font-bold text-gray-400 hover:text-yellow-400 transition">
+               🤔 How to play?
+             </a>
+           </div>
+
         </div>
       </div>
     </div>
