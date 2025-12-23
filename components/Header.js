@@ -7,13 +7,11 @@ export default function Header({ session }) {
     <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex justify-between items-center transition-all">
       {/* Left: Brand & Logo */}
       <div className="flex items-center gap-3 group cursor-default">
-        <div className="bg-yellow-100 p-2 rounded-xl border border-yellow-200 group-hover:rotate-12 transition-transform duration-300">
-          <img 
-            src="/logo.png" 
-            alt="WebWits Logo" 
-            className="w-8 h-8 object-contain filter drop-shadow-sm" 
-          />
-        </div>
+        <img 
+          src="/logo.png" 
+          alt="WebWits Logo" 
+          className="w-10 h-10 object-contain filter drop-shadow-sm group-hover:rotate-12 transition-transform duration-300" 
+        />
         <div className="flex flex-col">
           <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">
             WebWits
