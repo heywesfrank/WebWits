@@ -46,25 +46,26 @@ export default function Login() {
   };
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 p-4 text-white">
-      <div className="w-full max-w-md bg-gray-800/50 backdrop-blur-md border border-gray-700 p-8 rounded-2xl shadow-2xl">
+    // Changed background to white and text to gray-900
+    <div className="flex min-h-screen flex-col items-center justify-center bg-white p-4 text-gray-900">
+      {/* Changed card background to white/gray-50, border to gray-200, shadow */}
+      <div className="w-full max-w-md bg-white border border-gray-200 p-8 rounded-2xl shadow-2xl">
         
         <div className="text-center mb-8">
-          {/* Logo Updated for Wide Aspect Ratio */}
           <img 
             src="/logo.png" 
             alt="WebWits" 
             className="w-64 h-auto object-contain mx-auto mb-6" 
           />
-          <p className="text-gray-400 text-sm">
+          {/* Changed subtitle text color */}
+          <p className="text-gray-600 text-sm">
             Daily memes. Witty captions. Eternal glory.
           </p>
         </div>
 
         <form onSubmit={handleAuth} className="flex flex-col gap-5">
-          {/* Email Input */}
           <div>
-            <label htmlFor="email" className="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5">
+            <label htmlFor="email" className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
               Email Address
             </label>
             <input
@@ -74,14 +75,14 @@ export default function Login() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               disabled={loading}
-              className="w-full p-3 rounded-lg bg-gray-900/80 border border-gray-600 text-white placeholder-gray-600 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all disabled:opacity-50"
+              // Updated input styles for light theme
+              className="w-full p-3 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all disabled:opacity-50"
               required
             />
           </div>
 
-          {/* Password Input */}
           <div>
-            <label htmlFor="password" className="block text-xs font-medium text-gray-400 uppercase tracking-wider mb-1.5">
+            <label htmlFor="password" className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
               Password
             </label>
             <div className="relative">
@@ -92,25 +93,24 @@ export default function Login() {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 disabled={loading}
-                className="w-full p-3 pl-10 rounded-lg bg-gray-900/80 border border-gray-600 text-white placeholder-gray-600 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all disabled:opacity-50"
+                // Updated input styles for light theme
+                className="w-full p-3 pl-10 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all disabled:opacity-50"
                 required
                 minLength={6}
               />
-              <Lock size={18} className="absolute left-3 top-3.5 text-gray-500" />
+              <Lock size={18} className="absolute left-3 top-3.5 text-gray-400" />
             </div>
           </div>
 
-          {/* Error Message */}
           {errorMsg && (
-            <div className="p-3 rounded bg-red-500/10 border border-red-500/20 flex items-center gap-2 text-red-400 text-sm">
+            <div className="p-3 rounded bg-red-50 border border-red-200 flex items-center gap-2 text-red-600 text-sm">
               <AlertCircle size={16} />
               <span>{errorMsg}</span>
             </div>
           )}
 
-          {/* Info Message */}
           {infoMsg && (
-            <div className="p-3 rounded bg-green-500/10 border border-green-500/20 flex items-center gap-2 text-green-400 text-sm">
+            <div className="p-3 rounded bg-green-50 border border-green-200 flex items-center gap-2 text-green-600 text-sm">
               <Send size={16} />
               <span>{infoMsg}</span>
             </div>
@@ -119,7 +119,7 @@ export default function Login() {
           <button
             type="submit"
             disabled={loading}
-            className="group relative w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold p-3 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+            className="group relative w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold p-3 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
           >
             {loading ? (
               "Processing..."
@@ -139,7 +139,7 @@ export default function Login() {
               setErrorMsg("");
               setInfoMsg("");
             }}
-            className="text-xs text-gray-500 hover:text-yellow-400 transition-colors"
+            className="text-xs text-gray-500 hover:text-yellow-600 transition-colors"
           >
             {isSignUp
               ? "Already have an account? Sign In"
