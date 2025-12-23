@@ -1,7 +1,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Send, ThumbsUp, Trophy, LogOut, Loader2, Clock, Flame } from "lucide-react";
+import { Send, ThumbsUp, Trophy, Loader2, Clock, Flame } from "lucide-react"; // LogOut removed
+import Header from "./Header"; // Import the new component
 
 export default function MainApp({ session }) {
   const [meme, setMeme] = useState(null);
@@ -12,14 +13,12 @@ export default function MainApp({ session }) {
   // New UI states
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
-  const [sortBy, setSortBy] = useState("top"); // 'top' or 'new'
+  const [sortBy, setSortBy] = useState("top");
 
-  // Load data when this component mounts
   useEffect(() => {
     fetchData();
   }, []);
 
-  // Re-sort captions whenever the sort preference or captions list changes
   useEffect(() => {
     if (captions.length === 0) return;
     
@@ -31,7 +30,6 @@ export default function MainApp({ session }) {
       }
     });
     
-    // Only update if the order actually changed to avoid infinite loops
     if (JSON.stringify(sorted.map(c => c.id)) !== JSON.stringify(captions.map(c => c.id))) {
       setCaptions(sorted);
     }
@@ -41,7 +39,6 @@ export default function MainApp({ session }) {
     try {
       setLoading(true);
       
-      // A. Get today's active meme
       let { data: activeMeme, error: memeError } = await supabase
         .from("memes")
         .select("*")
@@ -54,7 +51,6 @@ export default function MainApp({ session }) {
 
       setMeme(activeMeme);
 
-      // B. If there is a meme, get the captions
       let currentCaptions = [];
       if (activeMeme) {
         const { data, error: captionsError } = await supabase
@@ -66,11 +62,9 @@ export default function MainApp({ session }) {
         currentCaptions = data || [];
       }
       
-      // Initial sort is by Top
       currentCaptions.sort((a, b) => b.vote_count - a.vote_count);
       setCaptions(currentCaptions);
 
-      // C. Get Weekly Leaderboard
       const { data: topUsers, error: leaderError } = await supabase
         .from("profiles")
         .select("username, weekly_points")
@@ -104,12 +98,11 @@ export default function MainApp({ session }) {
       alert("Error submitting! (Did you already comment?)");
     } else {
       setNewCaption("");
-      fetchData(); // Refresh list to show new caption
+      fetchData();
     }
   };
 
   const handleVote = async (commentId) => {
-    // 1. Optimistic UI Update: Update the UI immediately before the server responds
     const previousCaptions = [...captions];
     setCaptions((current) =>
       current.map((c) =>
@@ -117,24 +110,18 @@ export default function MainApp({ session }) {
       )
     );
 
-    // 2. Perform the server request
     const { error } = await supabase.from("votes").insert({
       user_id: session.user.id,
       comment_id: commentId,
     });
 
     if (error) {
-      // 3. Revert UI if it fails (e.g., duplicate vote)
       alert("You already voted for this one!");
       setCaptions(previousCaptions);
       return;
     }
 
-    // 4. Update the actual count in the database
     await supabase.rpc("increment_vote", { row_id: commentId });
-    
-    // Optional: Fetch data again to ensure sync, or rely on the optimistic update
-    // fetchData(); 
   };
 
   if (loading) {
@@ -147,24 +134,9 @@ export default function MainApp({ session }) {
 
   return (
     <div className="min-h-screen bg-gray-100 text-gray-900">
-      {/* Header */}
-      <nav className="bg-white shadow p-4 flex justify-between items-center sticky top-0 z-10">
-        <h1 className="text-2xl font-bold text-yellow-600 flex items-center gap-2">
-          <span>🤡</span> WebWits
-        </h1>
-        <div className="flex items-center gap-4">
-          <span className="text-sm text-gray-500 hidden sm:inline">
-            {session.user.email}
-          </span>
-          <button 
-            onClick={() => supabase.auth.signOut()}
-            className="text-gray-500 hover:text-red-500 transition"
-            title="Sign Out"
-          >
-            <LogOut size={20} />
-          </button>
-        </div>
-      </nav>
+      
+      {/* New Header Component */}
+      <Header session={session} />
 
       <div className="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
         
@@ -229,7 +201,6 @@ export default function MainApp({ session }) {
                 <div className="flex-1 pr-4">
                   <p className="font-semibold text-xs text-gray-400 mb-1 flex items-center gap-1">
                     @{caption.profiles?.username || "anon"}
-                    {/* Highlight user's own comments */}
                     {caption.user_id === session.user.id && (
                       <span className="bg-yellow-100 text-yellow-800 px-1.5 py-0.5 rounded-full text-[10px]">YOU</span>
                     )}
