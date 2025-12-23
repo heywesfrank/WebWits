@@ -1,4 +1,8 @@
+import { Outfit, Inter } from "next/font/google";
 import "./globals.css";
+
+const outfit = Outfit({ subsets: ["latin"], variable: "--font-outfit" });
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata = {
   title: "WebWits",
@@ -8,7 +12,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className="bg-gray-100 text-gray-900">
+      <body className={`${inter.variable} ${outfit.variable} font-sans bg-gray-900 text-gray-200`}>
         {children}
       </body>
     </html>
