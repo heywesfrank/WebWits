@@ -3,29 +3,35 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { 
   Send, ThumbsUp, Trophy, Loader2, Clock, Flame, 
-  Share2, Flag, AlertTriangle, X, History, Award 
+  Share2, Flag, X, History, Award 
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion"; // Import Animation Lib
 import Header from "./Header";
-import ArchiveSection from "./ArchiveSection"; // <--- Imported here
+import ArchiveSection from "./ArchiveSection";
 
 // --- Sub-components ---
 
 // 1. Toast Notification Component
 const ToastContainer = ({ toasts, removeToast }) => (
-  <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
-    {toasts.map((toast) => (
-      <div 
-        key={toast.id} 
-        className={`pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-bold animate-in slide-in-from-right-full transition-all ${
-          toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-yellow-400 text-black'
-        }`}
-      >
-        <span>{toast.msg}</span>
-        <button onClick={() => removeToast(toast.id)} className="ml-2 hover:opacity-70">
-          <X size={14} />
-        </button>
-      </div>
-    ))}
+  <div className="fixed bottom-20 md:bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none">
+    <AnimatePresence>
+      {toasts.map((toast) => (
+        <motion.div 
+          key={toast.id}
+          initial={{ opacity: 0, x: 50 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 50 }}
+          className={`pointer-events-auto flex items-center gap-2 px-4 py-3 rounded-lg shadow-lg text-sm font-bold ${
+            toast.type === 'error' ? 'bg-red-500 text-white' : 'bg-yellow-400 text-black'
+          }`}
+        >
+          <span>{toast.msg}</span>
+          <button onClick={() => removeToast(toast.id)} className="ml-2 hover:opacity-70">
+            <X size={14} />
+          </button>
+        </motion.div>
+      ))}
+    </AnimatePresence>
   </div>
 );
 
@@ -34,12 +40,57 @@ const Skeleton = ({ className }) => (
   <div className={`bg-gray-700/50 animate-pulse rounded ${className}`} />
 );
 
-// 3. User Profile Modal
+// 3. Leaderboard List Component (Reusable for Sidebar and Mobile Modal)
+const LeaderboardList = ({ leaderboard }) => (
+  <div className="space-y-4">
+    {leaderboard.map((user, index) => (
+      <div 
+        key={index} 
+        className={`relative flex items-center justify-between p-3 rounded-xl border transition-all hover:scale-[1.02] 
+          ${index === 0 ? 'bg-gradient-to-r from-yellow-400/20 to-yellow-400/5 border-yellow-400/50' : 
+            index === 1 ? 'bg-gray-800/80 border-gray-600' : 
+            index === 2 ? 'bg-gray-800/60 border-orange-700/50' : 'bg-transparent border-transparent'
+          }`}
+      >
+        <div className="flex items-center gap-3">
+          {/* Rank Badge */}
+          <div className={`
+            w-8 h-8 flex items-center justify-center rounded-lg font-black text-sm shadow-lg
+            ${index === 0 ? 'bg-yellow-400 text-black' : 
+              index === 1 ? 'bg-gray-300 text-black' : 
+              index === 2 ? 'bg-orange-600 text-white' : 'text-gray-500 font-medium'}
+          `}>
+            {index + 1}
+          </div>
+          
+          {/* User Details */}
+          <div className="flex flex-col">
+            <span className={`font-bold text-sm ${index === 0 ? 'text-yellow-400' : 'text-gray-200'}`}>
+              {user.username}
+            </span>
+            {index === 0 && <span className="text-[10px] text-yellow-500/80 font-mono uppercase tracking-wider">Current King</span>}
+          </div>
+        </div>
+        
+        <div className="text-right">
+          <span className="block font-mono font-bold text-white">{user.weekly_points}</span>
+          <span className="text-[10px] text-gray-500 uppercase">pts</span>
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
+// 4. User Profile Modal
 const UserProfileModal = ({ user, isOpen, onClose }) => {
   if (!isOpen || !user) return null;
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-      <div className="bg-gray-800 border border-gray-700 w-full max-w-md rounded-2xl p-6 relative shadow-2xl">
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-gray-800 border border-gray-700 w-full max-w-md rounded-2xl p-6 relative shadow-2xl"
+      >
         <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">
           <X size={24} />
         </button>
@@ -47,10 +98,10 @@ const UserProfileModal = ({ user, isOpen, onClose }) => {
           <div className="w-20 h-20 bg-yellow-400 rounded-full mx-auto mb-4 flex items-center justify-center text-3xl text-black font-black">
             {user.email[0].toUpperCase()}
           </div>
-          <h2 className="text-2xl font-bold text-white">{user.email.split('@')[0]}</h2>
+          <h2 className="text-2xl font-bold text-white font-display">{user.email.split('@')[0]}</h2>
           <p className="text-gray-400 text-sm">Contestant</p>
         </div>
-        
+        {/* Stats */}
         <div className="grid grid-cols-2 gap-4 mb-6">
           <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-700 text-center">
             <Trophy className="w-6 h-6 text-yellow-400 mx-auto mb-2" />
@@ -63,24 +114,36 @@ const UserProfileModal = ({ user, isOpen, onClose }) => {
             <div className="text-xs text-gray-500 uppercase tracking-wider">Total Votes</div>
           </div>
         </div>
-
-        <div className="bg-gray-900/50 p-4 rounded-xl border border-gray-700">
-          <h3 className="text-sm font-bold text-gray-400 uppercase mb-3 flex items-center gap-2">
-            <Award size={16} /> Achievements
-          </h3>
-          <div className="flex flex-wrap gap-2">
-            <span className="px-2 py-1 bg-yellow-400/10 text-yellow-400 text-xs rounded border border-yellow-400/20">
-              Early Adopter
-            </span>
-            <span className="px-2 py-1 bg-purple-500/10 text-purple-400 text-xs rounded border border-purple-500/20">
-              Meme Lord
-            </span>
-          </div>
-        </div>
-      </div>
+      </motion.div>
     </div>
   );
 };
+
+// 5. Mobile Leaderboard Modal
+const LeaderboardModal = ({ leaderboard, isOpen, onClose }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:hidden">
+      <motion.div 
+         initial={{ y: 50, opacity: 0 }}
+         animate={{ y: 0, opacity: 1 }}
+         className="bg-gray-900 border border-gray-700 w-full max-w-md rounded-2xl p-6 relative shadow-2xl h-[80vh] flex flex-col"
+      >
+        <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
+          <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
+            <Trophy size={20} /> Leaderboard
+          </h2>
+          <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <X size={24} />
+          </button>
+        </div>
+        <div className="overflow-y-auto flex-1">
+          <LeaderboardList leaderboard={leaderboard} />
+        </div>
+      </motion.div>
+    </div>
+  );
+}
 
 export default function MainApp({ session }) {
   // Data State
@@ -94,8 +157,9 @@ export default function MainApp({ session }) {
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [sortBy, setSortBy] = useState("top");
-  const [viewMode, setViewMode] = useState("active"); // 'active' | 'archive'
+  const [viewMode, setViewMode] = useState("active"); 
   const [showProfileModal, setShowProfileModal] = useState(false);
+  const [showLeaderboardModal, setShowLeaderboardModal] = useState(false); // Mobile Leaderboard
   const [timeLeft, setTimeLeft] = useState("");
   const [toasts, setToasts] = useState([]);
 
@@ -109,26 +173,19 @@ export default function MainApp({ session }) {
   useEffect(() => {
     fetchData();
     setupRealtime();
-
-    // Countdown Timer (Updates every second)
     const timer = setInterval(() => {
       const now = new Date();
-      // Assume deadline is next midnight UTC
       const tomorrow = new Date(now);
       tomorrow.setUTCHours(24, 0, 0, 0);
-      
       const diff = tomorrow - now;
       const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const minutes = Math.floor((diff / (1000 * 60)) % 60);
       const seconds = Math.floor((diff / 1000) % 60);
-      
       setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
-
     return () => clearInterval(timer);
   }, []);
 
-  // Sort Effect
   useEffect(() => {
     if (captions.length === 0) return;
     const sorted = [...captions].sort((a, b) => 
@@ -144,14 +201,11 @@ export default function MainApp({ session }) {
       .channel('public:comments')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'comments' }, async (payload) => {
         if(payload.new.meme_id !== meme?.id) return;
-        
-        // Fetch the profile for the new comment
         const { data: newCommentData } = await supabase
           .from('comments')
           .select(`*, profiles(username)`)
           .eq('id', payload.new.id)
           .single();
-
         if (newCommentData) {
           setCaptions(current => [newCommentData, ...current]);
           addToast(`New caption from @${newCommentData.profiles?.username || 'anon'}!`, 'info');
@@ -163,51 +217,22 @@ export default function MainApp({ session }) {
         );
       })
       .subscribe();
-
     return () => supabase.removeChannel(channel);
   };
 
   async function fetchData() {
     try {
       setLoading(true);
-      
-      // 1. Fetch Active Meme
-      let { data: activeMeme } = await supabase
-        .from("memes")
-        .select("*")
-        .eq("status", "active")
-        .single();
-      
+      let { data: activeMeme } = await supabase.from("memes").select("*").eq("status", "active").single();
       setMeme(activeMeme);
-
-      // 2. Fetch Archived Memes
-      let { data: archives } = await supabase
-        .from("memes")
-        .select("*")
-        .neq("status", "active")
-        .order("created_at", { ascending: false });
-      
+      let { data: archives } = await supabase.from("memes").select("*").neq("status", "active").order("created_at", { ascending: false });
       setArchivedMemes(archives || []);
-
-      // 3. Fetch Captions for Active Meme
       if (activeMeme) {
-        const { data } = await supabase
-          .from("comments")
-          .select(`*, profiles(username)`)
-          .eq("meme_id", activeMeme.id);
-        
+        const { data } = await supabase.from("comments").select(`*, profiles(username)`).eq("meme_id", activeMeme.id);
         setCaptions(data || []);
       }
-
-      // 4. Fetch Leaderboard
-      const { data: topUsers } = await supabase
-        .from("profiles")
-        .select("username, weekly_points")
-        .order("weekly_points", { ascending: false })
-        .limit(5);
-
+      const { data: topUsers } = await supabase.from("profiles").select("username, weekly_points").order("weekly_points", { ascending: false }).limit(5);
       setLeaderboard(topUsers || []);
-
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
@@ -218,7 +243,6 @@ export default function MainApp({ session }) {
   const submitCaption = async (e) => {
     e.preventDefault();
     if (!newCaption.trim()) return;
-
     setSubmitting(true);
     const { error } = await supabase.from("comments").insert({
       user_id: session.user.id,
@@ -226,7 +250,6 @@ export default function MainApp({ session }) {
       content: newCaption,
     });
     setSubmitting(false);
-
     if (error) {
       addToast(error.message, 'error');
     } else {
@@ -236,19 +259,16 @@ export default function MainApp({ session }) {
   };
 
   const handleVote = async (commentId) => {
-    // Optimistic Update
     const previousCaptions = [...captions];
     setCaptions(current =>
-      current.map(c => c.id === commentId ? { ...c, vote_count: c.vote_count + 1 } : c)
+      current.map(c => c.id === commentId ? { ...c, vote_count: c.vote_count + 1, hasVoted: true } : c)
     );
-
     const { error } = await supabase.from("votes").insert({
       user_id: session.user.id,
       comment_id: commentId,
     });
-
     if (error) {
-      setCaptions(previousCaptions); // Rollback
+      setCaptions(previousCaptions); 
       addToast("You already voted for this!", "error");
     } else {
       await supabase.rpc("increment_vote", { row_id: commentId });
@@ -269,36 +289,35 @@ export default function MainApp({ session }) {
   };
 
   const handleReport = (commentId) => {
-    // Optimistic Hide
     setCaptions(current => current.filter(c => c.id !== commentId));
     addToast("Caption reported and hidden.", "info");
-    // In a real app: await supabase.from('reports').insert(...)
   };
-
-  // --- Render ---
 
   if (loading && !meme) {
     return (
       <div className="min-h-screen bg-gray-900 flex flex-col items-center justify-center space-y-4">
          <Loader2 className="animate-spin text-yellow-400 w-10 h-10" />
-         <p className="text-gray-400 animate-pulse">Summoning memes...</p>
+         <p className="text-gray-400 animate-pulse font-mono">Summoning memes...</p>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white font-sans selection:bg-yellow-400 selection:text-black">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white font-sans selection:bg-yellow-400 selection:text-black pb-20 md:pb-0">
       <Header session={session} onOpenProfile={() => setShowProfileModal(true)} />
       <ToastContainer toasts={toasts} removeToast={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
+      
+      {/* Modals */}
       <UserProfileModal user={session.user} isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
+      <LeaderboardModal leaderboard={leaderboard} isOpen={showLeaderboardModal} onClose={() => setShowLeaderboardModal(false)} />
 
       <div className="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
         
         {/* Main Column */}
         <div className="md:col-span-2 space-y-6">
           
-          {/* View Toggles */}
-          <div className="flex bg-gray-800/50 p-1 rounded-xl border border-gray-700 w-fit">
+          {/* Desktop Toggles */}
+          <div className="hidden md:flex bg-gray-800/50 p-1 rounded-xl border border-gray-700 w-fit">
             <button 
               onClick={() => setViewMode('active')}
               className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition ${viewMode === 'active' ? 'bg-yellow-400 text-black' : 'text-gray-400 hover:text-white'}`}
@@ -317,7 +336,7 @@ export default function MainApp({ session }) {
             <>
               {/* Active Meme Card */}
               <div className="bg-gray-800/50 backdrop-blur-md border border-gray-700 rounded-xl shadow-2xl overflow-hidden relative group">
-                <div className="absolute top-4 right-4 bg-black/60 backdrop-blur text-white text-xs font-mono py-1 px-3 rounded-full border border-white/10 flex items-center gap-2">
+                <div className="absolute top-4 right-4 bg-black/60 backdrop-blur text-white text-xs font-mono py-1 px-3 rounded-full border border-white/10 flex items-center gap-2 z-10">
                   <Clock size={12} className="text-yellow-400" /> 
                   <span>Ends in: {timeLeft}</span>
                 </div>
@@ -338,7 +357,7 @@ export default function MainApp({ session }) {
                       onChange={(e) => setNewCaption(e.target.value)}
                       placeholder="Write a witty caption..."
                       disabled={submitting}
-                      className="flex-1 p-3 rounded-lg bg-gray-900/50 border border-gray-600 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all"
+                      className="flex-1 p-3 rounded-lg bg-gray-900/50 border border-gray-600 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all placeholder:text-gray-600"
                     />
                     <button 
                       type="submit"
@@ -353,7 +372,7 @@ export default function MainApp({ session }) {
 
               {/* Captions List */}
               <div className="flex justify-between items-center px-1">
-                 <h3 className="font-bold text-gray-300">
+                 <h3 className="font-bold text-gray-300 font-display text-lg">
                    {captions.length} {captions.length === 1 ? 'Caption' : 'Captions'}
                  </h3>
                  <div className="flex gap-2 text-sm bg-gray-800/50 p-1 rounded-lg border border-gray-700">
@@ -375,7 +394,7 @@ export default function MainApp({ session }) {
                         )}
                         {caption.vote_count > 10 && <span className="text-[10px] bg-red-500/20 text-red-400 px-1 rounded">🔥 Hot</span>}
                       </div>
-                      <p className="text-lg text-gray-200 leading-snug">{caption.content}</p>
+                      <p className="text-lg text-gray-200 leading-snug font-medium">{caption.content}</p>
                       
                       {/* Action Bar */}
                       <div className="flex gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
@@ -388,59 +407,77 @@ export default function MainApp({ session }) {
                       </div>
                     </div>
                     
-                    <button
+                    {/* Animated Vote Button */}
+                    <motion.button
+                      whileHover={{ scale: 1.1 }}
+                      whileTap={{ scale: 0.9 }}
                       onClick={() => handleVote(caption.id)}
-                      className="flex flex-col items-center justify-center gap-1 text-gray-500 hover:text-yellow-400 transition h-fit p-2 rounded-lg hover:bg-yellow-400/10"
+                      className={`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors
+                        ${caption.hasVoted ? 'text-yellow-400' : 'text-gray-500 hover:text-yellow-400'}
+                      `}
                     >
-                      <ThumbsUp size={24} className={`${caption.vote_count > 0 ? 'fill-yellow-400/20' : ''}`} />
+                      <ThumbsUp 
+                        size={24} 
+                        className={`transition-all ${caption.vote_count > 0 ? 'fill-yellow-400/20' : ''}`} 
+                      />
                       <span className="font-bold text-sm">{caption.vote_count}</span>
-                    </button>
+                    </motion.button>
                   </div>
                 ))}
               </div>
             </>
           ) : (
-            // Archive View using the new component
             <ArchiveSection archives={archivedMemes} />
           )}
         </div>
 
-        {/* Sidebar */}
-        <div className="md:col-span-1 space-y-6">
+        {/* Sidebar (Hidden on Mobile) */}
+        <div className="hidden md:block md:col-span-1 space-y-6">
           <div className="bg-gray-800/50 backdrop-blur-md border border-gray-700 p-5 rounded-xl shadow sticky top-24">
             <div className="flex items-center gap-2 mb-4 text-yellow-400 pb-2 border-b border-gray-700">
               <Trophy size={20} />
-              <h2 className="font-bold text-lg">Weekly Leaders</h2>
+              <h2 className="font-bold text-lg font-display">Weekly Leaders</h2>
             </div>
-            <ul className="space-y-3">
-              {leaderboard.map((user, index) => (
-                <li key={index} className="flex justify-between items-center">
-                  <div className="flex items-center gap-3">
-                    <span className={`
-                      w-6 h-6 flex items-center justify-center rounded text-xs font-black
-                      ${index === 0 ? 'bg-yellow-400 text-black shadow-[0_0_10px_rgba(250,204,21,0.5)]' : 
-                        index === 1 ? 'bg-gray-400 text-black' : 
-                        index === 2 ? 'bg-orange-700 text-white' : 'bg-gray-700 text-gray-400'}
-                    `}>
-                      {index + 1}
-                    </span>
-                    <span className="font-medium text-sm text-gray-300">{user.username}</span>
-                  </div>
-                  <span className="font-mono font-bold text-yellow-400 text-sm">{user.weekly_points}</span>
-                </li>
-              ))}
-            </ul>
+            
+            {/* Reused Leaderboard Component */}
+            <LeaderboardList leaderboard={leaderboard} />
           </div>
           
-          {/* Helpful Link to How It Works (Optional but recommended) */}
            <div className="bg-gray-800/50 border border-gray-700 p-4 rounded-xl text-center">
              <a href="/how-it-works" className="text-sm font-bold text-gray-400 hover:text-yellow-400 transition">
                🤔 How to play?
              </a>
            </div>
-
         </div>
       </div>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-gray-900/95 backdrop-blur border-t border-gray-800 p-3 flex justify-around z-40 pb-6">
+        <button 
+          onClick={() => setViewMode('active')} 
+          className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'active' ? 'text-yellow-400 scale-105' : 'text-gray-500'}`}
+        >
+          <Flame size={20} />
+          <span>Battle</span>
+        </button>
+        
+        <button 
+          onClick={() => setShowLeaderboardModal(true)} 
+          className="flex flex-col items-center gap-1 text-xs font-bold text-gray-500 active:text-white transition-all"
+        >
+          <Trophy size={20} />
+          <span>Rank</span>
+        </button>
+
+        <button 
+          onClick={() => setViewMode('archive')} 
+          className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'archive' ? 'text-yellow-400 scale-105' : 'text-gray-500'}`}
+        >
+          <History size={20} />
+          <span>Archive</span>
+        </button>
+      </div>
+
     </div>
   );
 }
