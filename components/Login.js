@@ -55,7 +55,11 @@ export default function Login() {
         
         <div className="text-center mb-8">
           <div className="inline-block p-3 bg-yellow-400/10 rounded-full mb-4">
-            <span className="text-4xl">🤡</span>
+            <img 
+              src="/logo.png" 
+              alt="WebWits Logo" 
+              className="w-12 h-12 object-contain" 
+            />
           </div>
           <h1 className="text-4xl font-black text-yellow-400 tracking-tight mb-2">
             WebWits
