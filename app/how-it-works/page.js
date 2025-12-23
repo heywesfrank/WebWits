@@ -17,7 +17,11 @@ export default function HowItWorks() {
         {/* Hero Header */}
         <div className="text-center mb-16 space-y-6 animate-in slide-in-from-bottom-4 duration-700">
             <div className="inline-flex items-center justify-center p-4 bg-yellow-400/10 rounded-3xl border border-yellow-400/20 mb-2 shadow-[0_0_30px_rgba(250,204,21,0.1)]">
-                <span className="text-5xl filter drop-shadow-md">🤡</span>
+                <img 
+                  src="/logo.png" 
+                  alt="WebWits Logo" 
+                  className="w-16 h-16 object-contain filter drop-shadow-md" 
+                />
             </div>
             <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white leading-tight">
                 How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Win</span>
