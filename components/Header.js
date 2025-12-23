@@ -6,20 +6,12 @@ export default function Header({ session }) {
   return (
     <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex justify-between items-center transition-all">
       {/* Left: Brand & Logo */}
-      <div className="flex items-center gap-3 group cursor-default">
+      <div className="flex items-center group cursor-pointer" onClick={() => window.location.href = '/'}>
         <img 
           src="/logo.png" 
-          alt="WebWits Logo" 
-          className="w-10 h-10 object-contain filter drop-shadow-sm group-hover:rotate-12 transition-transform duration-300" 
+          alt="WebWits" 
+          className="h-16 w-auto object-contain filter drop-shadow-sm transition-transform duration-300 group-hover:scale-105" 
         />
-        <div className="flex flex-col">
-          <h1 className="text-xl font-black text-gray-900 tracking-tight leading-none">
-            WebWits
-          </h1>
-          <span className="text-[10px] font-bold text-yellow-600 uppercase tracking-widest">
-            Daily Caption Battle
-          </span>
-        </div>
       </div>
 
       {/* Right: User Profile & Actions */}
