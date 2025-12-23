@@ -3,12 +3,13 @@ import { ArrowLeft, Trophy, PenTool, Users, Clock, Zap } from "lucide-react";
 
 export default function HowItWorks() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 text-white p-6 font-sans">
+    // Changed bg to white and text to gray
+    <div className="min-h-screen bg-white text-gray-900 p-6 font-sans">
       <div className="max-w-4xl mx-auto">
         
         {/* Navigation */}
         <nav className="flex items-center justify-between mb-12">
-            <Link href="/" className="group flex items-center gap-2 text-gray-400 hover:text-white transition-colors px-4 py-2 rounded-full hover:bg-white/5">
+            <Link href="/" className="group flex items-center gap-2 text-gray-500 hover:text-black transition-colors px-4 py-2 rounded-full hover:bg-gray-100">
                 <ArrowLeft size={20} className="group-hover:-translate-x-1 transition-transform" />
                 <span className="font-bold">Back to Battle</span>
             </Link>
@@ -16,16 +17,15 @@ export default function HowItWorks() {
 
         {/* Hero Header */}
         <div className="text-center mb-16 space-y-6 animate-in slide-in-from-bottom-4 duration-700">
-            {/* Logo Updated for Wide Aspect Ratio */}
             <img 
               src="/logo.png" 
               alt="WebWits" 
               className="w-80 h-auto object-contain mx-auto mb-6 filter drop-shadow-md" 
             />
-            <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white leading-tight">
-                How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Win</span>
+            <h1 className="text-5xl md:text-7xl font-black tracking-tight text-gray-900 leading-tight">
+                How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-600">Win</span>
             </h1>
-            <p className="text-xl md:text-2xl text-gray-400 max-w-2xl mx-auto font-light leading-relaxed">
+            <p className="text-xl md:text-2xl text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">
                 Welcome to <strong>WebWits</strong>, the daily arena where humor is the only currency that matters.
             </p>
         </div>
@@ -59,21 +59,21 @@ export default function HowItWorks() {
         </div>
 
         {/* Rules Section */}
-        <div className="bg-gray-800/30 border border-gray-700/50 rounded-2xl p-8 mb-16">
-            <h3 className="text-xl font-bold mb-6 flex items-center gap-2">
-                <Zap className="text-yellow-400" /> Ground Rules
+        <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 mb-16">
+            <h3 className="text-xl font-bold mb-6 flex items-center gap-2 text-gray-900">
+                <Zap className="text-yellow-500" /> Ground Rules
             </h3>
-            <ul className="space-y-4 text-gray-400">
+            <ul className="space-y-4 text-gray-600">
                 <li className="flex gap-3">
-                    <span className="text-yellow-400 font-bold">•</span>
+                    <span className="text-yellow-500 font-bold">•</span>
                     <span>Be original. Stolen jokes are for lesser beings.</span>
                 </li>
                 <li className="flex gap-3">
-                    <span className="text-yellow-400 font-bold">•</span>
+                    <span className="text-yellow-500 font-bold">•</span>
                     <span>No hate speech or harassment. Keep it spicy, not toxic.</span>
                 </li>
                 <li className="flex gap-3">
-                    <span className="text-yellow-400 font-bold">•</span>
+                    <span className="text-yellow-500 font-bold">•</span>
                     <span>One vote per caption. Choose wisely.</span>
                 </li>
             </ul>
@@ -83,7 +83,7 @@ export default function HowItWorks() {
         <div className="text-center pb-10">
             <Link 
                 href="/" 
-                className="inline-block bg-yellow-400 text-black font-black text-xl px-10 py-5 rounded-xl hover:bg-yellow-300 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-yellow-400/20"
+                className="inline-block bg-yellow-400 text-black font-black text-xl px-10 py-5 rounded-xl hover:bg-yellow-300 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-yellow-200"
             >
                 Enter the Arena
             </Link>
@@ -95,19 +95,19 @@ export default function HowItWorks() {
 
 function StepCard({ icon, title, desc, color }) {
     const colors = {
-        blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
-        purple: "bg-purple-500/10 text-purple-400 border-purple-500/20",
-        green: "bg-green-500/10 text-green-400 border-green-500/20",
-        yellow: "bg-yellow-500/10 text-yellow-400 border-yellow-500/20",
+        blue: "bg-blue-50 text-blue-600 border-blue-200",
+        purple: "bg-purple-50 text-purple-600 border-purple-200",
+        green: "bg-green-50 text-green-600 border-green-200",
+        yellow: "bg-yellow-50 text-yellow-600 border-yellow-200",
     };
 
     return (
-        <div className="bg-gray-800/50 p-8 rounded-2xl border border-gray-700/50 backdrop-blur-sm hover:border-gray-600 transition-colors">
+        <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:border-gray-300 transition-colors">
             <div className={`w-14 h-14 ${colors[color]} rounded-xl flex items-center justify-center mb-6 border`}>
                 {icon}
             </div>
-            <h3 className="text-2xl font-bold mb-3 text-gray-100">{title}</h3>
-            <p className="text-gray-400 leading-relaxed">{desc}</p>
+            <h3 className="text-2xl font-bold mb-3 text-gray-900">{title}</h3>
+            <p className="text-gray-500 leading-relaxed">{desc}</p>
         </div>
     );
 }
