@@ -12,7 +12,8 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body className={`${inter.variable} ${outfit.variable} font-sans bg-gray-900 text-gray-200`}>
+      {/* Changed bg-gray-900 to bg-white and text-gray-200 to text-gray-900 */}
+      <body className={`${inter.variable} ${outfit.variable} font-sans bg-white text-gray-900`}>
         {children}
       </body>
     </html>
