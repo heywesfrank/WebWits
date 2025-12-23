@@ -16,13 +16,12 @@ export default function HowItWorks() {
 
         {/* Hero Header */}
         <div className="text-center mb-16 space-y-6 animate-in slide-in-from-bottom-4 duration-700">
-            <div className="inline-flex items-center justify-center p-4 bg-yellow-400/10 rounded-3xl border border-yellow-400/20 mb-2 shadow-[0_0_30px_rgba(250,204,21,0.1)]">
-                <img 
-                  src="/logo.png" 
-                  alt="WebWits Logo" 
-                  className="w-16 h-16 object-contain filter drop-shadow-md" 
-                />
-            </div>
+            {/* Logo Updated for Wide Aspect Ratio */}
+            <img 
+              src="/logo.png" 
+              alt="WebWits" 
+              className="w-80 h-auto object-contain mx-auto mb-6 filter drop-shadow-md" 
+            />
             <h1 className="text-5xl md:text-7xl font-black tracking-tight text-white leading-tight">
                 How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">Win</span>
             </h1>
@@ -94,7 +93,6 @@ export default function HowItWorks() {
   );
 }
 
-// Helper Component for the grid
 function StepCard({ icon, title, desc, color }) {
     const colors = {
         blue: "bg-blue-500/10 text-blue-400 border-blue-500/20",
