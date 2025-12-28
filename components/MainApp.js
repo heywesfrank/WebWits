@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import Link from "next/link"; // [!code ++]
 import { supabase } from "@/lib/supabase";
 import { 
   Send, ThumbsUp, Trophy, Loader2, Clock, Flame, 
@@ -37,6 +38,7 @@ export default function MainApp({ session }) {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
   };
 
+  // ... [Keep useEffects for timers and sorting exactly the same] ...
   useEffect(() => {
     fetchData();
     setupRealtime();
@@ -63,6 +65,7 @@ export default function MainApp({ session }) {
     }
   }, [sortBy, captions]);
 
+  // ... [Keep setupRealtime exactly the same] ...
   const setupRealtime = () => {
     const channel = supabase
       .channel('public:comments')
@@ -109,6 +112,7 @@ export default function MainApp({ session }) {
 
   const submitCaption = async (e) => {
     e.preventDefault();
+    if (!session) return; // Guard clause [!code ++]
     if (!newCaption.trim()) return;
     setSubmitting(true);
     const { error } = await supabase.from("comments").insert({
@@ -126,6 +130,11 @@ export default function MainApp({ session }) {
   };
 
   const handleVote = async (commentId) => {
+    if (!session) { // Check for session [!code ++]
+      addToast("Please sign in to vote!", "error");
+      return;
+    }
+    
     const previousCaptions = [...captions];
     setCaptions(current =>
       current.map(c => c.id === commentId ? { ...c, vote_count: c.vote_count + 1, hasVoted: true } : c)
@@ -156,6 +165,7 @@ export default function MainApp({ session }) {
   };
 
   const handleReport = (commentId) => {
+    // You might want to block reporting for guests too, or leave it as is
     setCaptions(current => current.filter(c => c.id !== commentId));
     addToast("Caption reported and hidden.", "info");
   };
@@ -170,13 +180,13 @@ export default function MainApp({ session }) {
   }
 
   return (
-    // Updated background to white and text to gray
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-20 md:pb-0">
       <Header session={session} onOpenProfile={() => setShowProfileModal(true)} />
       
       <ToastContainer toasts={toasts} removeToast={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
       
-      <UserProfileModal user={session.user} isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
+      {/* Safely access user with optional chaining */}
+      <UserProfileModal user={session?.user} isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
       <LeaderboardModal leaderboard={leaderboard} isOpen={showLeaderboardModal} onClose={() => setShowLeaderboardModal(false)} />
 
       <div className="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -217,24 +227,34 @@ export default function MainApp({ session }) {
                   <div className="h-64 flex items-center justify-center text-gray-500">No active meme.</div>
                 )}
                 
+                {/* CONDITIONAL RENDERING FOR INPUT FORM */}
                 {meme && (
-                  <form onSubmit={submitCaption} className="p-4 flex gap-2 bg-gray-50 border-t border-gray-200">
-                    <input
-                      type="text"
-                      value={newCaption}
-                      onChange={(e) => setNewCaption(e.target.value)}
-                      placeholder="Write a witty caption..."
-                      disabled={submitting}
-                      className="flex-1 p-3 rounded-lg bg-white border border-gray-300 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all placeholder:text-gray-500 text-gray-900"
-                    />
-                    <button 
-                      type="submit"
-                      disabled={submitting || !newCaption.trim()}
-                      className="bg-yellow-400 text-black font-bold p-3 rounded-lg hover:bg-yellow-300 disabled:opacity-50 transition shadow-sm"
-                    >
-                      {submitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
-                    </button>
-                  </form>
+                  session ? (
+                    <form onSubmit={submitCaption} className="p-4 flex gap-2 bg-gray-50 border-t border-gray-200">
+                        <input
+                        type="text"
+                        value={newCaption}
+                        onChange={(e) => setNewCaption(e.target.value)}
+                        placeholder="Write a witty caption..."
+                        disabled={submitting}
+                        className="flex-1 p-3 rounded-lg bg-white border border-gray-300 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all placeholder:text-gray-500 text-gray-900"
+                        />
+                        <button 
+                        type="submit"
+                        disabled={submitting || !newCaption.trim()}
+                        className="bg-yellow-400 text-black font-bold p-3 rounded-lg hover:bg-yellow-300 disabled:opacity-50 transition shadow-sm"
+                        >
+                        {submitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                        </button>
+                    </form>
+                  ) : (
+                    <div className="p-4 bg-gray-50 border-t border-gray-200 text-center">
+                        <Link href="/login" className="inline-flex items-center gap-2 text-sm font-bold text-yellow-600 hover:text-yellow-700 hover:underline">
+                           <span>Sign in to play & join the battle!</span> 
+                           <Send size={14} />
+                        </Link>
+                    </div>
+                  )
                 )}
               </div>
 
@@ -257,7 +277,8 @@ export default function MainApp({ session }) {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-xs text-gray-500">@{caption.profiles?.username || "anon"}</span>
-                        {caption.user_id === session.user.id && (
+                        {/* Only show 'YOU' if session matches */}
+                        {session && caption.user_id === session.user.id && (
                           <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                         )}
                         {caption.vote_count > 10 && <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded border border-red-200">🔥 Hot</span>}
@@ -300,6 +321,7 @@ export default function MainApp({ session }) {
         </div>
 
         {/* Sidebar (Hidden on Mobile) */}
+        {/* ... [Keep sidebar code the same] ... */}
         <div className="hidden md:block md:col-span-1 space-y-6">
           <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm sticky top-24">
             <div className="flex items-center gap-2 mb-4 text-yellow-500 pb-2 border-b border-gray-100">
@@ -319,7 +341,8 @@ export default function MainApp({ session }) {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-around z-40 pb-6 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+      {/* ... [Keep mobile nav the same] ... */}
+       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-around z-40 pb-6 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
         <button 
           onClick={() => setViewMode('active')} 
           className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'active' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}
