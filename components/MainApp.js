@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import Link from "next/link"; // [!code ++]
+import Link from "next/link"; 
 import { supabase } from "@/lib/supabase";
 import { 
   Send, ThumbsUp, Trophy, Loader2, Clock, Flame, 
@@ -15,6 +15,7 @@ import Skeleton from "./Skeleton";
 import LeaderboardList from "./LeaderboardList";
 import UserProfileModal from "./UserProfileModal";
 import LeaderboardModal from "./LeaderboardModal";
+import HowToPlayButton from "./HowToPlayButton";
 
 export default function MainApp({ session }) {
   const [meme, setMeme] = useState(null);
@@ -38,7 +39,6 @@ export default function MainApp({ session }) {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
   };
 
-  // ... [Keep useEffects for timers and sorting exactly the same] ...
   useEffect(() => {
     fetchData();
     setupRealtime();
@@ -65,7 +65,6 @@ export default function MainApp({ session }) {
     }
   }, [sortBy, captions]);
 
-  // ... [Keep setupRealtime exactly the same] ...
   const setupRealtime = () => {
     const channel = supabase
       .channel('public:comments')
@@ -112,7 +111,7 @@ export default function MainApp({ session }) {
 
   const submitCaption = async (e) => {
     e.preventDefault();
-    if (!session) return; // Guard clause [!code ++]
+    if (!session) return;
     if (!newCaption.trim()) return;
     setSubmitting(true);
     const { error } = await supabase.from("comments").insert({
@@ -130,7 +129,7 @@ export default function MainApp({ session }) {
   };
 
   const handleVote = async (commentId) => {
-    if (!session) { // Check for session [!code ++]
+    if (!session) {
       addToast("Please sign in to vote!", "error");
       return;
     }
@@ -165,7 +164,6 @@ export default function MainApp({ session }) {
   };
 
   const handleReport = (commentId) => {
-    // You might want to block reporting for guests too, or leave it as is
     setCaptions(current => current.filter(c => c.id !== commentId));
     addToast("Caption reported and hidden.", "info");
   };
@@ -185,7 +183,6 @@ export default function MainApp({ session }) {
       
       <ToastContainer toasts={toasts} removeToast={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
       
-      {/* Safely access user with optional chaining */}
       <UserProfileModal user={session?.user} isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
       <LeaderboardModal leaderboard={leaderboard} isOpen={showLeaderboardModal} onClose={() => setShowLeaderboardModal(false)} />
 
@@ -277,7 +274,6 @@ export default function MainApp({ session }) {
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-bold text-xs text-gray-500">@{caption.profiles?.username || "anon"}</span>
-                        {/* Only show 'YOU' if session matches */}
                         {session && caption.user_id === session.user.id && (
                           <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                         )}
@@ -285,7 +281,6 @@ export default function MainApp({ session }) {
                       </div>
                       <p className="text-lg text-gray-800 leading-snug font-medium">{caption.content}</p>
                       
-                      {/* Action Bar */}
                       <div className="flex gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button onClick={() => handleShare(caption.content)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-800 transition">
                           <Share2 size={12} /> Share
@@ -296,7 +291,6 @@ export default function MainApp({ session }) {
                       </div>
                     </div>
                     
-                    {/* Animated Vote Button */}
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
@@ -321,7 +315,6 @@ export default function MainApp({ session }) {
         </div>
 
         {/* Sidebar (Hidden on Mobile) */}
-        {/* ... [Keep sidebar code the same] ... */}
         <div className="hidden md:block md:col-span-1 space-y-6">
           <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm sticky top-24">
             <div className="flex items-center gap-2 mb-4 text-yellow-500 pb-2 border-b border-gray-100">
@@ -332,16 +325,13 @@ export default function MainApp({ session }) {
             <LeaderboardList leaderboard={leaderboard} />
           </div>
           
-           <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl text-center">
-             <a href="/how-it-works" className="text-sm font-bold text-gray-500 hover:text-yellow-600 transition">
-               🤔 How to play?
-             </a>
-           </div>
+           {/* REPLACED: New Component */}
+           <HowToPlayButton />
+
         </div>
       </div>
 
       {/* Mobile Bottom Navigation */}
-      {/* ... [Keep mobile nav the same] ... */}
        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-around z-40 pb-6 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
         <button 
           onClick={() => setViewMode('active')} 
