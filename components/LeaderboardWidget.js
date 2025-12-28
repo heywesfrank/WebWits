@@ -196,3 +196,4 @@ export function LeaderboardModal({ leaderboard, isOpen, onClose }) {
       </motion.div>
     </div>
   );
+}
