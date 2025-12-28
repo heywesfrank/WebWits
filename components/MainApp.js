@@ -175,10 +175,10 @@ export default function MainApp({ session }) {
   };
 
   // --------------------------------------------------------------------------
-  // HELPER: RENDER MEDIA CONTENT
+  // HELPER: RENDER MEME CONTENT
   // --------------------------------------------------------------------------
   const renderMemeContent = (memeItem) => {
-    // 1. Video Support
+    // 1. Video Support (Raw files)
     if (memeItem.type === 'video') {
       return (
         <video 
@@ -193,7 +193,7 @@ export default function MainApp({ session }) {
       );
     }
     
-    // 2. Instagram Embed Support
+    // 2. Instagram Embed Support (Handles Videos & Images)
     if (memeItem.type === 'instagram') {
       // Ensure we have a clean URL to append /embed to
       const rawUrl = memeItem.content_url || memeItem.image_url || "";
@@ -204,7 +204,8 @@ export default function MainApp({ session }) {
         <div className="flex justify-center items-center w-full bg-gray-50 py-4">
           <iframe 
             src={embedUrl}
-            className="w-full max-w-[400px] aspect-square border border-gray-200 rounded-lg shadow-sm overflow-hidden" 
+            // CHANGED: Removed aspect-square, added min-h-[550px] to accommodate vertical Reels/Videos without cutting them off
+            className="w-full max-w-[400px] min-h-[550px] border border-gray-200 rounded-lg shadow-sm overflow-hidden" 
             scrolling="no" 
             allowTransparency="true"
             title="Instagram Post"
