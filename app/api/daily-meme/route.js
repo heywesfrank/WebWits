@@ -24,40 +24,45 @@ export async function GET(request) {
 
     // --- FIX STARTS HERE ---
     
-    // 2.5 Find the current active meme and its winner
+    // 3. Find the current active meme (if any)
+    // Use maybeSingle() so it doesn't throw an error if this is the very first run
     const { data: activeMeme } = await supabase
       .from('memes')
       .select('id')
       .eq('status', 'active')
-      .single();
+      .maybeSingle();
 
-    let winningCaption = null;
-
+    // Only try to archive if an active meme actually exists
     if (activeMeme) {
-      // Find the top voted comment for this meme
-      const { data: topComment } = await supabase
+      let winningCaption = null;
+
+      // Check for comments (Winner calculation)
+      const { data: topComments } = await supabase
         .from('comments')
         .select('content, vote_count')
         .eq('meme_id', activeMeme.id)
         .order('vote_count', { ascending: false })
-        .limit(1)
-        .single();
-      
-      if (topComment) {
-        winningCaption = topComment.content;
+        .limit(1);
+
+      // If we have comments, grab the top one. If not, winningCaption remains null.
+      if (topComments && topComments.length > 0) {
+        winningCaption = topComments[0].content;
+      }
+
+      // Archive the meme and save the winner (or null)
+      const { error: archiveError } = await supabase
+        .from('memes')
+        .update({ 
+          status: 'archived',
+          winning_caption: winningCaption 
+        })
+        .eq('id', activeMeme.id);
+
+      if (archiveError) {
+        console.error("Error archiving meme:", archiveError);
+        // We continue anyway to ensure the NEW meme still gets posted
       }
     }
-
-    // 3. Archive the current active meme AND save the winner
-    const { error: archiveError } = await supabase
-      .from('memes')
-      .update({ 
-        status: 'archived',
-        winning_caption: winningCaption // Save the winner!
-      })
-      .eq('status', 'active');
-
-    if (archiveError) throw archiveError;
     // --- FIX ENDS HERE ---
 
     // 4. Generate Today's Date (YYYY-MM-DD)
