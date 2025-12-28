@@ -2,6 +2,7 @@
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Send, AlertCircle, Mail, Sparkles } from "lucide-react";
+import HowToPlayButton from "./HowToPlayButton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -107,6 +108,12 @@ export default function Login() {
             </button>
           </form>
         )}
+
+        {/* Added: How to Play Button */}
+        <div className="mt-8 pt-6 border-t border-gray-100">
+          <HowToPlayButton />
+        </div>
+
       </div>
     </div>
   );
