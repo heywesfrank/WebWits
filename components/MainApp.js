@@ -178,7 +178,7 @@ export default function MainApp({ session }) {
   // HELPER: RENDER MEME CONTENT
   // --------------------------------------------------------------------------
   const renderMemeContent = (memeItem) => {
-    // 1. Video Support (Raw files)
+    // 1. Video Support (Raw files & Giphy MP4s)
     if (memeItem.type === 'video') {
       return (
         <video 
@@ -193,28 +193,7 @@ export default function MainApp({ session }) {
       );
     }
     
-    // 2. Instagram Embed Support (Handles Videos & Images)
-    if (memeItem.type === 'instagram') {
-      // Ensure we have a clean URL to append /embed to
-      const rawUrl = memeItem.content_url || memeItem.image_url || "";
-      // Remove trailing slash if present so we don't get //embed
-      const embedUrl = rawUrl.replace(/\/$/, "") + "/embed";
-
-      return (
-        <div className="flex justify-center items-center w-full bg-gray-50 py-4">
-          <iframe 
-            src={embedUrl}
-            // CHANGED: Removed aspect-square, added min-h-[550px] to accommodate vertical Reels/Videos without cutting them off
-            className="w-full max-w-[400px] min-h-[550px] border border-gray-200 rounded-lg shadow-sm overflow-hidden" 
-            scrolling="no" 
-            allowTransparency="true"
-            title="Instagram Post"
-          />
-        </div>
-      );
-    }
-
-    // 3. Default Image Support
+    // 2. Default Image Support
     return (
       <img 
         src={memeItem.image_url} 
@@ -275,7 +254,7 @@ export default function MainApp({ session }) {
                 {loading ? (
                   <Skeleton className="w-full h-96" />
                 ) : meme ? (
-                  // Use the helper to determine what to render (Video, Insta, or Image)
+                  // Use the helper to determine what to render (Video or Image)
                   renderMemeContent(meme)
                 ) : (
                   <div className="h-64 flex items-center justify-center text-gray-500">No active meme.</div>
