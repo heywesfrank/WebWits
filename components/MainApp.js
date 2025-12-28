@@ -45,21 +45,16 @@ export default function MainApp({ session }) {
     setupRealtime();
     const timer = setInterval(() => {
       const now = new Date();
-      
-      // Target 5:00 AM UTC (which is Midnight EST)
+      // Target 5:00 AM UTC (Midnight EST)
       const target = new Date(now);
       target.setUTCHours(5, 0, 0, 0); 
-      
-      // If we've already passed 5 AM UTC today, target 5 AM UTC tomorrow
       if (now > target) {
         target.setDate(target.getDate() + 1);
       }
-
       const diff = target - now;
       const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const minutes = Math.floor((diff / (1000 * 60)) % 60);
       const seconds = Math.floor((diff / 1000) % 60);
-      
       setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
     return () => clearInterval(timer);
@@ -103,18 +98,47 @@ export default function MainApp({ session }) {
   async function fetchData() {
     try {
       setLoading(true);
-      // Fetches active meme (now including 'type' and 'content_url' if they exist in DB)
+      
+      // 1. Fetch Active Meme
       let { data: activeMeme } = await supabase.from("memes").select("*").eq("status", "active").single();
       setMeme(activeMeme);
 
-      let { data: archives } = await supabase.from("memes").select("*").neq("status", "active").order("created_at", { ascending: false });
-      setArchivedMemes(archives || []);
+      // 2. Fetch Archives (Updated to include comments for backfilling winners)
+      let { data: archives } = await supabase
+        .from("memes")
+        .select(`
+          *,
+          comments (
+            content,
+            vote_count
+          )
+        `)
+        .neq("status", "active")
+        .order("created_at", { ascending: false });
+      
+      // Process archives: If winning_caption is missing, find it from comments
+      const processedArchives = (archives || []).map(archive => {
+        if (archive.winning_caption) return archive;
+        
+        // Find top voted comment manually
+        if (archive.comments && archive.comments.length > 0) {
+           const topComment = archive.comments.reduce((prev, current) => 
+             (prev.vote_count > current.vote_count) ? prev : current
+           );
+           return { ...archive, winning_caption: topComment.content };
+        }
+        return archive;
+      });
 
+      setArchivedMemes(processedArchives);
+
+      // 3. Fetch Captions for Active Meme
       if (activeMeme) {
         const { data } = await supabase.from("comments").select(`*, profiles(username)`).eq("meme_id", activeMeme.id);
         setCaptions(data || []);
       }
       
+      // 4. Fetch Leaderboard
       const { data: topUsers } = await supabase.from("profiles").select("username, weekly_points").order("weekly_points", { ascending: false }).limit(5);
       setLeaderboard(topUsers || []);
     } catch (error) {
@@ -124,29 +148,28 @@ export default function MainApp({ session }) {
     }
   }
 
-  // --- NEW: Handle selection of an archived meme ---
+  // --- Handle selection of an archived meme ---
   const handleArchiveSelect = async (archiveMeme) => {
     setLoading(true);
-    setMeme(archiveMeme); // Swap current meme display to the archived one
+    setMeme(archiveMeme);
     setViewMode('archive-detail');
-    setSortBy('top'); // Force sort by top to show winner first
+    setSortBy('top'); 
 
-    // Fetch captions for this specific archived meme
     const { data } = await supabase
         .from("comments")
         .select(`*, profiles(username)`)
         .eq("meme_id", archiveMeme.id)
-        .order("vote_count", { ascending: false }); // Pre-sort by votes
+        .order("vote_count", { ascending: false });
     
     setCaptions(data || []);
     setLoading(false);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // --- NEW: Handle going back to active battle ---
+  // --- Handle going back to active battle ---
   const handleBackToArena = () => {
     setViewMode('active');
-    fetchData(); // Reload the active battle data
+    fetchData(); 
   };
 
   const submitCaption = async (e) => {
@@ -169,7 +192,7 @@ export default function MainApp({ session }) {
   };
 
   const handleVote = async (commentId) => {
-    if (viewMode === 'archive-detail') return; // Disable voting in archive mode
+    if (viewMode === 'archive-detail') return; 
     if (!session) {
       addToast("Please sign in to vote!", "error");
       return;
@@ -209,26 +232,19 @@ export default function MainApp({ session }) {
     addToast("Caption reported and hidden.", "info");
   };
 
-  // --------------------------------------------------------------------------
-  // HELPER: RENDER MEME CONTENT
-  // --------------------------------------------------------------------------
-const renderMemeContent = (memeItem) => {
-    // 1. Video Support (Raw files & Giphy MP4s)
+  const renderMemeContent = (memeItem) => {
     if (memeItem.type === 'video') {
       return (
         <video 
           src={memeItem.content_url || memeItem.image_url} 
-          // controls  <-- Remove this line
           autoPlay 
           muted 
           loop 
           playsInline
-          className="w-full h-auto max-h-[600px] object-contain bg-black pointer-events-none" // Optional: add pointer-events-none to prevent clicking/highlighting
+          className="w-full h-auto max-h-[600px] object-contain bg-black pointer-events-none" 
         />
       );
     }
-    
-    // 2. Default Image Support
     return (
       <img 
         src={memeItem.image_url} 
@@ -315,8 +331,6 @@ const renderMemeContent = (memeItem) => {
                   <div className="h-64 flex items-center justify-center text-gray-500">No content found.</div>
                 )}
                 
-                {/* CONDITIONAL RENDERING FOR INPUT FORM */}
-                {/* Only show input form if ACTIVE view */}
                 {viewMode === 'active' && meme && (
                   session ? (
                     <form onSubmit={submitCaption} className="p-4 flex gap-2 bg-gray-50 border-t border-gray-200">
@@ -346,7 +360,6 @@ const renderMemeContent = (memeItem) => {
                   )
                 )}
                 
-                {/* Archive Footer Message */}
                 {viewMode === 'archive-detail' && (
                   <div className="p-4 bg-gray-50 border-t border-gray-200 text-center text-sm text-gray-500 font-medium">
                     This contest has ended. All glory is eternal.
@@ -361,7 +374,6 @@ const renderMemeContent = (memeItem) => {
                  </h3>
                  <div className="flex gap-2 text-sm bg-gray-100 p-1 rounded-lg border border-gray-200">
                    <button onClick={() => setSortBy('top')} className={`px-3 py-1 rounded transition ${sortBy === 'top' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>Top</button>
-                   {/* Only show 'New' sort option in Active mode */}
                    {viewMode === 'active' && (
                      <button onClick={() => setSortBy('new')} className={`px-3 py-1 rounded transition ${sortBy === 'new' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>New</button>
                    )}
@@ -372,13 +384,11 @@ const renderMemeContent = (memeItem) => {
                 {loading ? (
                    [1,2,3].map(i => <Skeleton key={i} className="h-24 w-full" />)
                 ) : captions.map((caption, index) => {
-                  // Determine if this caption is the winner (Archive Mode Only)
                   const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
 
                   return (
                   <div key={caption.id} className={`relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group ${isWinner ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-200'}`}>
                     
-                    {/* Winner Crown/Badge */}
                     {isWinner && (
                       <div className="absolute -top-3 -left-2">
                         <div className="bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
@@ -413,12 +423,11 @@ const renderMemeContent = (memeItem) => {
                       whileHover={viewMode === 'active' ? { scale: 1.1 } : {}}
                       whileTap={viewMode === 'active' ? { scale: 0.9 } : {}}
                       onClick={() => handleVote(caption.id)}
-                      disabled={viewMode === 'archive-detail'} // Disable voting in archive
+                      disabled={viewMode === 'archive-detail'} 
                       className={`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors
                         ${caption.hasVoted ? 'text-yellow-500' : viewMode === 'archive-detail' ? 'text-gray-400 cursor-default' : 'text-gray-400 hover:text-yellow-500'}
                       `}
                     >
-                      {/* Use Trophy for winner instead of ThumbsUp in Archive Mode if desired, or stick to ThumbsUp with count */}
                       {isWinner ? (
                          <Trophy size={24} className="fill-yellow-400 text-yellow-600" />
                       ) : (
@@ -435,11 +444,8 @@ const renderMemeContent = (memeItem) => {
 
         {/* Sidebar (Hidden on Mobile) */}
         <div className="hidden md:block md:col-span-1 space-y-6">
-          
           <LeaderboardWidget initialWeeklyLeaders={leaderboard} />
-          
-           <HowToPlayButton />
-
+          <HowToPlayButton />
         </div>
       </div>
 
@@ -469,7 +475,6 @@ const renderMemeContent = (memeItem) => {
           <span>Archive</span>
         </button>
       </div>
-
     </div>
   );
 }
