@@ -186,18 +186,18 @@ export default function MainApp({ session }) {
   // --------------------------------------------------------------------------
   // HELPER: RENDER MEME CONTENT
   // --------------------------------------------------------------------------
-  const renderMemeContent = (memeItem) => {
+const renderMemeContent = (memeItem) => {
     // 1. Video Support (Raw files & Giphy MP4s)
     if (memeItem.type === 'video') {
       return (
         <video 
           src={memeItem.content_url || memeItem.image_url} 
-          controls 
+          // controls  <-- Remove this line
           autoPlay 
           muted 
           loop 
           playsInline
-          className="w-full h-auto max-h-[600px] object-contain bg-black" 
+          className="w-full h-auto max-h-[600px] object-contain bg-black pointer-events-none" // Optional: add pointer-events-none to prevent clicking/highlighting
         />
       );
     }
