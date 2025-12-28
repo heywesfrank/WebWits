@@ -1,6 +1,6 @@
 import { Calendar, Trophy } from "lucide-react";
 
-export default function ArchiveSection({ archives }) {
+export default function ArchiveSection({ archives, onSelectMeme }) { // [!code ++]
   if (!archives || archives.length === 0) {
     return (
       <div className="col-span-2 text-center py-12 bg-gray-800/30 rounded-xl border border-gray-700/50 border-dashed">
@@ -15,6 +15,7 @@ export default function ArchiveSection({ archives }) {
       {archives.map((m) => (
         <div 
           key={m.id} 
+          onClick={() => onSelectMeme && onSelectMeme(m)} // [!code ++]
           className="group relative bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden hover:border-yellow-400/50 transition-all hover:shadow-[0_0_20px_rgba(250,204,21,0.1)] cursor-pointer"
         >
           
