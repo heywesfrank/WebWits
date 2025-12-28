@@ -15,7 +15,7 @@ import Skeleton from "./Skeleton";
 import UserProfileModal from "./UserProfileModal";
 import HowToPlayButton from "./HowToPlayButton";
 
-// UPDATED: Import LeaderboardWidget (default) and LeaderboardModal (named) from the same file
+// Import LeaderboardWidget (default) and LeaderboardModal (named)
 import LeaderboardWidget, { LeaderboardModal } from "./LeaderboardWidget";
 
 export default function MainApp({ session }) {
@@ -61,6 +61,7 @@ export default function MainApp({ session }) {
     const sorted = [...captions].sort((a, b) => 
       sortBy === "top" ? b.vote_count - a.vote_count : new Date(b.created_at) - new Date(a.created_at)
     );
+    // Simple check to prevent infinite loops if order hasn't changed
     if (JSON.stringify(sorted.map(c => c.id)) !== JSON.stringify(captions.map(c => c.id))) {
       setCaptions(sorted);
     }
@@ -93,14 +94,18 @@ export default function MainApp({ session }) {
   async function fetchData() {
     try {
       setLoading(true);
+      // Fetches active meme (now including 'type' and 'content_url' if they exist in DB)
       let { data: activeMeme } = await supabase.from("memes").select("*").eq("status", "active").single();
       setMeme(activeMeme);
+
       let { data: archives } = await supabase.from("memes").select("*").neq("status", "active").order("created_at", { ascending: false });
       setArchivedMemes(archives || []);
+
       if (activeMeme) {
         const { data } = await supabase.from("comments").select(`*, profiles(username)`).eq("meme_id", activeMeme.id);
         setCaptions(data || []);
       }
+      
       const { data: topUsers } = await supabase.from("profiles").select("username, weekly_points").order("weekly_points", { ascending: false }).limit(5);
       setLeaderboard(topUsers || []);
     } catch (error) {
@@ -169,11 +174,60 @@ export default function MainApp({ session }) {
     addToast("Caption reported and hidden.", "info");
   };
 
+  // --------------------------------------------------------------------------
+  // HELPER: RENDER MEDIA CONTENT
+  // --------------------------------------------------------------------------
+  const renderMemeContent = (memeItem) => {
+    // 1. Video Support
+    if (memeItem.type === 'video') {
+      return (
+        <video 
+          src={memeItem.content_url || memeItem.image_url} 
+          controls 
+          autoPlay 
+          muted 
+          loop 
+          playsInline
+          className="w-full h-auto max-h-[600px] object-contain bg-black" 
+        />
+      );
+    }
+    
+    // 2. Instagram Embed Support
+    if (memeItem.type === 'instagram') {
+      // Ensure we have a clean URL to append /embed to
+      const rawUrl = memeItem.content_url || memeItem.image_url || "";
+      // Remove trailing slash if present so we don't get //embed
+      const embedUrl = rawUrl.replace(/\/$/, "") + "/embed";
+
+      return (
+        <div className="flex justify-center items-center w-full bg-gray-50 py-4">
+          <iframe 
+            src={embedUrl}
+            className="w-full max-w-[400px] aspect-square border border-gray-200 rounded-lg shadow-sm overflow-hidden" 
+            scrolling="no" 
+            allowTransparency="true"
+            title="Instagram Post"
+          />
+        </div>
+      );
+    }
+
+    // 3. Default Image Support
+    return (
+      <img 
+        src={memeItem.image_url} 
+        alt="Daily Challenge" 
+        className="w-full h-auto object-cover" 
+      />
+    );
+  };
+
   if (loading && !meme) {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4">
          <Loader2 className="animate-spin text-yellow-500 w-10 h-10" />
-         <p className="text-gray-500 animate-pulse font-mono">Summoning memes...</p>
+         <p className="text-gray-500 animate-pulse font-mono">Summoning content...</p>
       </div>
     );
   }
@@ -220,7 +274,8 @@ export default function MainApp({ session }) {
                 {loading ? (
                   <Skeleton className="w-full h-96" />
                 ) : meme ? (
-                  <img src={meme.image_url} alt="Daily Challenge" className="w-full h-auto" />
+                  // Use the helper to determine what to render (Video, Insta, or Image)
+                  renderMemeContent(meme)
                 ) : (
                   <div className="h-64 flex items-center justify-center text-gray-500">No active meme.</div>
                 )}
@@ -318,7 +373,6 @@ export default function MainApp({ session }) {
         {/* Sidebar (Hidden on Mobile) */}
         <div className="hidden md:block md:col-span-1 space-y-6">
           
-          {/* UPDATED: New Combined Leaderboard Widget */}
           <LeaderboardWidget initialWeeklyLeaders={leaderboard} />
           
            <HowToPlayButton />
