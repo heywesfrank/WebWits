@@ -13,26 +13,26 @@ function LeaderboardList({ leaderboard, scoreKey = "weekly_points" }) {
       {leaderboard.map((user, index) => (
         <div 
           key={index} 
-          className={\`relative flex items-center justify-between p-3 rounded-xl border transition-all hover:scale-[1.02] 
-            \${index === 0 ? 'bg-gradient-to-r from-yellow-400/20 to-yellow-400/5 border-yellow-400/50' : 
+          className={`relative flex items-center justify-between p-3 rounded-xl border transition-all hover:scale-[1.02] 
+            ${index === 0 ? 'bg-gradient-to-r from-yellow-400/20 to-yellow-400/5 border-yellow-400/50' : 
               index === 1 ? 'bg-gray-800/80 border-gray-600' : 
               index === 2 ? 'bg-gray-800/60 border-orange-700/50' : 'bg-transparent border-transparent'
-            }\`}
+            }`}
         >
           <div className="flex items-center gap-3">
             {/* Rank Badge */}
-            <div className={\`
+            <div className={`
               w-8 h-8 flex items-center justify-center rounded-lg font-black text-sm shadow-lg
-              \${index === 0 ? 'bg-yellow-400 text-black' : 
+              ${index === 0 ? 'bg-yellow-400 text-black' : 
                 index === 1 ? 'bg-gray-300 text-black' : 
                 index === 2 ? 'bg-orange-600 text-white' : 'text-gray-500 font-medium'}
-            \`}>
+            `}>
               {index + 1}
             </div>
             
             {/* User Details */}
             <div className="flex flex-col">
-              <span className={\`font-bold text-sm \${index === 0 ? 'text-yellow-400' : 'text-gray-200'}\`}>
+              <span className={`font-bold text-sm ${index === 0 ? 'text-yellow-400' : 'text-gray-200'}`}>
                 {user.username}
               </span>
               {index === 0 && <span className="text-[10px] text-yellow-500/80 font-mono uppercase tracking-wider">Current King</span>}
@@ -78,6 +78,7 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
       try {
         let sortColumn = "weekly_points";
         
+        // Map tabs to DB columns (Ensure these columns exist in your 'profiles' table)
         switch (activeTab) {
           case "daily": sortColumn = "daily_points"; break;
           case "weekly": sortColumn = "weekly_points"; break;
@@ -86,10 +87,9 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
           default: sortColumn = "weekly_points";
         }
 
-        // Note: These columns must exist in your 'profiles' table
         const { data, error } = await supabase
           .from("profiles")
-          .select(\`username, \${sortColumn}\`)
+          .select(`username, ${sortColumn}`)
           .order(sortColumn, { ascending: false })
           .limit(5);
 
@@ -112,6 +112,7 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
   const activeTabInfo = tabs.find(t => t.id === activeTab);
   const Icon = activeTabInfo?.icon || Trophy;
 
+  // Determine which property to display
   const getScoreKey = () => {
      switch(activeTab) {
          case 'daily': return 'daily_points';
@@ -135,11 +136,11 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={\`flex-1 py-1.5 text-[10px] sm:text-xs font-bold rounded-md transition-all duration-200 \${
+            className={`flex-1 py-1.5 text-[10px] sm:text-xs font-bold rounded-md transition-all duration-200 ${
               activeTab === tab.id
                 ? "bg-white text-yellow-600 shadow-sm border border-gray-200"
                 : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
-            }\`}
+            }`}
           >
             {tab.label}
           </button>
@@ -189,7 +190,7 @@ export function LeaderboardModal({ leaderboard, isOpen, onClose }) {
           </button>
         </div>
         <div className="overflow-y-auto flex-1">
-          {/* Note: The modal currently displays the list passed from MainApp (Default: Weekly) */}
+          {/* Mobile modal defaults to showing the data passed in (usually weekly) */}
           <LeaderboardList leaderboard={leaderboard} scoreKey="weekly_points" />
         </div>
       </motion.div>
