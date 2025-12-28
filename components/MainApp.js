@@ -4,7 +4,7 @@ import Link from "next/link";
 import { supabase } from "@/lib/supabase";
 import { 
   Send, ThumbsUp, Loader2, Clock, Flame, 
-  Share2, Flag, History, Trophy 
+  Share2, Flag, History, Trophy, ArrowLeft 
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "./Header";
@@ -124,6 +124,31 @@ export default function MainApp({ session }) {
     }
   }
 
+  // --- NEW: Handle selection of an archived meme ---
+  const handleArchiveSelect = async (archiveMeme) => {
+    setLoading(true);
+    setMeme(archiveMeme); // Swap current meme display to the archived one
+    setViewMode('archive-detail');
+    setSortBy('top'); // Force sort by top to show winner first
+
+    // Fetch captions for this specific archived meme
+    const { data } = await supabase
+        .from("comments")
+        .select(`*, profiles(username)`)
+        .eq("meme_id", archiveMeme.id)
+        .order("vote_count", { ascending: false }); // Pre-sort by votes
+    
+    setCaptions(data || []);
+    setLoading(false);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // --- NEW: Handle going back to active battle ---
+  const handleBackToArena = () => {
+    setViewMode('active');
+    fetchData(); // Reload the active battle data
+  };
+
   const submitCaption = async (e) => {
     e.preventDefault();
     if (!session) return;
@@ -144,6 +169,7 @@ export default function MainApp({ session }) {
   };
 
   const handleVote = async (commentId) => {
+    if (viewMode === 'archive-detail') return; // Disable voting in archive mode
     if (!session) {
       addToast("Please sign in to vote!", "error");
       return;
@@ -212,7 +238,7 @@ const renderMemeContent = (memeItem) => {
     );
   };
 
-  if (loading && !meme) {
+  if (loading && !meme && viewMode === 'active') {
     return (
       <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4">
          <Loader2 className="animate-spin text-yellow-500 w-10 h-10" />
@@ -238,7 +264,7 @@ const renderMemeContent = (memeItem) => {
           {/* Desktop Toggles */}
           <div className="hidden md:flex bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
             <button 
-              onClick={() => setViewMode('active')}
+              onClick={handleBackToArena}
               className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition ${viewMode === 'active' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
             >
               <Flame size={16} /> Active Battle
@@ -251,26 +277,47 @@ const renderMemeContent = (memeItem) => {
             </button>
           </div>
 
-          {viewMode === 'active' ? (
+          {viewMode === 'archive' ? (
+             <ArchiveSection archives={archivedMemes} onSelectMeme={handleArchiveSelect} />
+          ) : (
             <>
-              {/* Active Meme Card */}
+              {/* Back Button for Detail View */}
+              {viewMode === 'archive-detail' && (
+                <button 
+                  onClick={() => setViewMode('archive')}
+                  className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-black mb-2 transition-colors"
+                >
+                  <ArrowLeft size={16} /> Back to Archives
+                </button>
+              )}
+
+              {/* Meme Card */}
               <div className="bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden relative group">
-                <div className="absolute top-4 right-4 bg-black/70 backdrop-blur text-white text-xs font-mono py-1 px-3 rounded-full border border-white/10 flex items-center gap-2 z-10">
-                  <Clock size={12} className="text-yellow-400" /> 
-                  <span>Ends in: {timeLeft}</span>
-                </div>
+                
+                {/* Header Badge: Timer OR Winner Status */}
+                {viewMode === 'active' ? (
+                  <div className="absolute top-4 right-4 bg-black/70 backdrop-blur text-white text-xs font-mono py-1 px-3 rounded-full border border-white/10 flex items-center gap-2 z-10">
+                    <Clock size={12} className="text-yellow-400" /> 
+                    <span>Ends in: {timeLeft}</span>
+                  </div>
+                ) : (
+                  <div className="absolute top-4 right-4 bg-yellow-400 text-black text-xs font-bold py-1 px-3 rounded-full shadow-lg flex items-center gap-2 z-10">
+                    <Trophy size={12} className="text-black" /> 
+                    <span>Winner Declared</span>
+                  </div>
+                )}
 
                 {loading ? (
                   <Skeleton className="w-full h-96" />
                 ) : meme ? (
-                  // Use the helper to determine what to render (Video or Image)
                   renderMemeContent(meme)
                 ) : (
-                  <div className="h-64 flex items-center justify-center text-gray-500">No active meme.</div>
+                  <div className="h-64 flex items-center justify-center text-gray-500">No content found.</div>
                 )}
                 
                 {/* CONDITIONAL RENDERING FOR INPUT FORM */}
-                {meme && (
+                {/* Only show input form if ACTIVE view */}
+                {viewMode === 'active' && meme && (
                   session ? (
                     <form onSubmit={submitCaption} className="p-4 flex gap-2 bg-gray-50 border-t border-gray-200">
                         <input
@@ -298,6 +345,13 @@ const renderMemeContent = (memeItem) => {
                     </div>
                   )
                 )}
+                
+                {/* Archive Footer Message */}
+                {viewMode === 'archive-detail' && (
+                  <div className="p-4 bg-gray-50 border-t border-gray-200 text-center text-sm text-gray-500 font-medium">
+                    This contest has ended. All glory is eternal.
+                  </div>
+                )}
               </div>
 
               {/* Captions List */}
@@ -307,22 +361,39 @@ const renderMemeContent = (memeItem) => {
                  </h3>
                  <div className="flex gap-2 text-sm bg-gray-100 p-1 rounded-lg border border-gray-200">
                    <button onClick={() => setSortBy('top')} className={`px-3 py-1 rounded transition ${sortBy === 'top' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>Top</button>
-                   <button onClick={() => setSortBy('new')} className={`px-3 py-1 rounded transition ${sortBy === 'new' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>New</button>
+                   {/* Only show 'New' sort option in Active mode */}
+                   {viewMode === 'active' && (
+                     <button onClick={() => setSortBy('new')} className={`px-3 py-1 rounded transition ${sortBy === 'new' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>New</button>
+                   )}
                  </div>
               </div>
 
               <div className="space-y-4">
                 {loading ? (
                    [1,2,3].map(i => <Skeleton key={i} className="h-24 w-full" />)
-                ) : captions.map((caption) => (
-                  <div key={caption.id} className="bg-white border border-gray-200 p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group">
+                ) : captions.map((caption, index) => {
+                  // Determine if this caption is the winner (Archive Mode Only)
+                  const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
+
+                  return (
+                  <div key={caption.id} className={`relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group ${isWinner ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-200'}`}>
+                    
+                    {/* Winner Crown/Badge */}
+                    {isWinner && (
+                      <div className="absolute -top-3 -left-2">
+                        <div className="bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
+                          <Trophy size={10} /> CHAMPION
+                        </div>
+                      </div>
+                    )}
+
                     <div className="flex-1">
                       <div className="flex items-center gap-2 mb-1">
-                        <span className="font-bold text-xs text-gray-500">@{caption.profiles?.username || "anon"}</span>
+                        <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`}>@{caption.profiles?.username || "anon"}</span>
                         {session && caption.user_id === session.user.id && (
                           <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                         )}
-                        {caption.vote_count > 10 && <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded border border-red-200">🔥 Hot</span>}
+                        {caption.vote_count > 10 && viewMode === 'active' && <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded border border-red-200">🔥 Hot</span>}
                       </div>
                       <p className="text-lg text-gray-800 leading-snug font-medium">{caption.content}</p>
                       
@@ -330,32 +401,35 @@ const renderMemeContent = (memeItem) => {
                         <button onClick={() => handleShare(caption.content)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-800 transition">
                           <Share2 size={12} /> Share
                         </button>
-                        <button onClick={() => handleReport(caption.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition">
-                          <Flag size={12} /> Report
-                        </button>
+                        {viewMode === 'active' && (
+                          <button onClick={() => handleReport(caption.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition">
+                            <Flag size={12} /> Report
+                          </button>
+                        )}
                       </div>
                     </div>
                     
                     <motion.button
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
+                      whileHover={viewMode === 'active' ? { scale: 1.1 } : {}}
+                      whileTap={viewMode === 'active' ? { scale: 0.9 } : {}}
                       onClick={() => handleVote(caption.id)}
+                      disabled={viewMode === 'archive-detail'} // Disable voting in archive
                       className={`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors
-                        ${caption.hasVoted ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}
+                        ${caption.hasVoted ? 'text-yellow-500' : viewMode === 'archive-detail' ? 'text-gray-400 cursor-default' : 'text-gray-400 hover:text-yellow-500'}
                       `}
                     >
-                      <ThumbsUp 
-                        size={24} 
-                        className={`transition-all ${caption.vote_count > 0 ? 'fill-yellow-100' : ''}`} 
-                      />
-                      <span className="font-bold text-sm">{caption.vote_count}</span>
+                      {/* Use Trophy for winner instead of ThumbsUp in Archive Mode if desired, or stick to ThumbsUp with count */}
+                      {isWinner ? (
+                         <Trophy size={24} className="fill-yellow-400 text-yellow-600" />
+                      ) : (
+                         <ThumbsUp size={24} className={`transition-all ${caption.vote_count > 0 ? 'fill-yellow-100' : ''}`} />
+                      )}
+                      <span className={`font-bold text-sm ${isWinner ? 'text-yellow-700' : ''}`}>{caption.vote_count}</span>
                     </motion.button>
                   </div>
-                ))}
+                )})}
               </div>
             </>
-          ) : (
-            <ArchiveSection archives={archivedMemes} />
           )}
         </div>
 
@@ -372,7 +446,7 @@ const renderMemeContent = (memeItem) => {
       {/* Mobile Bottom Navigation */}
        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-around z-40 pb-6 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
         <button 
-          onClick={() => setViewMode('active')} 
+          onClick={handleBackToArena} 
           className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'active' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}
         >
           <Flame size={20} />
@@ -389,7 +463,7 @@ const renderMemeContent = (memeItem) => {
 
         <button 
           onClick={() => setViewMode('archive')} 
-          className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'archive' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}
+          className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'archive' || viewMode === 'archive-detail' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}
         >
           <History size={20} />
           <span>Archive</span>
