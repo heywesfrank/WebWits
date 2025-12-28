@@ -45,12 +45,21 @@ export default function MainApp({ session }) {
     setupRealtime();
     const timer = setInterval(() => {
       const now = new Date();
-      const tomorrow = new Date(now);
-      tomorrow.setUTCHours(24, 0, 0, 0);
-      const diff = tomorrow - now;
+      
+      // Target 5:00 AM UTC (which is Midnight EST)
+      const target = new Date(now);
+      target.setUTCHours(5, 0, 0, 0); 
+      
+      // If we've already passed 5 AM UTC today, target 5 AM UTC tomorrow
+      if (now > target) {
+        target.setDate(target.getDate() + 1);
+      }
+
+      const diff = target - now;
       const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const minutes = Math.floor((diff / (1000 * 60)) % 60);
       const seconds = Math.floor((diff / 1000) % 60);
+      
       setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
     return () => clearInterval(timer);
