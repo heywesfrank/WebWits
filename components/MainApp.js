@@ -3,8 +3,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link"; 
 import { supabase } from "@/lib/supabase";
 import { 
-  Send, ThumbsUp, Trophy, Loader2, Clock, Flame, 
-  Share2, Flag, History 
+  Send, ThumbsUp, Loader2, Clock, Flame, 
+  Share2, Flag, History, Trophy 
 } from "lucide-react";
 import { motion } from "framer-motion";
 import Header from "./Header";
@@ -15,8 +15,8 @@ import Skeleton from "./Skeleton";
 import UserProfileModal from "./UserProfileModal";
 import HowToPlayButton from "./HowToPlayButton";
 
-// UPDATED: Import both components from the single Leaderboard file
-import LeaderboardWidget, { LeaderboardModal } from "./Leaderboard";
+// UPDATED: Import LeaderboardWidget (default) and LeaderboardModal (named) from the same file
+import LeaderboardWidget, { LeaderboardModal } from "./LeaderboardWidget";
 
 export default function MainApp({ session }) {
   const [meme, setMeme] = useState(null);
@@ -51,7 +51,7 @@ export default function MainApp({ session }) {
       const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
       const minutes = Math.floor((diff / (1000 * 60)) % 60);
       const seconds = Math.floor((diff / 1000) % 60);
-      setTimeLeft(\`\${hours}h \${minutes}m \${seconds}s\`);
+      setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
     return () => clearInterval(timer);
   }, []);
@@ -73,12 +73,12 @@ export default function MainApp({ session }) {
         if(payload.new.meme_id !== meme?.id) return;
         const { data: newCommentData } = await supabase
           .from('comments')
-          .select(\`*, profiles(username)\`)
+          .select(`*, profiles(username)`)
           .eq('id', payload.new.id)
           .single();
         if (newCommentData) {
           setCaptions(current => [newCommentData, ...current]);
-          addToast(\`New caption from @\${newCommentData.profiles?.username || 'anon'}!\`, 'info');
+          addToast(`New caption from @${newCommentData.profiles?.username || 'anon'}!`, 'info');
         }
       })
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'comments' }, (payload) => {
@@ -98,7 +98,7 @@ export default function MainApp({ session }) {
       let { data: archives } = await supabase.from("memes").select("*").neq("status", "active").order("created_at", { ascending: false });
       setArchivedMemes(archives || []);
       if (activeMeme) {
-        const { data } = await supabase.from("comments").select(\`*, profiles(username)\`).eq("meme_id", activeMeme.id);
+        const { data } = await supabase.from("comments").select(`*, profiles(username)`).eq("meme_id", activeMeme.id);
         setCaptions(data || []);
       }
       const { data: topUsers } = await supabase.from("profiles").select("username, weekly_points").order("weekly_points", { ascending: false }).limit(5);
@@ -153,7 +153,7 @@ export default function MainApp({ session }) {
   };
 
   const handleShare = async (captionText) => {
-    const text = \`WebWits Daily Challenge:\\n"\${captionText}"\\n\\nJoin the battle: https://web-wits.vercel.app\`;
+    const text = `WebWits Daily Challenge:\n"${captionText}"\n\nJoin the battle: https://web-wits.vercel.app`;
     if (navigator.share) {
       try {
         await navigator.share({ title: 'WebWits', text });
@@ -196,13 +196,13 @@ export default function MainApp({ session }) {
           <div className="hidden md:flex bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
             <button 
               onClick={() => setViewMode('active')}
-              className={\`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition \${viewMode === 'active' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}\`}
+              className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition ${viewMode === 'active' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
             >
               <Flame size={16} /> Active Battle
             </button>
             <button 
               onClick={() => setViewMode('archive')}
-              className={\`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition \${viewMode === 'archive' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}\`}
+              className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition ${viewMode === 'archive' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}
             >
               <History size={16} /> Archive
             </button>
@@ -262,8 +262,8 @@ export default function MainApp({ session }) {
                    {captions.length} {captions.length === 1 ? 'Caption' : 'Captions'}
                  </h3>
                  <div className="flex gap-2 text-sm bg-gray-100 p-1 rounded-lg border border-gray-200">
-                   <button onClick={() => setSortBy('top')} className={\`px-3 py-1 rounded transition \${sortBy === 'top' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}\`}>Top</button>
-                   <button onClick={() => setSortBy('new')} className={\`px-3 py-1 rounded transition \${sortBy === 'new' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}\`}>New</button>
+                   <button onClick={() => setSortBy('top')} className={`px-3 py-1 rounded transition ${sortBy === 'top' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>Top</button>
+                   <button onClick={() => setSortBy('new')} className={`px-3 py-1 rounded transition ${sortBy === 'new' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>New</button>
                  </div>
               </div>
 
@@ -296,13 +296,13 @@ export default function MainApp({ session }) {
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={() => handleVote(caption.id)}
-                      className={\`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors
-                        \${caption.hasVoted ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}
-                      \`}
+                      className={`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors
+                        ${caption.hasVoted ? 'text-yellow-500' : 'text-gray-400 hover:text-yellow-500'}
+                      `}
                     >
                       <ThumbsUp 
                         size={24} 
-                        className={\`transition-all \${caption.vote_count > 0 ? 'fill-yellow-100' : ''}\`} 
+                        className={`transition-all ${caption.vote_count > 0 ? 'fill-yellow-100' : ''}`} 
                       />
                       <span className="font-bold text-sm">{caption.vote_count}</span>
                     </motion.button>
@@ -330,7 +330,7 @@ export default function MainApp({ session }) {
        <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-around z-40 pb-6 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
         <button 
           onClick={() => setViewMode('active')} 
-          className={\`flex flex-col items-center gap-1 text-xs font-bold transition-all \${viewMode === 'active' ? 'text-yellow-500 scale-105' : 'text-gray-400'}\`}
+          className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'active' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}
         >
           <Flame size={20} />
           <span>Battle</span>
@@ -346,7 +346,7 @@ export default function MainApp({ session }) {
 
         <button 
           onClick={() => setViewMode('archive')} 
-          className={\`flex flex-col items-center gap-1 text-xs font-bold transition-all \${viewMode === 'archive' ? 'text-yellow-500 scale-105' : 'text-gray-400'}\`}
+          className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'archive' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}
         >
           <History size={20} />
           <span>Archive</span>
@@ -355,3 +355,4 @@ export default function MainApp({ session }) {
 
     </div>
   );
+}
