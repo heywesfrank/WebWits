@@ -1,4 +1,10 @@
 {
+  "crons": [
+    {
+      "path": "/api/daily-meme",
+      "schedule": "0 0 * * *"
+    }
+  ],
   "git": {
     "deploymentEnabled": false
   }
