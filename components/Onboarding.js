@@ -1,13 +1,14 @@
 "use client";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Camera, User, Loader2, ArrowRight, Check } from "lucide-react";
+import { Camera, User, Loader2, ArrowRight, Check, Globe } from "lucide-react";
 
 export default function Onboarding({ session, onComplete }) {
-  const [step, setStep] = useState(1); // 1: Avatar, 2: Username
+  const [step, setStep] = useState(1); // 1: Avatar, 2: Username, 3: Country
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [username, setUsername] = useState("");
+  const [country, setCountry] = useState("");
   const [saving, setSaving] = useState(false);
 
   // Handle Image Upload
@@ -38,7 +39,7 @@ export default function Onboarding({ session, onComplete }) {
 
   // Handle Final Submission
   const handleSubmit = async () => {
-    if (!username.trim() || !avatarUrl) return;
+    if (!username.trim() || !avatarUrl || !country.trim()) return;
     setSaving(true);
 
     try {
@@ -48,7 +49,8 @@ export default function Onboarding({ session, onComplete }) {
           id: session.user.id,
           username: username,
           avatar_url: avatarUrl,
-          email: session.user.email, // Ensure email is synced
+          email: session.user.email,
+          country: country, // Added country field
           updated_at: new Date(),
         });
 
@@ -61,6 +63,25 @@ export default function Onboarding({ session, onComplete }) {
     }
   };
 
+  // Helper for dynamic headings
+  const getHeading = () => {
+    switch(step) {
+      case 1: return "We've seen worse. Pick a pic.";
+      case 2: return "What should we call you?";
+      case 3: return "Where are you roasting from?";
+      default: return "";
+    }
+  };
+
+  const getSubHeading = () => {
+    switch(step) {
+      case 1: return "Upload an image to represent you in the arena.";
+      case 2: return "This name is permanent - choose wisely.";
+      case 3: return "Your country (so that we can send your prize). No stalking.";
+      default: return "";
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-white/80 backdrop-blur-md p-4">
       <div className="w-full max-w-md bg-white border border-gray-200 shadow-2xl rounded-2xl p-8 animate-in fade-in zoom-in duration-300">
@@ -69,13 +90,14 @@ export default function Onboarding({ session, onComplete }) {
         <div className="flex gap-2 mb-8">
           <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 1 ? 'bg-yellow-400' : 'bg-gray-100'}`} />
           <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 2 ? 'bg-yellow-400' : 'bg-gray-100'}`} />
+          <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 3 ? 'bg-yellow-400' : 'bg-gray-100'}`} />
         </div>
 
         <h2 className="text-2xl font-black text-gray-900 mb-2 font-display">
-          {step === 1 ? "We've seen worse. Pick a pic." : "What should we call you?"}
+          {getHeading()}
         </h2>
         <p className="text-gray-500 mb-6 text-sm">
-          {step === 1 ? "Upload an image to represent you in the arena." : "This name is permanent - choose wisely."}
+          {getSubHeading()}
         </p>
 
         {/* STEP 1: AVATAR UPLOAD */}
@@ -120,12 +142,11 @@ export default function Onboarding({ session, onComplete }) {
                   type="text" 
                   placeholder="Username" 
                   value={username}
-                  maxLength={20} // [!code ++] Enforce limit
+                  maxLength={20}
                   onChange={(e) => setUsername(e.target.value.trim())}
                   className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none font-bold text-gray-900"
                 />
               </div>
-              {/* Character Counter */}
               <div className="flex justify-end mt-1">
                  <span className={`text-[10px] font-medium ${username.length === 20 ? 'text-red-500' : 'text-gray-400'}`}>
                     {username.length}/20
@@ -141,8 +162,42 @@ export default function Onboarding({ session, onComplete }) {
                 Back
               </button>
               <button 
+                onClick={() => setStep(3)}
+                disabled={!username}
+                className="flex-[2] px-4 py-3 bg-black text-white font-bold rounded-xl disabled:opacity-50 hover:bg-gray-800 transition flex items-center justify-center gap-2"
+              >
+                Next Step <ArrowRight size={18} />
+              </button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: COUNTRY */}
+        {step === 3 && (
+          <div className="space-y-4">
+            <div>
+              <div className="relative">
+                <Globe className="absolute left-4 top-3.5 text-gray-400" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="e.g. Canada, Brazil, Mars..." 
+                  value={country}
+                  onChange={(e) => setCountry(e.target.value)}
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none font-bold text-gray-900"
+                />
+              </div>
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setStep(2)}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition"
+              >
+                Back
+              </button>
+              <button 
                 onClick={handleSubmit}
-                disabled={!username || saving}
+                disabled={!country || saving}
                 className="flex-[2] px-4 py-3 bg-yellow-400 text-black font-bold rounded-xl hover:bg-yellow-300 transition flex items-center justify-center gap-2"
               >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : (
