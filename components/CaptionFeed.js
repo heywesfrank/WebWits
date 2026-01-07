@@ -1,0 +1,71 @@
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { Share2, Flag, Trophy, ThumbsUp } from "lucide-react";
+
+export default function CaptionFeed({ captions, session, viewMode, onVote, onShare, onReport }) {
+  const [sortBy, setSortBy] = useState("top");
+
+  const sortedCaptions = [...captions].sort((a, b) => 
+    sortBy === "top" ? b.vote_count - a.vote_count : new Date(b.created_at) - new Date(a.created_at)
+  );
+
+  return (
+    <div className="space-y-4">
+      {/* Feed Controls */}
+      <div className="flex justify-between items-center px-1">
+        <h3 className="font-bold text-gray-800 font-display text-lg">
+          {captions.length} {captions.length === 1 ? 'Caption' : 'Captions'}
+        </h3>
+        <div className="flex gap-2 text-sm bg-gray-100 p-1 rounded-lg border border-gray-200">
+          <button onClick={() => setSortBy('top')} className={`px-3 py-1 rounded transition ${sortBy === 'top' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>Top</button>
+          {viewMode === 'active' && (
+            <button onClick={() => setSortBy('new')} className={`px-3 py-1 rounded transition ${sortBy === 'new' ? 'bg-white text-yellow-600 shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>New</button>
+          )}
+        </div>
+      </div>
+
+      {/* List */}
+      {sortedCaptions.map((caption, index) => {
+        const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
+        return (
+          <div key={caption.id} className={`relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group ${isWinner ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-200'}`}>
+            {isWinner && (
+              <div className="absolute -top-3 -left-2 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
+                <Trophy size={10} /> CHAMPION
+              </div>
+            )}
+
+            <div className="flex-1">
+              <div className="flex items-center gap-2 mb-1">
+                <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`}>@{caption.profiles?.username || "anon"}</span>
+                {session && caption.user_id === session.user.id && (
+                  <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
+                )}
+                {caption.vote_count > 10 && viewMode === 'active' && <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded border border-red-200">🔥 Hot</span>}
+              </div>
+              <p className="text-lg text-gray-800 leading-snug font-medium">{caption.content}</p>
+              
+              <div className="flex gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => onShare(caption.content)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-800 transition"><Share2 size={12} /> Share</button>
+                {viewMode === 'active' && (
+                  <button onClick={() => onReport(caption.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition"><Flag size={12} /> Report</button>
+                )}
+              </div>
+            </div>
+            
+            <motion.button
+              whileHover={viewMode === 'active' ? { scale: 1.1 } : {}}
+              whileTap={viewMode === 'active' ? { scale: 0.9 } : {}}
+              onClick={() => onVote(caption.id)}
+              disabled={viewMode === 'archive-detail'} 
+              className={`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors ${caption.hasVoted ? 'text-yellow-500' : viewMode === 'archive-detail' ? 'text-gray-400 cursor-default' : 'text-gray-400 hover:text-yellow-500'}`}
+            >
+              {isWinner ? <Trophy size={24} className="fill-yellow-400 text-yellow-600" /> : <ThumbsUp size={24} className={`transition-all ${caption.vote_count > 0 ? 'fill-yellow-100' : ''}`} />}
+              <span className={`font-bold text-sm ${isWinner ? 'text-yellow-700' : ''}`}>{caption.vote_count}</span>
+            </motion.button>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
