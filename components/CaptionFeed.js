@@ -27,17 +27,33 @@ export default function CaptionFeed({ captions, session, viewMode, onVote, onSha
       {/* List */}
       {sortedCaptions.map((caption, index) => {
         const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
+        const username = caption.profiles?.username || "anon";
+        const avatarUrl = caption.profiles?.avatar_url;
+
         return (
           <div key={caption.id} className={`relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group ${isWinner ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-200'}`}>
             {isWinner && (
-              <div className="absolute -top-3 -left-2 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1">
+              <div className="absolute -top-3 -left-2 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 z-10">
                 <Trophy size={10} /> CHAMPION
               </div>
             )}
 
+            {/* Avatar Column */}
+            <div className="flex-shrink-0 pt-1">
+              <div className="h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 relative shadow-sm">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={username} className="h-full w-full object-cover" />
+                ) : (
+                  <div className="h-full w-full flex items-center justify-center bg-yellow-100 text-yellow-600 font-bold text-xs">
+                    {username?.[0]?.toUpperCase()}
+                  </div>
+                )}
+              </div>
+            </div>
+
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`}>@{caption.profiles?.username || "anon"}</span>
+                <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`}>@{username}</span>
                 {session && caption.user_id === session.user.id && (
                   <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                 )}
