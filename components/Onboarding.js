@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../supabaseClient' // Make sure this path matches your project structure
+import { supabase } from '@/lib/supabase'
 
 export default function Onboarding({ session }) {
   const [loading, setLoading] = useState(true)
