@@ -1,7 +1,33 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 
+// 1. Add the filter function outside the hook or inside a utils file
+const filterProfanity = (text) => {
+  // Map of words to their sanitized versions
+  const badWords = {
+    "fuck": "fu**",
+    "shit": "sh*t",
+    "bitch": "bi*ch",
+    "ass": "a**",
+    "asshole": "a**hole",
+    "dick": "d*ck",
+    "pussy": "p*ssy",
+    "bastard": "ba*tard",
+    "crap": "cr*p",
+    "damn": "d*mn"
+  };
+
+  // Create a regex that searches for these words (case-insensitive, whole words only)
+  const pattern = new RegExp(`\\b(${Object.keys(badWords).join("|")})\\b`, "gi");
+
+  // Replace found words with the mapped value
+  return text.replace(pattern, (match) => {
+    return badWords[match.toLowerCase()] || match;
+  });
+};
+
 export function useGameLogic(session) {
+  // ... existing state variables (activeMeme, captions, etc.) ...
   const [activeMeme, setActiveMeme] = useState(null);
   const [selectedMeme, setSelectedMeme] = useState(null);
   const [captions, setCaptions] = useState([]);
@@ -14,16 +40,16 @@ export function useGameLogic(session) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [toasts, setToasts] = useState([]);
 
-  // Toast Helper
+  // ... existing addToast and fetchData functions ...
   const addToast = useCallback((msg, type = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, msg, type }]);
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
   }, []);
 
-  // 1. Initial Data Fetch
   const fetchData = useCallback(async () => {
-    try {
+     // ... existing fetch logic ...
+     try {
       setLoading(true);
       
       if (session?.user) {
@@ -54,7 +80,6 @@ export function useGameLogic(session) {
       setArchivedMemes(processedArchives);
 
       if (active) {
-        // UPDATED: Including 'country' in the selection
         const { data } = await supabase
           .from("comments")
           .select(`*, profiles(username, avatar_url, country)`)
@@ -72,7 +97,6 @@ export function useGameLogic(session) {
     }
   }, [session]);
 
-  // Realtime Subscription
   useEffect(() => {
     fetchData();
   }, [fetchData]);
@@ -87,16 +111,29 @@ export function useGameLogic(session) {
     setViewMode('active');
   };
 
+  // 2. Update submitCaption to use the filter
   const submitCaption = async (text) => {
     if (!session?.user || !activeMeme) return false;
+    
+    // SANITIZE INPUT HERE
+    const cleanText = filterProfanity(text);
+
     try {
       const { error } = await supabase.from('comments').insert({
         meme_id: activeMeme.id,
         user_id: session.user.id,
-        content: text
+        content: cleanText // Use the clean text
       });
+      
       if (error) throw error;
-      addToast("Caption submitted!", "success");
+      
+      // Optional: Give the user a wink if you caught something
+      if (cleanText !== text) {
+        addToast("Caption polished & submitted! 🧼", "success");
+      } else {
+        addToast("Caption submitted!", "success");
+      }
+
       fetchData();
       return true;
     } catch (err) {
@@ -106,9 +143,9 @@ export function useGameLogic(session) {
     }
   };
 
+  // ... rest of the file (castVote, shareCaption, etc) ...
   const castVote = async (commentId) => {
     if (!session?.user) return;
-    // Note: Actual voting logic/RPC would go here
     addToast("Vote cast!", "success");
   };
 
