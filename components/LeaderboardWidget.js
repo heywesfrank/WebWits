@@ -39,8 +39,8 @@ function LeaderboardList({ leaderboard, scoreKey = "weekly_points" }) {
           </div>
           
           <div className="text-right pl-2 flex-shrink-0">
-            {/* UPDATED: Text color is black if index is 0 (1st place), otherwise white */}
-            <span className={`block font-mono font-bold text-xs ${index === 0 ? 'text-black' : 'text-white'}`}>
+            {/* UPDATED: Score is white on mobile, black on desktop for 1st place */}
+            <span className={`block font-mono font-bold text-xs ${index === 0 ? 'text-white md:text-black' : 'text-white'}`}>
               {user[scoreKey] !== undefined ? user[scoreKey] : 0}
             </span>
             <span className="text-[9px] text-gray-500 uppercase">pts</span>
@@ -59,7 +59,7 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
   const [leaders, setLeaders] = useState(initialWeeklyLeaders);
   const [loading, setLoading] = useState(false);
 
-  // UPDATED: Removed 'Daily' tab
+  // UPDATED: Removed "Daily" tab
   const tabs = [
     { id: "weekly", label: "Weekly", icon: Trophy, title: "Weekly Leaders" },
     { id: "monthly", label: "Monthly", icon: Star, title: "Monthly Stars" },
