@@ -122,7 +122,8 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
   };
 
   return (
-    <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm sticky top-24 transition-all">
+    // FIX 1: Removed 'sticky top-24' from here. It is now handled in the parent container.
+    <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm transition-all">
       {/* Header */}
       <div className="flex items-center gap-2 mb-4 text-yellow-500 pb-2 border-b border-gray-100">
         <Icon size={20} className="animate-in zoom-in duration-300" key={activeTab} />
