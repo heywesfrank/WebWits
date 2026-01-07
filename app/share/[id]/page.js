@@ -1,20 +1,13 @@
 import { createClient } from '@supabase/supabase-js';
 import ShareRedirect from '@/components/ShareRedirect';
 
-// Define the domain explicitly to avoid mismatch errors
+// Define the domain explicitly
 const DOMAIN = 'https://itswebwits.com';
-
-export const metadata = {
-  metadataBase: new URL(DOMAIN),
-};
 
 export async function generateMetadata({ params }) {
   const id = params.id;
   
   // 1. USE SERVICE_ROLE_KEY
-  // We use the Service Role Key here instead of the Anon Key.
-  // This bypasses Row Level Security (RLS) to ensure the metadata 
-  // ALWAYS generates, even if the user isn't logged in.
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -32,21 +25,21 @@ export async function generateMetadata({ params }) {
     .single();
 
   // 3. FALLBACK WITH IMAGE
-  // If fetch fails (invalid ID or deleted comment), return a default card
   if (!comment) {
     return {
+      metadataBase: new URL(DOMAIN), // Moved here
       title: 'WebWits',
       description: 'Daily Caption Battle',
       openGraph: {
         title: 'WebWits',
         description: 'Daily Caption Battle',
-        images: [`${DOMAIN}/logo.png`], // Fallback to your logo
+        images: [`${DOMAIN}/logo.png`],
       },
       twitter: {
         card: 'summary_large_image',
         title: 'WebWits',
         description: 'Daily Caption Battle',
-        images: [`${DOMAIN}/logo.png`], // Fallback to your logo
+        images: [`${DOMAIN}/logo.png`],
       },
     };
   }
@@ -64,6 +57,7 @@ export async function generateMetadata({ params }) {
   const ogImageUrl = `${DOMAIN}/api/og?${ogSearchParams.toString()}`;
 
   return {
+    metadataBase: new URL(DOMAIN), // Moved here
     title: 'WebWits Battle',
     description: `Can you beat this? "${content}"`,
     openGraph: {
