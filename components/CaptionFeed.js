@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Share2, Flag, Trophy, ThumbsUp } from "lucide-react";
 
-// Helper: Map Country Names to ISO Codes for Emoji Generation
+// Helper: Map Country Names to ISO Codes
 const COUNTRY_CODES = {
   "Afghanistan": "AF", "Albania": "AL", "Algeria": "DZ", "Andorra": "AD", "Angola": "AO", 
   "Antigua and Barbuda": "AG", "Argentina": "AR", "Armenia": "AM", "Australia": "AU", "Austria": "AT", 
@@ -47,13 +47,8 @@ const COUNTRY_CODES = {
   "Zimbabwe": "ZW"
 };
 
-function getCountryFlag(countryName) {
-  const code = COUNTRY_CODES[countryName];
-  if (!code) return null;
-  // Convert 2-letter ISO code to flag emoji
-  return code
-    .toUpperCase()
-    .replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
+function getCountryCode(countryName) {
+  return COUNTRY_CODES[countryName]?.toLowerCase() || null;
 }
 
 export default function CaptionFeed({ captions, session, viewMode, onVote, onShare, onReport }) {
@@ -83,7 +78,7 @@ export default function CaptionFeed({ captions, session, viewMode, onVote, onSha
         const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
         const username = caption.profiles?.username || "anon";
         const avatarUrl = caption.profiles?.avatar_url;
-        const country = caption.profiles?.country;
+        const countryCode = getCountryCode(caption.profiles?.country);
 
         return (
           <div key={caption.id} className={`relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group ${isWinner ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-200'}`}>
@@ -95,27 +90,35 @@ export default function CaptionFeed({ captions, session, viewMode, onVote, onSha
 
             {/* Avatar Column */}
             <div className="flex-shrink-0 pt-1">
-              <div className="h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 relative shadow-sm">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt={username} className="h-full w-full object-cover" />
-                ) : (
-                  <div className="h-full w-full flex items-center justify-center bg-yellow-100 text-yellow-600 font-bold text-xs">
-                    {username?.[0]?.toUpperCase()}
-                  </div>
+              {/* Relative wrapper for Avatar + Flag overlay */}
+              <div className="relative inline-block">
+                
+                {/* Main Avatar Circle */}
+                <div className="h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm">
+                  {avatarUrl ? (
+                    <img src={avatarUrl} alt={username} className="h-full w-full object-cover" />
+                  ) : (
+                    <div className="h-full w-full flex items-center justify-center bg-yellow-100 text-yellow-600 font-bold text-xs">
+                      {username?.[0]?.toUpperCase()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Flag Overlay (Bottom Right) */}
+                {countryCode && (
+                  <img 
+                    src={`https://flagcdn.com/w20/${countryCode}.png`}
+                    alt={caption.profiles.country}
+                    title={caption.profiles.country}
+                    className="absolute -bottom-1 -right-1 w-4 h-3 rounded-[2px] shadow-sm border border-white object-cover"
+                  />
                 )}
               </div>
             </div>
 
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'} flex items-center gap-1`}>
-                  @{username}
-                  {country && (
-                    <span title={country} className="text-sm cursor-help opacity-90 hover:opacity-100 transition-opacity">
-                      {getCountryFlag(country)}
-                    </span>
-                  )}
-                </span>
+                <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`}>@{username}</span>
                 {session && caption.user_id === session.user.id && (
                   <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                 )}
