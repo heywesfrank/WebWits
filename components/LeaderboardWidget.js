@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Trophy, Loader2, Star, Crown, Flame, X } from "lucide-react";
+import { Trophy, Loader2, Star, Crown, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 // ------------------------------------------------------------------
@@ -39,7 +39,8 @@ function LeaderboardList({ leaderboard, scoreKey = "weekly_points" }) {
           </div>
           
           <div className="text-right pl-2 flex-shrink-0">
-            <span className="block font-mono font-bold text-xs text-white">
+            {/* UPDATED: Text color is black if index is 0 (1st place), otherwise white */}
+            <span className={`block font-mono font-bold text-xs ${index === 0 ? 'text-black' : 'text-white'}`}>
               {user[scoreKey] !== undefined ? user[scoreKey] : 0}
             </span>
             <span className="text-[9px] text-gray-500 uppercase">pts</span>
@@ -58,8 +59,8 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
   const [leaders, setLeaders] = useState(initialWeeklyLeaders);
   const [loading, setLoading] = useState(false);
 
+  // UPDATED: Removed 'Daily' tab
   const tabs = [
-    { id: "daily", label: "Daily", icon: Flame, title: "Daily Champions" },
     { id: "weekly", label: "Weekly", icon: Trophy, title: "Weekly Leaders" },
     { id: "monthly", label: "Monthly", icon: Star, title: "Monthly Stars" },
     { id: "all_time", label: "All Time", icon: Crown, title: "Hall of Fame" },
@@ -79,7 +80,6 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
         
         // Map tabs to DB columns (Ensure these columns exist in your 'profiles' table)
         switch (activeTab) {
-          case "daily": sortColumn = "daily_points"; break;
           case "weekly": sortColumn = "weekly_points"; break;
           case "monthly": sortColumn = "monthly_points"; break;
           case "all_time": sortColumn = "total_points"; break;
@@ -114,7 +114,6 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
   // Determine which property to display
   const getScoreKey = () => {
      switch(activeTab) {
-         case 'daily': return 'daily_points';
          case 'monthly': return 'monthly_points';
          case 'all_time': return 'total_points';
          default: return 'weekly_points';
