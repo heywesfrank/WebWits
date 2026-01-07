@@ -11,7 +11,7 @@ export function useGameLogic(session) {
   
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("active");
-  const [showOnboarding, setShowOnboarding] = useState(false);
+  // REMOVED: const [showOnboarding, setShowOnboarding] = useState(false);
   const [toasts, setToasts] = useState([]);
 
   // Toast Helper
@@ -29,7 +29,7 @@ export function useGameLogic(session) {
       if (session?.user) {
         const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
         setUserProfile(profile);
-        if (!profile?.username || !profile?.avatar_url) setShowOnboarding(true);
+        // REMOVED: if (!profile?.username || !profile?.avatar_url) setShowOnboarding(true);
       } else {
         setUserProfile(null);
       }
@@ -171,8 +171,8 @@ export function useGameLogic(session) {
 
   return {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
-    loading, viewMode, showOnboarding, toasts, 
-    setViewMode, setShowOnboarding, setToasts,
+    loading, viewMode, toasts, // REMOVED: showOnboarding
+    setViewMode, setToasts, // REMOVED: setShowOnboarding
     fetchData, handleArchiveSelect, handleBackToArena, 
     submitCaption, castVote, shareCaption, reportCaption
   };
