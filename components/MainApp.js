@@ -412,7 +412,15 @@ export default function MainApp({ session }) {
 
               {/* Meme Card */}
               <div className="bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden relative">
-                <MemeStage meme={currentMeme} isActive={viewMode === 'active'} loading={loading} />
+                {/* FIX: Only show loading state if we don't have the meme yet.
+                   This prevents the skeleton from flashing (and the GIF reloading) 
+                   when fetching data in the background or switching tabs.
+                */}
+                <MemeStage 
+                  meme={currentMeme} 
+                  isActive={viewMode === 'active'} 
+                  loading={loading && !currentMeme} 
+                />
                 
                 {/* Interaction Bar */}
                 {viewMode === 'active' && currentMeme && (
