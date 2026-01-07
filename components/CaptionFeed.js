@@ -1,15 +1,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Instagram, Twitter, MessageCircle, X, Copy, Check } from "lucide-react";
+import { Share2, Flag, Trophy, ThumbsUp, Instagram, Twitter, MessageCircle, X, Check } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
   return COUNTRY_CODES[countryName]?.toLowerCase() || null;
 }
 
-export default function CaptionFeed({ captions, session, viewMode, onVote, onShare, onReport }) {
+export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport }) {
   const [sortBy, setSortBy] = useState("top");
-  const [shareConfig, setShareConfig] = useState(null); // { caption, rank, username }
+  const [shareConfig, setShareConfig] = useState(null); // { caption, rank, username, meme... }
 
   const sortedCaptions = [...captions].sort((a, b) => 
     sortBy === "top" ? b.vote_count - a.vote_count : new Date(b.created_at) - new Date(a.created_at)
@@ -21,7 +21,11 @@ export default function CaptionFeed({ captions, session, viewMode, onVote, onSha
     setShareConfig({
       content: caption.content,
       username: caption.profiles?.username || "anon",
-      rank: rank
+      rank: rank,
+      // Pass meme details to the modal
+      memeUrl: meme?.image_url,
+      memeContent: meme?.content_url,
+      memeType: meme?.type
     });
   };
 
@@ -99,7 +103,6 @@ export default function CaptionFeed({ captions, session, viewMode, onVote, onSha
               <p className="text-lg text-gray-800 leading-snug font-medium">{caption.content}</p>
               
               <div className="flex gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                {/* Updated Share Button triggers Modal */}
                 <button 
                   onClick={() => handleOpenShare(caption, index)} 
                   className="flex items-center gap-1 text-xs text-gray-400 hover:text-yellow-600 transition"
@@ -132,9 +135,8 @@ export default function CaptionFeed({ captions, session, viewMode, onVote, onSha
 
 function ShareModal({ config, onClose }) {
   const [copied, setCopied] = useState(false);
-  const shareUrl = "https://web-wits.vercel.app";
+  const shareUrl = "https://itswebwits.com";
   
-  // Dynamic Text Generation
   const shareText = config.rank 
     ? `Can you beat this #${config.rank} place comment? "${config.content}" 🤣 Battle at WebWits!`
     : `Can you beat this comment? "${config.content}" 🤣 Battle at WebWits!`;
@@ -154,14 +156,14 @@ function ShareModal({ config, onClose }) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
       <motion.div 
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-2xl relative"
+        className="w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-2xl relative my-8"
       >
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-black z-10">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-black z-10 bg-white/50 rounded-full p-1">
           <X size={20} />
         </button>
 
@@ -170,34 +172,58 @@ function ShareModal({ config, onClose }) {
           
           {/* THE CARD PREVIEW */}
           <div className="bg-gradient-to-br from-yellow-400 to-yellow-500 p-1 rounded-xl shadow-lg transform rotate-1 transition-transform hover:rotate-0">
-             <div className="bg-white rounded-lg p-6 text-left relative overflow-hidden">
-                {/* Background Pattern */}
-                <div className="absolute top-0 right-0 opacity-5">
-                   <Trophy size={100} />
-                </div>
+             <div className="bg-white rounded-lg overflow-hidden">
                 
-                {/* Rank Badge */}
-                {config.rank && (
-                  <div className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-3">
-                    <Trophy size={10} />
-                    <span>Rank #{config.rank}</span>
+                {/* Meme Media Display */}
+                <div className="w-full bg-black/5 flex items-center justify-center border-b border-gray-100 relative">
+                   {config.memeType === 'video' ? (
+                     <video 
+                        src={config.memeContent || config.memeUrl} 
+                        className="w-full max-h-48 object-contain bg-black" 
+                        muted playsInline autoPlay loop 
+                     />
+                   ) : (
+                     <img 
+                        src={config.memeUrl} 
+                        className="w-full max-h-48 object-cover" 
+                        alt="Meme Context" 
+                     />
+                   )}
+                   {/* Overlay WebWits Tag */}
+                   <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      itswebwits.com
+                   </div>
+                </div>
+
+                <div className="p-6 text-left relative">
+                  {/* Background Pattern */}
+                  <div className="absolute top-0 right-0 opacity-5 pointer-events-none">
+                     <Trophy size={100} />
                   </div>
-                )}
-                
-                {/* Content */}
-                <p className="text-xl font-bold text-gray-900 leading-tight mb-4">
-                  "{config.content}"
-                </p>
-                
-                {/* Footer */}
-                <div className="flex justify-between items-end border-t border-gray-100 pt-3">
-                   <div className="text-xs text-gray-500">
-                      by <span className="font-bold text-black">@{config.username}</span>
-                   </div>
-                   <div className="text-xs font-black text-yellow-500 tracking-tight">
-                      WEBWITS
-                   </div>
-                </div>
+                  
+                  {/* Rank Badge */}
+                  {config.rank && (
+                    <div className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-3">
+                      <Trophy size={10} />
+                      <span>Rank #{config.rank}</span>
+                    </div>
+                  )}
+                  
+                  {/* Content */}
+                  <p className="text-xl font-bold text-gray-900 leading-tight mb-4">
+                    "{config.content}"
+                  </p>
+                  
+                  {/* Footer */}
+                  <div className="flex justify-between items-end border-t border-gray-100 pt-3">
+                     <div className="text-xs text-gray-500">
+                        by <span className="font-bold text-black">@{config.username}</span>
+                     </div>
+                     <div className="text-xs font-black text-yellow-500 tracking-tight">
+                        WEBWITS
+                     </div>
+                  </div>
+               </div>
              </div>
           </div>
         </div>
@@ -211,7 +237,9 @@ function ShareModal({ config, onClose }) {
              <div className="w-10 h-10 bg-gradient-to-tr from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
                 {copied ? <Check size={20} /> : <Instagram size={20} />}
              </div>
-             <span className="text-[10px] font-bold text-gray-500">{copied ? "Copied!" : "Instagram"}</span>
+             <span className="text-[10px] font-bold text-gray-500">
+               {copied ? "Copied!" : "Copy for Insta"}
+             </span>
            </button>
 
            <button 
