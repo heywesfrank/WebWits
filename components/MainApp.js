@@ -9,7 +9,7 @@ import ArchiveSection from "./ArchiveSection";
 import ToastContainer from "./ToastContainer";
 import UserProfileModal from "./UserProfileModal";
 import HowToPlayButton from "./HowToPlayButton";
-import PrizesButton from "./PrizesButton"; // [!code ++]
+import PrizesButton from "./PrizesButton";
 import Onboarding from "./Onboarding"; 
 import LeaderboardWidget, { LeaderboardModal } from "./LeaderboardWidget";
 import MemeStage from "./MemeStage";
@@ -118,7 +118,8 @@ export default function MainApp({ session }) {
 
               {/* Feed */}
               <CaptionFeed 
-                captions={captions} 
+                captions={captions}
+                meme={currentMeme} 
                 session={session} 
                 viewMode={viewMode}
                 onVote={castVote}
@@ -133,7 +134,7 @@ export default function MainApp({ session }) {
         <div className="hidden md:block md:col-span-1 space-y-6 sticky top-24 h-fit">
           <LeaderboardWidget initialWeeklyLeaders={leaderboard} />
           <HowToPlayButton />
-          <PrizesButton /> {/* [!code ++] */}
+          <PrizesButton />
         </div>
       </div>
 
