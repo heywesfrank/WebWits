@@ -88,7 +88,7 @@ export default function Header({ session, profile }) {
                     <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
                       <BookOpen size={16} />
                     </div>
-                    How it Works
+                    How to Play
                   </Link>
 
                   <div className="h-px bg-gray-100 my-1 mx-2"></div>
