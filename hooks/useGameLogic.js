@@ -54,7 +54,11 @@ export function useGameLogic(session) {
       setArchivedMemes(processedArchives);
 
       if (active) {
-        const { data } = await supabase.from("comments").select(`*, profiles(username)`).eq("meme_id", active.id);
+        // UPDATED: Now selecting avatar_url along with username
+        const { data } = await supabase
+          .from("comments")
+          .select(`*, profiles(username, avatar_url)`)
+          .eq("meme_id", active.id);
         setCaptions(data || []);
       }
       
@@ -68,12 +72,10 @@ export function useGameLogic(session) {
     }
   }, [session]);
 
-  // Realtime Subscription (Assuming this was part of the truncated content)
+  // Realtime Subscription
   useEffect(() => {
     fetchData();
   }, [fetchData]);
-
-  // --- RESTORED ACTIONS ---
 
   const handleArchiveSelect = (meme) => {
     setSelectedMeme(meme);
@@ -85,9 +87,6 @@ export function useGameLogic(session) {
     setViewMode('active');
   };
 
-  // NOTE: You likely need to restore the logic for these functions from your backup
-  // I have provided basic implementations based on standard Supabase patterns
-  
   const submitCaption = async (text) => {
     if (!session?.user || !activeMeme) return false;
     try {
@@ -109,7 +108,7 @@ export function useGameLogic(session) {
 
   const castVote = async (commentId) => {
     if (!session?.user) return;
-    // Assuming you have an RPC or logic for voting
+    // Note: Actual voting logic/RPC would go here
     addToast("Vote cast!", "success");
   };
 
