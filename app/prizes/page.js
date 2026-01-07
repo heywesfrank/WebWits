@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Gift, DollarSign, Crown, Shirt } from "lucide-react";
+import { ArrowLeft, Gift, Shirt, Calendar, Crown } from "lucide-react";
 
 export default function PrizesPage() {
   return (
@@ -16,50 +16,45 @@ export default function PrizesPage() {
 
         {/* Hero Header */}
         <div className="text-center mb-16 space-y-6 animate-in slide-in-from-bottom-4 duration-700">
-            <div className="w-24 h-24 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <Gift size={48} className="text-green-600" />
+            <div className="w-24 h-24 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Gift size={48} className="text-yellow-600" />
             </div>
             <h1 className="text-5xl md:text-7xl font-black tracking-tight text-gray-900 leading-tight">
-                Real Wits. <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-emerald-600">Real Rewards.</span>
+                Real Wits. <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-yellow-700">Real Rewards.</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">
                 Funny isn't just a personality trait. It's a payday.
             </p>
         </div>
 
-        {/* Prize Tiers */}
-        <div className="grid gap-6 md:grid-cols-3 mb-16">
-            {/* Daily */}
-            <PrizeCard 
-                icon={<DollarSign size={32} />}
-                tier="Daily Winner"
-                reward="$10 Cash"
-                desc="The top voted caption every 24 hours takes home the daily bounty."
-                color="green"
-            />
-            {/* Weekly */}
-            <PrizeCard 
-                icon={<Crown size={32} />}
-                tier="Weekly King"
-                reward="$50 Bonus"
-                desc="Accumulate the most points in a week to earn the crown and the cash."
-                color="yellow"
-            />
+        {/* Prize Tiers - Centered Grid */}
+        <div className="grid gap-6 md:grid-cols-2 max-w-2xl mx-auto mb-16">
+            
             {/* Monthly */}
             <PrizeCard 
-                icon={<Shirt size={32} />}
-                tier="Monthly Legend"
-                reward="Exclusive Merch"
-                desc="Top the monthly leaderboard to get limited edition WebWits gear."
-                color="purple"
+                icon={<Calendar size={32} />}
+                tier="Monthly Winner"
+                reward="$25 Amazon Gift Card"
+                desc="The highest scoring player each month gets the goods sent straight to their inbox."
+                color="blue"
             />
+            
+            {/* Yearly */}
+            <PrizeCard 
+                icon={<Crown size={32} />}
+                tier="Yearly Legend"
+                reward="Exclusive Merch"
+                desc="The ultimate champion of the year gets limited edition WebWits gear that money can't buy."
+                color="dark"
+            />
+            
         </div>
 
-        {/* Disclaimer / Info */}
+        {/* Disclaimer */}
         <div className="bg-gray-50 border border-gray-200 rounded-2xl p-8 text-center">
-            <h3 className="text-lg font-bold mb-2">How are prizes paid?</h3>
+            <h3 className="text-lg font-bold mb-2">How do I claim?</h3>
             <p className="text-gray-600 max-w-lg mx-auto">
-                Winners are contacted via the email attached to their account. Cash prizes are sent via PayPal or Venmo within 48 hours of the winner declaration.
+                Winners are automatically contacted via the email attached to their account. Digital gift cards are sent within 48 hours of the month's end.
             </p>
         </div>
 
@@ -69,19 +64,19 @@ export default function PrizesPage() {
 }
 
 function PrizeCard({ icon, tier, reward, desc, color }) {
+    // Mapping your project's "yellow" classes (which are blue)
     const colors = {
-        green: "bg-green-50 text-green-600 border-green-200",
-        yellow: "bg-yellow-50 text-yellow-600 border-yellow-200",
-        purple: "bg-purple-50 text-purple-600 border-purple-200",
+        blue: "bg-yellow-50 text-yellow-600 border-yellow-200",
+        dark: "bg-gray-50 text-gray-800 border-gray-200",
     };
 
     return (
-        <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:border-gray-300 transition-all hover:-translate-y-1">
+        <div className="bg-white p-8 rounded-2xl border border-gray-200 shadow-sm hover:border-yellow-400 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-yellow-100/50">
             <div className={`w-16 h-16 ${colors[color]} rounded-2xl flex items-center justify-center mb-6 border`}>
                 {icon}
             </div>
-            <h3 className="text-xl font-bold text-gray-400 uppercase tracking-widest text-xs mb-1">{tier}</h3>
-            <div className="text-3xl font-black text-gray-900 mb-4">{reward}</div>
+            <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-1">{tier}</h3>
+            <div className="text-2xl font-black text-gray-900 mb-4">{reward}</div>
             <p className="text-gray-500 leading-relaxed text-sm">{desc}</p>
         </div>
     );
