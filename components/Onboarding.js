@@ -3,6 +3,34 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Camera, User, Loader2, ArrowRight, Check, Globe } from "lucide-react";
 
+// Extensive list of countries for the dropdown
+const COUNTRIES = [
+  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola", "Antigua and Barbuda", "Argentina", "Armenia", "Australia", "Austria", "Azerbaijan",
+  "Bahamas", "Bahrain", "Bangladesh", "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan", "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil", "Brunei", "Bulgaria", "Burkina Faso", "Burundi",
+  "Cabo Verde", "Cambodia", "Cameroon", "Canada", "Central African Republic", "Chad", "Chile", "China", "Colombia", "Comoros", "Congo (Congo-Brazzaville)", "Costa Rica", "Croatia", "Cuba", "Cyprus", "Czechia (Czech Republic)",
+  "Democratic Republic of the Congo", "Denmark", "Djibouti", "Dominica", "Dominican Republic",
+  "East Timor (Timor-Leste)", "Ecuador", "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea", "Estonia", "Eswatini", "Ethiopia",
+  "Fiji", "Finland", "France",
+  "Gabon", "Gambia", "Georgia", "Germany", "Ghana", "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau", "Guyana",
+  "Haiti", "Honduras", "Hungary",
+  "Iceland", "India", "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy", "Ivory Coast",
+  "Jamaica", "Japan", "Jordan",
+  "Kazakhstan", "Kenya", "Kiribati", "Kuwait", "Kyrgyzstan",
+  "Laos", "Latvia", "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein", "Lithuania", "Luxembourg",
+  "Madagascar", "Malawi", "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands", "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova", "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique", "Myanmar (formerly Burma)",
+  "Namibia", "Nauru", "Nepal", "Netherlands", "New Zealand", "Nicaragua", "Niger", "Nigeria", "North Korea", "North Macedonia", "Norway",
+  "Oman",
+  "Pakistan", "Palau", "Palestine State", "Panama", "Papua New Guinea", "Paraguay", "Peru", "Philippines", "Poland", "Portugal",
+  "Qatar",
+  "Romania", "Russia", "Rwanda",
+  "Saint Kitts and Nevis", "Saint Lucia", "Saint Vincent and the Grenadines", "Samoa", "San Marino", "Sao Tome and Principe", "Saudi Arabia", "Senegal", "Serbia", "Seychelles", "Sierra Leone", "Singapore", "Slovakia", "Slovenia", "Solomon Islands", "Somalia", "South Africa", "South Korea", "South Sudan", "Spain", "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland", "Syria",
+  "Taiwan", "Tajikistan", "Tanzania", "Thailand", "Togo", "Tonga", "Trinidad and Tobago", "Tunisia", "Turkey", "Turkmenistan", "Tuvalu",
+  "Uganda", "Ukraine", "United Arab Emirates", "United Kingdom", "United States of America", "Uruguay", "Uzbekistan",
+  "Vanuatu", "Vatican City", "Venezuela", "Vietnam",
+  "Yemen",
+  "Zambia", "Zimbabwe"
+];
+
 export default function Onboarding({ session, onComplete }) {
   const [step, setStep] = useState(1); // 1: Avatar, 2: Username, 3: Country
   const [uploading, setUploading] = useState(false);
@@ -39,7 +67,7 @@ export default function Onboarding({ session, onComplete }) {
 
   // Handle Final Submission
   const handleSubmit = async () => {
-    if (!username.trim() || !avatarUrl || !country.trim()) return;
+    if (!username.trim() || !avatarUrl || !country) return;
     setSaving(true);
 
     try {
@@ -50,7 +78,7 @@ export default function Onboarding({ session, onComplete }) {
           username: username,
           avatar_url: avatarUrl,
           email: session.user.email,
-          country: country, // Added country field
+          country: country,
           updated_at: new Date(),
         });
 
@@ -77,7 +105,7 @@ export default function Onboarding({ session, onComplete }) {
     switch(step) {
       case 1: return "Upload an image to represent you in the arena.";
       case 2: return "This name is permanent - choose wisely.";
-      case 3: return "Your country (so that we can send your prize). No stalking.";
+      case 3: return "Your country (so that we can send the prize). No stalking.";
       default: return "";
     }
   };
@@ -172,19 +200,26 @@ export default function Onboarding({ session, onComplete }) {
           </div>
         )}
 
-        {/* STEP 3: COUNTRY */}
+        {/* STEP 3: COUNTRY DROPDOWN */}
         {step === 3 && (
           <div className="space-y-4">
             <div>
               <div className="relative">
-                <Globe className="absolute left-4 top-3.5 text-gray-400" size={20} />
-                <input 
-                  type="text" 
-                  placeholder="e.g. Canada, Brazil, Mars..." 
+                <Globe className="absolute left-4 top-3.5 text-gray-400 pointer-events-none" size={20} />
+                <select 
                   value={country}
                   onChange={(e) => setCountry(e.target.value)}
-                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none font-bold text-gray-900"
-                />
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none font-bold text-gray-900 appearance-none cursor-pointer"
+                >
+                  <option value="" disabled>Select a country</option>
+                  {COUNTRIES.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+                {/* Custom arrow if desired, though native select arrows vary by browser */}
+                <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
+                  <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+                </div>
               </div>
             </div>
 
