@@ -12,6 +12,24 @@ export async function GET(request) {
     );
 
     const GIPHY_API_KEY = process.env.GIPHY_API_KEY;
+    const today = new Date().toISOString().split('T')[0];
+
+    // --- STEP 0: IDEMPOTENCY CHECK ---
+    // Check if a meme for today already exists.
+    // If it does, stop immediately to prevent double-runs or overwriting.
+    const { data: existingToday } = await supabase
+      .from('memes')
+      .select('id, status')
+      .eq('publish_date', today)
+      .maybeSingle();
+
+    if (existingToday) {
+      return NextResponse.json({ 
+        success: true, 
+        message: `Meme for ${today} already exists. Skipping.`,
+        meme: existingToday
+      });
+    }
     
     // --- STEP 1: Fetch a Unique GIF (No Repeats) ---
     let contentUrl = null;
@@ -53,7 +71,6 @@ export async function GET(request) {
     if (!isUnique) throw new Error("Failed to find a unique GIF after 5 attempts");
 
     // --- STEP 2: Archive ALL currently active memes (Self-Healing) ---
-    // We use .select() instead of .single() to handle cases where multiple memes are active
     const { data: activeMemes } = await supabase
       .from('memes')
       .select('id')
@@ -87,8 +104,7 @@ export async function GET(request) {
     }
 
     // --- STEP 3: Insert the New Meme ---
-    const today = new Date().toISOString().split('T')[0];
-
+    // We reuse the 'today' variable defined at the top
     const { data, error: insertError } = await supabase
       .from('memes')
       .insert({
