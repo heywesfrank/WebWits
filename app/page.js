@@ -1,7 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-// Login component is no longer needed here
 import MainApp from "@/components/MainApp";
 
 export default function Home() {
@@ -23,6 +22,6 @@ export default function Home() {
     return () => subscription.unsubscribe();
   }, []);
 
-  // Always render MainApp. It will handle the logged-in vs logged-out state.
+  // Delegate all UI and Logic to MainApp
   return <MainApp session={session} />;
 }
