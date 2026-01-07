@@ -2,6 +2,60 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Share2, Flag, Trophy, ThumbsUp } from "lucide-react";
 
+// Helper: Map Country Names to ISO Codes for Emoji Generation
+const COUNTRY_CODES = {
+  "Afghanistan": "AF", "Albania": "AL", "Algeria": "DZ", "Andorra": "AD", "Angola": "AO", 
+  "Antigua and Barbuda": "AG", "Argentina": "AR", "Armenia": "AM", "Australia": "AU", "Austria": "AT", 
+  "Azerbaijan": "AZ", "Bahamas": "BS", "Bahrain": "BH", "Bangladesh": "BD", "Barbados": "BB", 
+  "Belarus": "BY", "Belgium": "BE", "Belize": "BZ", "Benin": "BJ", "Bhutan": "BT", "Bolivia": "BO", 
+  "Bosnia and Herzegovina": "BA", "Botswana": "BW", "Brazil": "BR", "Brunei": "BN", "Bulgaria": "BG", 
+  "Burkina Faso": "BF", "Burundi": "BI", "Cabo Verde": "CV", "Cambodia": "KH", "Cameroon": "CM", 
+  "Canada": "CA", "Central African Republic": "CF", "Chad": "TD", "Chile": "CL", "China": "CN", 
+  "Colombia": "CO", "Comoros": "KM", "Congo (Congo-Brazzaville)": "CG", "Costa Rica": "CR", 
+  "Croatia": "HR", "Cuba": "CU", "Cyprus": "CY", "Czechia (Czech Republic)": "CZ", 
+  "Democratic Republic of the Congo": "CD", "Denmark": "DK", "Djibouti": "DJ", "Dominica": "DM", 
+  "Dominican Republic": "DO", "East Timor (Timor-Leste)": "TL", "Ecuador": "EC", "Egypt": "EG", 
+  "El Salvador": "SV", "Equatorial Guinea": "GQ", "Eritrea": "ER", "Estonia": "EE", "Eswatini": "SZ", 
+  "Ethiopia": "ET", "Fiji": "FJ", "Finland": "FI", "France": "FR", "Gabon": "GA", "Gambia": "GM", 
+  "Georgia": "GE", "Germany": "DE", "Ghana": "GH", "Greece": "GR", "Grenada": "GD", "Guatemala": "GT", 
+  "Guinea": "GN", "Guinea-Bissau": "GW", "Guyana": "GY", "Haiti": "HT", "Honduras": "HN", 
+  "Hungary": "HU", "Iceland": "IS", "India": "IN", "Indonesia": "ID", "Iran": "IR", "Iraq": "IQ", 
+  "Ireland": "IE", "Israel": "IL", "Italy": "IT", "Ivory Coast": "CI", "Jamaica": "JM", "Japan": "JP", 
+  "Jordan": "JO", "Kazakhstan": "KZ", "Kenya": "KE", "Kiribati": "KI", "Kuwait": "KW", 
+  "Kyrgyzstan": "KG", "Laos": "LA", "Latvia": "LV", "Lebanon": "LB", "Lesotho": "LS", "Liberia": "LR", 
+  "Libya": "LY", "Liechtenstein": "LI", "Lithuania": "LT", "Luxembourg": "LU", "Madagascar": "MG", 
+  "Malawi": "MW", "Malaysia": "MY", "Maldives": "MV", "Mali": "ML", "Malta": "MT", 
+  "Marshall Islands": "MH", "Mauritania": "MR", "Mauritius": "MU", "Mexico": "MX", "Micronesia": "FM", 
+  "Moldova": "MD", "Monaco": "MC", "Mongolia": "MN", "Montenegro": "ME", "Morocco": "MA", 
+  "Mozambique": "MZ", "Myanmar (formerly Burma)": "MM", "Namibia": "NA", "Nauru": "NR", "Nepal": "NP", 
+  "Netherlands": "NL", "New Zealand": "NZ", "Nicaragua": "NI", "Niger": "NE", "Nigeria": "NG", 
+  "North Korea": "KP", "North Macedonia": "MK", "Norway": "NO", "Oman": "OM", "Pakistan": "PK", 
+  "Palau": "PW", "Palestine State": "PS", "Panama": "PA", "Papua New Guinea": "PG", "Paraguay": "PY", 
+  "Peru": "PE", "Philippines": "PH", "Poland": "PL", "Portugal": "PT", "Qatar": "QA", "Romania": "RO", 
+  "Russia": "RU", "Rwanda": "RW", "Saint Kitts and Nevis": "KN", "Saint Lucia": "LC", 
+  "Saint Vincent and the Grenadines": "VC", "Samoa": "WS", "San Marino": "SM", 
+  "Sao Tome and Principe": "ST", "Saudi Arabia": "SA", "Senegal": "SN", "Serbia": "RS", 
+  "Seychelles": "SC", "Sierra Leone": "SL", "Singapore": "SG", "Slovakia": "SK", "Slovenia": "SI", 
+  "Solomon Islands": "SB", "Somalia": "SO", "South Africa": "ZA", "South Korea": "KR", 
+  "South Sudan": "SS", "Spain": "ES", "Sri Lanka": "LK", "Sudan": "SD", "Suriname": "SR", 
+  "Sweden": "SE", "Switzerland": "CH", "Syria": "SY", "Taiwan": "TW", "Tajikistan": "TJ", 
+  "Tanzania": "TZ", "Thailand": "TH", "Togo": "TG", "Tonga": "TO", "Trinidad and Tobago": "TT", 
+  "Tunisia": "TN", "Turkey": "TR", "Turkmenistan": "TM", "Tuvalu": "TV", "Uganda": "UG", 
+  "Ukraine": "UA", "United Arab Emirates": "AE", "United Kingdom": "GB", 
+  "United States of America": "US", "Uruguay": "UY", "Uzbekistan": "UZ", "Vanuatu": "VU", 
+  "Vatican City": "VA", "Venezuela": "VE", "Vietnam": "VN", "Yemen": "YE", "Zambia": "ZM", 
+  "Zimbabwe": "ZW"
+};
+
+function getCountryFlag(countryName) {
+  const code = COUNTRY_CODES[countryName];
+  if (!code) return null;
+  // Convert 2-letter ISO code to flag emoji
+  return code
+    .toUpperCase()
+    .replace(/./g, char => String.fromCodePoint(char.charCodeAt(0) + 127397));
+}
+
 export default function CaptionFeed({ captions, session, viewMode, onVote, onShare, onReport }) {
   const [sortBy, setSortBy] = useState("top");
 
@@ -29,6 +83,7 @@ export default function CaptionFeed({ captions, session, viewMode, onVote, onSha
         const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
         const username = caption.profiles?.username || "anon";
         const avatarUrl = caption.profiles?.avatar_url;
+        const country = caption.profiles?.country;
 
         return (
           <div key={caption.id} className={`relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group ${isWinner ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-200'}`}>
@@ -53,7 +108,14 @@ export default function CaptionFeed({ captions, session, viewMode, onVote, onSha
 
             <div className="flex-1">
               <div className="flex items-center gap-2 mb-1">
-                <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`}>@{username}</span>
+                <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'} flex items-center gap-1`}>
+                  @{username}
+                  {country && (
+                    <span title={country} className="text-sm cursor-help opacity-90 hover:opacity-100 transition-opacity">
+                      {getCountryFlag(country)}
+                    </span>
+                  )}
+                </span>
                 {session && caption.user_id === session.user.id && (
                   <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                 )}
