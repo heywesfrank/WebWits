@@ -9,7 +9,8 @@ import ArchiveSection from "./ArchiveSection";
 import ToastContainer from "./ToastContainer";
 import UserProfileModal from "./UserProfileModal";
 import HowToPlayButton from "./HowToPlayButton";
-import Onboarding from "./Onboarding"; // RESTORED
+import PrizesButton from "./PrizesButton"; // [!code ++]
+import Onboarding from "./Onboarding"; 
 import LeaderboardWidget, { LeaderboardModal } from "./LeaderboardWidget";
 import MemeStage from "./MemeStage";
 import CaptionFeed from "./CaptionFeed";
@@ -21,7 +22,7 @@ export default function MainApp({ session }) {
   const {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, setViewMode, toasts, setToasts, 
-    showOnboarding, setShowOnboarding, // RESTORED
+    showOnboarding, setShowOnboarding,
     handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption
   } = useGameLogic(session);
 
@@ -44,13 +45,11 @@ export default function MainApp({ session }) {
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-20 md:pb-0">
       <Header session={session} profile={userProfile} onOpenProfile={() => setShowProfileModal(true)} />
       
-      {/* RESTORED: Onboarding Modal */}
       {showOnboarding && (
         <Onboarding 
           session={session} 
           onComplete={() => { 
             setShowOnboarding(false); 
-            // Reload to ensure the new profile data (avatar/username) propagates everywhere
             window.location.reload(); 
           }} 
         />
@@ -134,6 +133,7 @@ export default function MainApp({ session }) {
         <div className="hidden md:block md:col-span-1 space-y-6 sticky top-24 h-fit">
           <LeaderboardWidget initialWeeklyLeaders={leaderboard} />
           <HowToPlayButton />
+          <PrizesButton /> {/* [!code ++] */}
         </div>
       </div>
 
