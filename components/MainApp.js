@@ -9,7 +9,7 @@ import ArchiveSection from "./ArchiveSection";
 import ToastContainer from "./ToastContainer";
 import UserProfileModal from "./UserProfileModal";
 import HowToPlayButton from "./HowToPlayButton";
-// REMOVED: import Onboarding from "./Onboarding";
+import Onboarding from "./Onboarding"; // RESTORED
 import LeaderboardWidget, { LeaderboardModal } from "./LeaderboardWidget";
 import MemeStage from "./MemeStage";
 import CaptionFeed from "./CaptionFeed";
@@ -20,7 +20,8 @@ import { useGameLogic } from "@/hooks/useGameLogic";
 export default function MainApp({ session }) {
   const {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
-    loading, viewMode, setViewMode, toasts, setToasts, // REMOVED: showOnboarding, setShowOnboarding
+    loading, viewMode, setViewMode, toasts, setToasts, 
+    showOnboarding, setShowOnboarding, // RESTORED
     handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption
   } = useGameLogic(session);
 
@@ -37,20 +38,26 @@ export default function MainApp({ session }) {
     setSubmitting(false);
   };
 
-  // ... (Your existing loading check if you kept it, or removed it as per previous step)
-
   const currentMeme = viewMode === 'active' ? activeMeme : selectedMeme;
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-20 md:pb-0">
       <Header session={session} profile={userProfile} onOpenProfile={() => setShowProfileModal(true)} />
       
-      {/* REMOVED: {showOnboarding && <Onboarding session={session} onComplete={() => setShowOnboarding(false)} />} */}
+      {/* RESTORED: Onboarding Modal */}
+      {showOnboarding && (
+        <Onboarding 
+          session={session} 
+          onComplete={() => { 
+            setShowOnboarding(false); 
+            // Reload to ensure the new profile data (avatar/username) propagates everywhere
+            window.location.reload(); 
+          }} 
+        />
+      )}
       
       <ToastContainer toasts={toasts} removeToast={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
       <UserProfileModal user={session?.user} profile={userProfile} isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
-      
-      {/* ... Rest of the component remains the same ... */}
       
       <LeaderboardModal leaderboard={leaderboard} isOpen={showLeaderboardModal} onClose={() => setShowLeaderboardModal(false)} />
 
