@@ -1,12 +1,11 @@
-"use client";
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { createClient } from '@supabase/supabase-js';
+import ShareRedirect from '@/components/ShareRedirect'; // Import the client component
 
 // --- SERVER SIDE METADATA GENERATION ---
-// This runs on the server before the page loads to generate the Twitter Card
 export async function generateMetadata({ params }) {
   const id = params.id;
+  
+  // Initialize Supabase (Server-side compatible)
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -35,13 +34,13 @@ export async function generateMetadata({ params }) {
   const username = profiles?.username || 'Anon';
   const memeUrl = memes?.image_url || '';
 
-  // 2. Build the Image URL (Pointing to YOUR domain, not Supabase)
-  // We use encodeURIComponent to ensure special characters don't break the URL
+  // 2. Build the Image URL
   const ogSearchParams = new URLSearchParams();
   ogSearchParams.set('content', content);
   ogSearchParams.set('username', username);
   ogSearchParams.set('memeUrl', memeUrl);
-  // [!code warning] Ensure this matches your actual deployed domain
+  
+  // Ensure this matches your actual deployed domain
   const domain = 'https://itswebwits.com'; 
   const ogImageUrl = `${domain}/api/og?${ogSearchParams.toString()}`;
 
@@ -62,25 +61,8 @@ export async function generateMetadata({ params }) {
   };
 }
 
-// --- CLIENT SIDE REDIRECT ---
-// This component renders the page content and handles the user redirect
+// --- MAIN PAGE COMPONENT ---
 export default function SharePage() {
-  const router = useRouter();
-
-  useEffect(() => {
-    // Wait a brief moment then redirect to home
-    const timer = setTimeout(() => {
-      router.push('/');
-    }, 1000);
-    return () => clearTimeout(timer);
-  }, [router]);
-
-  return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-gray-900 text-white font-sans">
-      <div className="animate-pulse flex flex-col items-center gap-4">
-        <img src="/logo.png" alt="WebWits" className="w-32 h-auto" />
-        <p className="text-yellow-400 font-bold">Loading Battle...</p>
-      </div>
-    </div>
-  );
+  // Just render the client redirector
+  return <ShareRedirect />;
 }
