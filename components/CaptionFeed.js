@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Twitter, MessageCircle, X, Check, Link as LinkIcon, Copy } from "lucide-react";
+import { motion } from "framer-motion";
+import { Share2, Flag, Trophy, ThumbsUp } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -9,35 +9,51 @@ function getCountryCode(countryName) {
 
 export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport }) {
   const [sortBy, setSortBy] = useState("top");
-  const [shareConfig, setShareConfig] = useState(null); 
+  
+  // Helper for "Copied!" feedback
+  const [copiedId, setCopiedId] = useState(null);
 
   const sortedCaptions = [...captions].sort((a, b) => 
     sortBy === "top" ? b.vote_count - a.vote_count : new Date(b.created_at) - new Date(a.created_at)
   );
 
-  const handleOpenShare = (caption, index) => {
+  const handleShareClick = async (caption, index) => {
+    // 1. Build the Dynamic Text
     const rank = sortBy === 'top' ? index + 1 : null;
-    setShareConfig({
-      id: caption.id, // Needed for the link
-      content: caption.content,
-      username: caption.profiles?.username || "anon",
-      rank: rank,
-      memeUrl: meme?.image_url,
-      memeType: meme?.type
-    });
+    const shareUrl = `https://itswebwits.com/share/${caption.id}`;
+    
+    let shareText = "";
+    if (rank) {
+      shareText = `Can you beat this #${rank} place comment? "${caption.content}"`;
+    } else {
+      shareText = `Can you beat this comment? "${caption.content}"`;
+    }
+
+    // 2. Try Native Share (Mobile)
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: 'WebWits Battle',
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch (err) {
+        // User cancelled or share failed, do nothing
+      }
+    } else {
+      // 3. Fallback: Copy to Clipboard (Desktop)
+      try {
+        await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+        setCopiedId(caption.id);
+        setTimeout(() => setCopiedId(null), 2000);
+      } catch (err) {
+        console.error("Failed to copy", err);
+      }
+    }
   };
 
   return (
     <div className="space-y-4">
-      <AnimatePresence>
-        {shareConfig && (
-          <ShareModal 
-            config={shareConfig} 
-            onClose={() => setShareConfig(null)} 
-          />
-        )}
-      </AnimatePresence>
-
       <div className="flex justify-between items-center px-1">
         <h3 className="font-bold text-gray-800 font-display text-lg">
           {captions.length} {captions.length === 1 ? 'Caption' : 'Captions'}
@@ -96,11 +112,13 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
               <p className="text-lg text-gray-800 leading-snug font-medium">{caption.content}</p>
               
               <div className="flex gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                {/* MERGED SHARE BUTTON */}
                 <button 
-                  onClick={() => handleOpenShare(caption, index)} 
+                  onClick={() => handleShareClick(caption, index)} 
                   className="flex items-center gap-1 text-xs text-gray-400 hover:text-yellow-600 transition"
                 >
-                  <Share2 size={12} /> Share
+                  <Share2 size={12} /> 
+                  {copiedId === caption.id ? "Copied!" : "Share"}
                 </button>
                 
                 {viewMode === 'active' && (
@@ -122,155 +140,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
           </div>
         );
       })}
-    </div>
-  );
-}
-
-function ShareModal({ config, onClose }) {
-  const [copied, setCopied] = useState(false);
-  
-  // Create the specialized Share URL
-  const shareUrl = `https://itswebwits.com/share/${config.id}`;
-  const shareText = config.rank 
-    ? `Can you beat this #${config.rank} place comment?`
-    : `Can you beat this comment?`;
-
-  const handleCopyLink = () => {
-    navigator.clipboard.writeText(shareUrl);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const handleSocialShare = async (platform) => {
-    // Mobile Native Share for Link
-    if (navigator.share) {
-       try {
-         await navigator.share({
-           title: 'WebWits Battle',
-           text: shareText,
-           url: shareUrl
-         });
-         return;
-       } catch (err) {
-         // Fallback to desktop logic below if cancelled
-       }
-    }
-
-    // Desktop Fallback
-    if (platform === 'whatsapp') {
-      window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
-    } else if (platform === 'twitter') {
-      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
-    }
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 overflow-y-auto">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.95 }}
-        className="w-full max-w-sm bg-white rounded-2xl overflow-hidden shadow-2xl relative my-8"
-      >
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-black z-10 bg-white/50 rounded-full p-1">
-          <X size={20} />
-        </button>
-
-        <div className="p-6 pb-0 text-center">
-          <h3 className="font-bold text-lg text-gray-900 mb-6">Share this Wit</h3>
-          
-          {/* VISUAL PREVIEW ONLY (This is just HTML, not shared directly) */}
-          <div className="bg-gradient-to-br from-yellow-400 to-yellow-500 p-1 rounded-xl shadow-lg">
-             <div className="bg-white rounded-lg overflow-hidden">
-                <div className="w-full bg-black/5 flex items-center justify-center border-b border-gray-100 relative">
-                   {config.memeType === 'video' ? (
-                     <div className="relative w-full">
-                        <img 
-                          src={config.memeUrl} 
-                          className="w-full max-h-48 object-cover opacity-80" 
-                          alt="Meme Context" 
-                        />
-                     </div>
-                   ) : (
-                     <img 
-                        src={config.memeUrl} 
-                        className="w-full max-h-48 object-cover" 
-                        alt="Meme Context" 
-                     />
-                   )}
-                   <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      itswebwits.com
-                   </div>
-                </div>
-
-                <div className="p-6 text-left relative">
-                  <div className="absolute top-0 right-0 opacity-5 pointer-events-none">
-                     <Trophy size={100} />
-                  </div>
-                  
-                  {config.rank && (
-                    <div className="inline-flex items-center gap-1 bg-yellow-100 text-yellow-700 px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider mb-3">
-                      <Trophy size={10} />
-                      <span>Rank #{config.rank}</span>
-                    </div>
-                  )}
-                  
-                  <p className="text-xl font-bold text-gray-900 leading-tight mb-4">
-                    "{config.content}"
-                  </p>
-                  
-                  <div className="flex justify-between items-end border-t border-gray-100 pt-3">
-                     <div className="text-xs text-gray-500">
-                        by <span className="font-bold text-black">@{config.username}</span>
-                     </div>
-                     <div className="text-xs font-black text-yellow-500 tracking-tight">
-                        WEBWITS
-                     </div>
-                  </div>
-               </div>
-             </div>
-          </div>
-          <p className="text-xs text-gray-400 mt-4">
-            Sharing this link will show this card automatically.
-          </p>
-        </div>
-
-        {/* Share Buttons */}
-        <div className="p-6 grid grid-cols-3 gap-3">
-           <button 
-             onClick={handleCopyLink}
-             className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
-           >
-             <div className="w-10 h-10 bg-gradient-to-tr from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                {copied ? <Check size={20} /> : <LinkIcon size={20} />}
-             </div>
-             <span className="text-[10px] font-bold text-gray-500">
-               {copied ? "Copied!" : "Copy Link"}
-             </span>
-           </button>
-
-           <button 
-             onClick={() => handleSocialShare('whatsapp')}
-             className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
-           >
-             <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                <MessageCircle size={20} />
-             </div>
-             <span className="text-[10px] font-bold text-gray-500">WhatsApp</span>
-           </button>
-
-           <button 
-             onClick={() => handleSocialShare('twitter')}
-             className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
-           >
-             <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                <Twitter size={20} />
-             </div>
-             <span className="text-[10px] font-bold text-gray-500">X.com</span>
-           </button>
-        </div>
-
-      </motion.div>
     </div>
   );
 }
