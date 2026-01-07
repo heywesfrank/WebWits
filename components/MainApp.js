@@ -14,6 +14,7 @@ import ToastContainer from "./ToastContainer";
 import Skeleton from "./Skeleton";
 import UserProfileModal from "./UserProfileModal";
 import HowToPlayButton from "./HowToPlayButton";
+import Onboarding from "./Onboarding"; // [!code ++]
 
 // Import LeaderboardWidget (default) and LeaderboardModal (named)
 import LeaderboardWidget, { LeaderboardModal } from "./LeaderboardWidget";
@@ -23,6 +24,7 @@ export default function MainApp({ session }) {
   const [captions, setCaptions] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [archivedMemes, setArchivedMemes] = useState([]);
+  const [userProfile, setUserProfile] = useState(null); // [!code ++]
   
   const [newCaption, setNewCaption] = useState("");
   const [loading, setLoading] = useState(true);
@@ -31,6 +33,7 @@ export default function MainApp({ session }) {
   const [viewMode, setViewMode] = useState("active"); 
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+  const [showOnboarding, setShowOnboarding] = useState(false); // [!code ++]
   const [timeLeft, setTimeLeft] = useState("");
   const [toasts, setToasts] = useState([]);
 
@@ -42,7 +45,8 @@ export default function MainApp({ session }) {
 
   useEffect(() => {
     fetchData();
-    setupRealtime();
+    const cleanupRealtime = setupRealtime();
+    
     const timer = setInterval(() => {
       const now = new Date();
       // Target 5:00 AM UTC (Midnight EST)
@@ -57,8 +61,12 @@ export default function MainApp({ session }) {
       const seconds = Math.floor((diff / 1000) % 60);
       setTimeLeft(`${hours}h ${minutes}m ${seconds}s`);
     }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+
+    return () => {
+      clearInterval(timer);
+      if (cleanupRealtime) cleanupRealtime();
+    };
+  }, [session]); // [!code ++] Re-run when session changes to fetch user profile
 
   useEffect(() => {
     if (captions.length === 0) return;
@@ -99,28 +107,38 @@ export default function MainApp({ session }) {
     try {
       setLoading(true);
       
-      // 1. Fetch Active Meme
+      // 1. Fetch User Profile & Check Onboarding [!code ++]
+      if (session?.user) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", session.user.id)
+          .single();
+        
+        setUserProfile(profile);
+
+        // If username or avatar is missing, trigger onboarding
+        if (!profile || !profile.username || !profile.avatar_url) {
+          setShowOnboarding(true);
+        }
+      } else {
+        setUserProfile(null);
+      }
+
+      // 2. Fetch Active Meme
       let { data: activeMeme } = await supabase.from("memes").select("*").eq("status", "active").single();
       setMeme(activeMeme);
 
-      // 2. Fetch Archives (Updated to include comments for backfilling winners)
+      // 3. Fetch Archives
       let { data: archives } = await supabase
         .from("memes")
-        .select(`
-          *,
-          comments (
-            content,
-            vote_count
-          )
-        `)
+        .select(`*, comments (content, vote_count)`)
         .neq("status", "active")
         .order("created_at", { ascending: false });
       
       // Process archives: If winning_caption is missing, find it from comments
       const processedArchives = (archives || []).map(archive => {
         if (archive.winning_caption) return archive;
-        
-        // Find top voted comment manually
         if (archive.comments && archive.comments.length > 0) {
            const topComment = archive.comments.reduce((prev, current) => 
              (prev.vote_count > current.vote_count) ? prev : current
@@ -132,13 +150,13 @@ export default function MainApp({ session }) {
 
       setArchivedMemes(processedArchives);
 
-      // 3. Fetch Captions for Active Meme
+      // 4. Fetch Captions for Active Meme
       if (activeMeme) {
         const { data } = await supabase.from("comments").select(`*, profiles(username)`).eq("meme_id", activeMeme.id);
         setCaptions(data || []);
       }
       
-      // 4. Fetch Leaderboard
+      // 5. Fetch Leaderboard
       const { data: topUsers } = await supabase.from("profiles").select("username, weekly_points").order("weekly_points", { ascending: false }).limit(5);
       setLeaderboard(topUsers || []);
     } catch (error) {
@@ -148,7 +166,13 @@ export default function MainApp({ session }) {
     }
   }
 
-  // --- Handle selection of an archived meme ---
+  // [!code ++]
+  const handleOnboardingComplete = () => {
+    setShowOnboarding(false);
+    fetchData(); // Refresh to get the new profile data and update UI
+    addToast("Welcome to the arena!", "success");
+  };
+
   const handleArchiveSelect = async (archiveMeme) => {
     setLoading(true);
     setMeme(archiveMeme);
@@ -166,7 +190,6 @@ export default function MainApp({ session }) {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // --- Handle going back to active battle ---
   const handleBackToArena = () => {
     setViewMode('active');
     fetchData(); 
@@ -265,11 +288,14 @@ export default function MainApp({ session }) {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-20 md:pb-0">
-      <Header session={session} onOpenProfile={() => setShowProfileModal(true)} />
+      <Header session={session} profile={userProfile} onOpenProfile={() => setShowProfileModal(true)} /> {/* [!code ++] */}
       
+      {/* Onboarding Modal [!code ++] */}
+      {showOnboarding && <Onboarding session={session} onComplete={handleOnboardingComplete} />}
+
       <ToastContainer toasts={toasts} removeToast={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
       
-      <UserProfileModal user={session?.user} isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
+      <UserProfileModal user={session?.user} profile={userProfile} isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
       <LeaderboardModal leaderboard={leaderboard} isOpen={showLeaderboardModal} onClose={() => setShowLeaderboardModal(false)} />
 
       <div className="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
