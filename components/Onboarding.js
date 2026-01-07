@@ -72,10 +72,10 @@ export default function Onboarding({ session, onComplete }) {
         </div>
 
         <h2 className="text-2xl font-black text-gray-900 mb-2 font-display">
-          {step === 1 ? "Show us your face" : "What should we call you?"}
+          {step === 1 ? "We've seen worse. Pick a pic." : "What should we call you?"}
         </h2>
         <p className="text-gray-500 mb-6 text-sm">
-          {step === 1 ? "Upload an avatar to represent you in the arena." : "Pick a unique username for the leaderboard."}
+          {step === 1 ? "Upload an image to represent you in the arena." : "Pick a unique username for the leaderboard."}
         </p>
 
         {/* STEP 1: AVATAR UPLOAD */}
