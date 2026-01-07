@@ -37,15 +37,6 @@ export default function MainApp({ session }) {
     setSubmitting(false);
   };
 
-  if (loading && !activeMeme && viewMode === 'active') {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center space-y-4">
-         <Loader2 className="animate-spin text-yellow-500 w-10 h-10" />
-         <p className="text-gray-500 animate-pulse font-mono">Summoning content...</p>
-      </div>
-    );
-  }
-
   const currentMeme = viewMode === 'active' ? activeMeme : selectedMeme;
 
   return (
