@@ -54,10 +54,10 @@ export function useGameLogic(session) {
       setArchivedMemes(processedArchives);
 
       if (active) {
-        // UPDATED: Now selecting avatar_url along with username
+        // UPDATED: Now selecting country along with username and avatar_url
         const { data } = await supabase
           .from("comments")
-          .select(`*, profiles(username, avatar_url)`)
+          .select(`*, profiles(username, avatar_url, country)`)
           .eq("meme_id", active.id);
         setCaptions(data || []);
       }
