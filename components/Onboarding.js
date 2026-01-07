@@ -113,15 +113,24 @@ export default function Onboarding({ session, onComplete }) {
         {/* STEP 2: USERNAME */}
         {step === 2 && (
           <div className="space-y-4">
-            <div className="relative">
-              <User className="absolute left-4 top-3.5 text-gray-400" size={20} />
-              <input 
-                type="text" 
-                placeholder="Username" 
-                value={username}
-                onChange={(e) => setUsername(e.target.value.trim())}
-                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none font-bold text-gray-900"
-              />
+            <div>
+              <div className="relative">
+                <User className="absolute left-4 top-3.5 text-gray-400" size={20} />
+                <input 
+                  type="text" 
+                  placeholder="Username" 
+                  value={username}
+                  maxLength={20} // [!code ++] Enforce limit
+                  onChange={(e) => setUsername(e.target.value.trim())}
+                  className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none font-bold text-gray-900"
+                />
+              </div>
+              {/* Character Counter */}
+              <div className="flex justify-end mt-1">
+                 <span className={`text-[10px] font-medium ${username.length === 20 ? 'text-red-500' : 'text-gray-400'}`}>
+                    {username.length}/20
+                 </span>
+              </div>
             </div>
 
             <div className="flex gap-3">
