@@ -1,197 +1,150 @@
-import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Loader2, Save, User, Sparkles, Upload, Camera } from 'lucide-react'
+"use client";
+import { useState } from "react";
+import { supabase } from "@/lib/supabase";
+import { Camera, User, Loader2, ArrowRight, Check } from "lucide-react";
 
 export default function Onboarding({ session, onComplete }) {
-  const [loading, setLoading] = useState(true)
-  const [saving, setSaving] = useState(false)
-  const [uploading, setUploading] = useState(false)
-  const [username, setUsername] = useState('')
-  const [avatarUrl, setAvatarUrl] = useState(null)
-  const [errorMsg, setErrorMsg] = useState('')
+  const [step, setStep] = useState(1); // 1: Avatar, 2: Username
+  const [uploading, setUploading] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState(null);
+  const [username, setUsername] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  useEffect(() => {
-    let ignore = false
-    async function getProfile() {
-      setLoading(true)
-      const { user } = session
-
-      const { data } = await supabase
-        .from('profiles')
-        .select(`username, avatar_url`)
-        .eq('id', user.id)
-        .maybeSingle()
-
-      if (!ignore && data) {
-        setUsername(data.username || '')
-        setAvatarUrl(data.avatar_url || null)
-      }
-      setLoading(false)
-    }
-
-    getProfile()
-    return () => { ignore = true }
-  }, [session])
-
-  async function uploadAvatar(event) {
+  // Handle Image Upload
+  const handleImageUpload = async (event) => {
     try {
-      setUploading(true)
-      setErrorMsg('')
-      
-      if (!event.target.files || event.target.files.length === 0) {
-        throw new Error('You must select an image to upload.')
-      }
+      setUploading(true);
+      const file = event.target.files[0];
+      if (!file) return;
 
-      const file = event.target.files[0]
-      const fileExt = file.name.split('.').pop()
-      const fileName = `${session.user.id}-${Math.random()}.${fileExt}`
-      const filePath = `${fileName}`
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${session.user.id}-${Date.now()}.${fileExt}`;
+      const filePath = `${fileName}`;
 
-      // Upload to 'avatars' bucket
-      const { error: uploadError } = await supabase.storage
+      let { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(filePath, file)
+        .upload(filePath, file);
 
-      if (uploadError) {
-        throw uploadError
-      }
+      if (uploadError) throw uploadError;
 
-      // Get Public URL
-      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath)
-      setAvatarUrl(data.publicUrl)
-
+      const { data } = supabase.storage.from('avatars').getPublicUrl(filePath);
+      setAvatarUrl(data.publicUrl);
     } catch (error) {
-      setErrorMsg('Error uploading image: ' + error.message)
+      alert('Error uploading avatar: ' + error.message);
     } finally {
-      setUploading(false)
+      setUploading(false);
     }
-  }
+  };
 
-  async function updateProfile(event) {
-    event.preventDefault()
-    setSaving(true)
-    setErrorMsg('')
+  // Handle Final Submission
+  const handleSubmit = async () => {
+    if (!username.trim() || !avatarUrl) return;
+    setSaving(true);
 
-    const { user } = session
+    try {
+      const { error } = await supabase
+        .from('profiles')
+        .upsert({
+          id: session.user.id,
+          username: username,
+          avatar_url: avatarUrl,
+          email: session.user.email, // Ensure email is synced
+          updated_at: new Date(),
+        });
 
-    // Use uploaded avatar or generate a default one if skipped
-    const finalAvatar = avatarUrl || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
-
-    const updates = {
-      id: user.id,
-      username,
-      avatar_url: finalAvatar,
-      updated_at: new Date(),
+      if (error) throw error;
+      onComplete(); // Notify parent to close onboarding
+    } catch (error) {
+      alert('Error saving profile: ' + error.message);
+    } finally {
+      setSaving(false);
     }
-
-    const { error } = await supabase.from('profiles').upsert(updates)
-
-    if (error) {
-      setErrorMsg(error.message)
-      setSaving(false)
-    } else {
-      if (onComplete) onComplete() 
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm">
-        <Loader2 className="animate-spin text-yellow-500 w-10 h-10" />
-      </div>
-    )
-  }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-300">
-      <div className="w-full max-w-md bg-white border border-gray-200 p-8 rounded-2xl shadow-2xl relative">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-white/80 backdrop-blur-md p-4">
+      <div className="w-full max-w-md bg-white border border-gray-200 shadow-2xl rounded-2xl p-8 animate-in fade-in zoom-in duration-300">
         
-        {/* Header */}
-        <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto mb-4 text-yellow-600">
-                <Sparkles size={32} />
-            </div>
-            <h2 className="text-2xl font-black text-gray-900 mb-2">Welcome to WebWits!</h2>
-            <p className="text-gray-500 text-sm">Setup your profile to enter the arena.</p>
+        {/* Progress Bar */}
+        <div className="flex gap-2 mb-8">
+          <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 1 ? 'bg-yellow-400' : 'bg-gray-100'}`} />
+          <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 2 ? 'bg-yellow-400' : 'bg-gray-100'}`} />
         </div>
 
-        <form onSubmit={updateProfile} className="space-y-6">
-          
-          {/* Avatar Upload */}
-          <div className="flex flex-col items-center gap-4">
-             <div className="relative group w-24 h-24 rounded-full overflow-hidden bg-gray-100 border-2 border-gray-200">
-                {avatarUrl ? (
-                  <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
-                ) : (
-                  <div className="w-full h-full flex items-center justify-center text-gray-400">
-                    <User size={40} />
-                  </div>
-                )}
-                <label className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                  {uploading ? <Loader2 className="animate-spin text-white" /> : <Camera className="text-white" />}
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    onChange={uploadAvatar} 
-                    disabled={uploading}
-                    className="hidden" 
-                  />
-                </label>
-             </div>
-             <p className="text-xs text-gray-500 font-medium">Click image to upload</p>
-          </div>
+        <h2 className="text-2xl font-black text-gray-900 mb-2 font-display">
+          {step === 1 ? "Show us your face" : "What should we call you?"}
+        </h2>
+        <p className="text-gray-500 mb-6 text-sm">
+          {step === 1 ? "Upload an avatar to represent you in the arena." : "Pick a unique username for the leaderboard."}
+        </p>
 
-          {/* Email (Read Only) */}
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Email</label>
-            <input 
-                type="text" 
-                value={session.user.email} 
-                disabled 
-                className="w-full p-3 rounded-lg bg-gray-100 border border-gray-200 text-gray-500 cursor-not-allowed"
-            />
-          </div>
-
-          {/* Username */}
-          <div>
-            <label htmlFor="username" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                Username <span className="text-red-500">*</span>
-            </label>
-            <div className="relative">
-                <input
-                    id="username"
-                    type="text"
-                    required
-                    value={username}
-                    maxLength={20}
-                    onChange={(e) => setUsername(e.target.value)}
-                    className="w-full p-3 pl-10 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all font-bold"
-                    placeholder="FunnyGuy123"
+        {/* STEP 1: AVATAR UPLOAD */}
+        {step === 1 && (
+          <div className="flex flex-col items-center">
+            <div className="relative w-32 h-32 bg-gray-100 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center mb-6 overflow-hidden group">
+              {avatarUrl ? (
+                <img src={avatarUrl} alt="Avatar" className="w-full h-full object-cover" />
+              ) : (
+                <Camera size={32} className="text-gray-400" />
+              )}
+              
+              <label className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center cursor-pointer transition-colors">
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  onChange={handleImageUpload} 
+                  disabled={uploading}
+                  className="hidden" 
                 />
-                <User size={18} className="absolute left-3 top-3.5 text-gray-400" />
+                {uploading && <Loader2 className="animate-spin text-yellow-400" />}
+              </label>
             </div>
-            <div className="flex justify-between text-[10px] mt-1 text-gray-400 font-medium">
-                <span>Unique handle visible on leaderboards</span>
-                <span className={username.length === 20 ? 'text-red-500' : ''}>{username.length}/20</span>
+
+            <button 
+              onClick={() => setStep(2)}
+              disabled={!avatarUrl}
+              className="w-full bg-black text-white font-bold py-3 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-800 transition-colors flex items-center justify-center gap-2"
+            >
+              Next Step <ArrowRight size={18} />
+            </button>
+          </div>
+        )}
+
+        {/* STEP 2: USERNAME */}
+        {step === 2 && (
+          <div className="space-y-4">
+            <div className="relative">
+              <User className="absolute left-4 top-3.5 text-gray-400" size={20} />
+              <input 
+                type="text" 
+                placeholder="Username" 
+                value={username}
+                onChange={(e) => setUsername(e.target.value.trim())}
+                className="w-full pl-12 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none font-bold text-gray-900"
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <button 
+                onClick={() => setStep(1)}
+                className="flex-1 px-4 py-3 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition"
+              >
+                Back
+              </button>
+              <button 
+                onClick={handleSubmit}
+                disabled={!username || saving}
+                className="flex-[2] px-4 py-3 bg-yellow-400 text-black font-bold rounded-xl hover:bg-yellow-300 transition flex items-center justify-center gap-2"
+              >
+                {saving ? <Loader2 className="animate-spin" size={18} /> : (
+                   <>Finish <Check size={18} /></>
+                )}
+              </button>
             </div>
           </div>
+        )}
 
-          {errorMsg && (
-             <div className="p-3 bg-red-50 text-red-600 text-sm rounded-lg border border-red-100 font-medium">
-                {errorMsg}
-             </div>
-          )}
-
-          <button 
-            type="submit" 
-            disabled={saving || uploading}
-            className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-black text-lg p-4 rounded-xl shadow-lg shadow-yellow-200 hover:shadow-yellow-300 hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-          >
-            {saving ? <Loader2 className="animate-spin" /> : <Save size={20} />}
-            <span>{saving ? 'Saving...' : 'Enter Arena'}</span>
-          </button>
-        </form>
       </div>
     </div>
-  )
+  );
 }
