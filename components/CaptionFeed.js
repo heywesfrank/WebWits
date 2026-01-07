@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp } from "lucide-react";
+import { Share2, Flag, Trophy, ThumbsUp, Check } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -10,7 +10,7 @@ function getCountryCode(countryName) {
 export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport }) {
   const [sortBy, setSortBy] = useState("top");
   
-  // Helper for "Copied!" feedback
+  // Track which specific caption was just copied
   const [copiedId, setCopiedId] = useState(null);
 
   const sortedCaptions = [...captions].sort((a, b) => 
@@ -18,7 +18,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
   );
 
   const handleShareClick = async (caption, index) => {
-    // 1. Build the Dynamic Text
+    // 1. Build the Dynamic Text & URL
     const rank = sortBy === 'top' ? index + 1 : null;
     const shareUrl = `https://itswebwits.com/share/${caption.id}`;
     
@@ -28,9 +28,17 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
     } else {
       shareText = `Can you beat this comment? "${caption.content}"`;
     }
+    
+    // Combine for clipboard (Desktop)
+    const clipboardText = `${shareText} ${shareUrl}`;
 
-    // 2. Try Native Share (Mobile)
-    if (navigator.share) {
+    // 2. Platform Detection
+    // We only use the native Share Menu (navigator.share) on Mobile devices.
+    // On Desktop, we force a "Copy to Clipboard" because the native menu 
+    // often freezes or looks broken on Windows/Mac.
+    const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+    if (isMobile && navigator.share) {
       try {
         await navigator.share({
           title: 'WebWits Battle',
@@ -38,16 +46,19 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
           url: shareUrl,
         });
       } catch (err) {
-        // User cancelled or share failed, do nothing
+        // User cancelled, ignore
       }
     } else {
-      // 3. Fallback: Copy to Clipboard (Desktop)
+      // 3. Desktop Fallback: Copy to Clipboard immediately
       try {
-        await navigator.clipboard.writeText(`${shareText} ${shareUrl}`);
+        await navigator.clipboard.writeText(clipboardText);
+        
+        // Show visual feedback
         setCopiedId(caption.id);
-        setTimeout(() => setCopiedId(null), 2000);
+        setTimeout(() => setCopiedId(null), 3000);
       } catch (err) {
         console.error("Failed to copy", err);
+        alert("Could not copy link. Manually copy this URL:\n" + shareUrl);
       }
     }
   };
@@ -111,18 +122,27 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
               </div>
               <p className="text-lg text-gray-800 leading-snug font-medium">{caption.content}</p>
               
-              <div className="flex gap-4 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
-                {/* MERGED SHARE BUTTON */}
+              {/* UPDATED: Buttons are now ALWAYS visible (removed opacity-0 and group-hover classes) */}
+              <div className="flex gap-4 mt-3">
                 <button 
                   onClick={() => handleShareClick(caption, index)} 
-                  className="flex items-center gap-1 text-xs text-gray-400 hover:text-yellow-600 transition"
+                  className={`flex items-center gap-1 text-xs transition font-bold ${
+                    copiedId === caption.id 
+                      ? "text-green-600 bg-green-50 px-2 py-1 rounded-md" 
+                      : "text-gray-400 hover:text-yellow-600"
+                  }`}
                 >
-                  <Share2 size={12} /> 
-                  {copiedId === caption.id ? "Copied!" : "Share"}
+                  {copiedId === caption.id ? <Check size={12} /> : <Share2 size={12} />}
+                  {copiedId === caption.id ? "Link Copied!" : "Share"}
                 </button>
                 
                 {viewMode === 'active' && (
-                  <button onClick={() => onReport(caption.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition"><Flag size={12} /> Report</button>
+                  <button 
+                    onClick={() => onReport(caption.id)} 
+                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition"
+                  >
+                    <Flag size={12} /> Report
+                  </button>
                 )}
               </div>
             </div>
