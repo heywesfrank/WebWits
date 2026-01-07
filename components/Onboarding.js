@@ -1,12 +1,11 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Loader2, Save, User, Globe, Sparkles } from 'lucide-react'
+import { Loader2, Save, User, Sparkles } from 'lucide-react'
 
 export default function Onboarding({ session, onComplete }) {
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [username, setUsername] = useState('')
-  const [website, setWebsite] = useState('')
   const [avatar_url, setAvatarUrl] = useState(null)
   const [errorMsg, setErrorMsg] = useState('')
 
@@ -16,16 +15,15 @@ export default function Onboarding({ session, onComplete }) {
       setLoading(true)
       const { user } = session
 
-      // Now that columns exist, this select will work
-      const { data, error } = await supabase
+      // REMOVED: 'website' from this select query
+      const { data } = await supabase
         .from('profiles')
-        .select(`username, website, avatar_url`)
+        .select(`username, avatar_url`)
         .eq('id', user.id)
-        .maybeSingle() // Use maybeSingle to avoid 406 errors if row is missing
+        .maybeSingle()
 
       if (!ignore && data) {
         setUsername(data.username || '')
-        setWebsite(data.website || '')
         setAvatarUrl(data.avatar_url || '')
       }
       setLoading(false)
@@ -42,13 +40,13 @@ export default function Onboarding({ session, onComplete }) {
 
     const { user } = session
 
-    // Generate a default avatar if none exists, so the user isn't stuck in the loop
+    // Generate a default avatar if none exists
     const finalAvatar = avatar_url || `https://api.dicebear.com/7.x/avataaars/svg?seed=${username}`
 
     const updates = {
       id: user.id,
       username,
-      website,
+      // REMOVED: website field from updates
       avatar_url: finalAvatar,
       updated_at: new Date(),
     }
@@ -59,7 +57,6 @@ export default function Onboarding({ session, onComplete }) {
       setErrorMsg(error.message)
       setSaving(false)
     } else {
-      // SUCCESS: Call onComplete to close the modal
       if (onComplete) onComplete() 
     }
   }
@@ -119,22 +116,6 @@ export default function Onboarding({ session, onComplete }) {
             <div className="flex justify-between text-[10px] mt-1 text-gray-400 font-medium">
                 <span>Unique handle visible on leaderboards</span>
                 <span className={username.length === 20 ? 'text-red-500' : ''}>{username.length}/20</span>
-            </div>
-          </div>
-
-          {/* Website */}
-          <div>
-            <label htmlFor="website" className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1.5">Website (Optional)</label>
-            <div className="relative">
-                <input
-                    id="website"
-                    type="url"
-                    value={website}
-                    onChange={(e) => setWebsite(e.target.value)}
-                    className="w-full p-3 pl-10 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all"
-                    placeholder="https://..."
-                />
-                <Globe size={18} className="absolute left-3 top-3.5 text-gray-400" />
             </div>
           </div>
 
