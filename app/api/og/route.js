@@ -6,7 +6,6 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url);
     
-    // Get details from URL
     const content = searchParams.get('content')?.slice(0, 100) || '...';
     const username = searchParams.get('username') || 'Anon';
     const rank = searchParams.get('rank');
@@ -22,8 +21,9 @@ export async function GET(request) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(to bottom right, #facc15, #eab308)', // yellow-400 to yellow-500
+            background: 'linear-gradient(to bottom right, #facc15, #eab308)', // Yellow background
             padding: '20px',
+            fontFamily: 'sans-serif',
           }}
         >
           <div
@@ -38,36 +38,41 @@ export async function GET(request) {
               height: '100%',
             }}
           >
-            {/* Meme Image Area */}
-            <div style={{ display: 'flex', height: '50%', width: '100%', position: 'relative', background: '#f3f4f6' }}>
+            {/* Top Half: Meme Image */}
+            <div style={{ display: 'flex', height: '55%', width: '100%', position: 'relative', background: '#f3f4f6', overflow: 'hidden' }}>
               {memeUrl && (
                  /* eslint-disable-next-line @next/next/no-img-element */
-                <img src={memeUrl} style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                <img 
+                  src={memeUrl} 
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }} 
+                />
               )}
-               <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(0,0,0,0.7)', color: 'white', padding: '4px 12px', borderRadius: '20px', fontSize: 14, fontWeight: 'bold' }}>
+               <div style={{ position: 'absolute', bottom: 10, right: 10, background: 'rgba(0,0,0,0.8)', color: 'white', padding: '6px 16px', borderRadius: '30px', fontSize: 20, fontWeight: 'bold' }}>
                   itswebwits.com
                </div>
             </div>
 
-            {/* Content Area */}
-            <div style={{ display: 'flex', flexDirection: 'column', padding: '40px', justifyContent: 'space-between', height: '50%' }}>
+            {/* Bottom Half: Content */}
+            <div style={{ display: 'flex', flexDirection: 'column', padding: '40px', justifyContent: 'space-between', height: '45%' }}>
               
-              {/* Rank Badge */}
+              {/* Rank Badge (Optional) */}
               {rank && (
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: '#fef9c3', color: '#a16207', padding: '8px 16px', borderRadius: '8px', alignSelf: 'flex-start', fontSize: 16, fontWeight: 'bold', textTransform: 'uppercase' }}>
-                   🏆 Rank #{rank}
+                <div style={{ display: 'flex', alignItems: 'center', background: '#fef9c3', color: '#a16207', padding: '8px 20px', borderRadius: '12px', alignSelf: 'flex-start', fontSize: 24, fontWeight: 'bold', marginBottom: '10px' }}>
+                   🏆 RANK #{rank}
                 </div>
               )}
 
-              <div style={{ fontSize: 48, fontWeight: 'bold', color: '#111827', lineHeight: 1.1 }}>
+              {/* Caption Text */}
+              <div style={{ fontSize: 48, fontWeight: 'bold', color: '#111827', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                 "{content}"
               </div>
 
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%', borderTop: '2px solid #f3f4f6', paddingTop: '20px' }}>
-                <div style={{ fontSize: 24, color: '#6b7280' }}>
+              {/* Footer */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%', marginTop: 'auto' }}>
+                <div style={{ fontSize: 28, color: '#6b7280' }}>
                   by <span style={{ color: '#000', fontWeight: 'bold' }}>@{username}</span>
                 </div>
-                <div style={{ fontSize: 24, fontWeight: '900', color: '#eab308' }}>
+                <div style={{ fontSize: 32, fontWeight: '900', color: '#eab308', letterSpacing: '-1px' }}>
                   WEBWITS
                 </div>
               </div>
@@ -81,6 +86,7 @@ export async function GET(request) {
       }
     );
   } catch (e) {
+    console.error(e);
     return new Response(`Failed to generate image`, { status: 500 });
   }
 }
