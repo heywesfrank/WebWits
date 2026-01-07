@@ -1,8 +1,7 @@
-import { useState, useRef } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Instagram, Twitter, MessageCircle, X, Check, Link as LinkIcon, Loader2, Copy } from "lucide-react";
+import { Share2, Flag, Trophy, ThumbsUp, Twitter, MessageCircle, X, Check, Link as LinkIcon, Copy } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
-import html2canvas from "html2canvas";
 
 function getCountryCode(countryName) {
   return COUNTRY_CODES[countryName]?.toLowerCase() || null;
@@ -19,11 +18,11 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
   const handleOpenShare = (caption, index) => {
     const rank = sortBy === 'top' ? index + 1 : null;
     setShareConfig({
+      id: caption.id, // Needed for the link
       content: caption.content,
       username: caption.profiles?.username || "anon",
       rank: rank,
       memeUrl: meme?.image_url,
-      memeContent: meme?.content_url,
       memeType: meme?.type
     });
   };
@@ -39,7 +38,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         )}
       </AnimatePresence>
 
-      {/* Feed Controls */}
       <div className="flex justify-between items-center px-1">
         <h3 className="font-bold text-gray-800 font-display text-lg">
           {captions.length} {captions.length === 1 ? 'Caption' : 'Captions'}
@@ -52,7 +50,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         </div>
       </div>
 
-      {/* List */}
       {sortedCaptions.map((caption, index) => {
         const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
         const username = caption.profiles?.username || "anon";
@@ -95,7 +92,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                 {session && caption.user_id === session.user.id && (
                   <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                 )}
-                {caption.vote_count > 10 && viewMode === 'active' && <span className="text-[10px] bg-red-100 text-red-600 px-1 rounded border border-red-200">🔥 Hot</span>}
               </div>
               <p className="text-lg text-gray-800 leading-snug font-medium">{caption.content}</p>
               
@@ -131,82 +127,40 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 }
 
 function ShareModal({ config, onClose }) {
-  const [generating, setGenerating] = useState(false);
-  const [statusMsg, setStatusMsg] = useState("");
-  const cardRef = useRef(null); 
+  const [copied, setCopied] = useState(false);
   
-  const shareUrl = "https://itswebwits.com";
+  // Create the specialized Share URL
+  const shareUrl = `https://itswebwits.com/share/${config.id}`;
   const shareText = config.rank 
-    ? `Can you beat this #${config.rank} place comment? "${config.content}"`
-    : `Can you beat this comment? "${config.content}"`;
+    ? `Can you beat this #${config.rank} place comment?`
+    : `Can you beat this comment?`;
 
-  const handleShare = async (platform) => {
-    if (!cardRef.current) return;
-    setGenerating(true);
-    setStatusMsg("");
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
 
-    try {
-      // 1. Generate Canvas
-      const canvas = await html2canvas(cardRef.current, {
-        useCORS: true, 
-        scale: 2, 
-        backgroundColor: null
-      });
+  const handleSocialShare = async (platform) => {
+    // Mobile Native Share for Link
+    if (navigator.share) {
+       try {
+         await navigator.share({
+           title: 'WebWits Battle',
+           text: shareText,
+           url: shareUrl
+         });
+         return;
+       } catch (err) {
+         // Fallback to desktop logic below if cancelled
+       }
+    }
 
-      canvas.toBlob(async (blob) => {
-        if (!blob) return;
-
-        // --- MOBILE NATIVE SHARE ---
-        // Checks if the browser supports sharing FILES (mostly mobile)
-        if (navigator.share && navigator.canShare && navigator.canShare({ files: [new File([blob], 't.png', {type:'image/png'})] })) {
-            const file = new File([blob], 'webwits-share.png', { type: 'image/png' });
-            try {
-                await navigator.share({
-                    title: 'WebWits Battle',
-                    text: `${shareText} ${shareUrl}`,
-                    files: [file],
-                });
-                setGenerating(false);
-                return; // Stop here if native share worked
-            } catch (err) {
-                // User cancelled or failed, continue to desktop logic
-                console.log("Native share cancelled");
-            }
-        }
-
-        // --- DESKTOP FALLBACK (Clipboard + Link) ---
-        // Since we can't upload files to X/WhatsApp via URL, we Copy to Clipboard + Open Link
-        
-        try {
-            await navigator.clipboard.write([
-                new ClipboardItem({ 'image/png': blob })
-            ]);
-            setStatusMsg("Image copied! Paste it in your post 📋");
-        } catch (err) {
-            console.error("Clipboard write failed", err);
-            setStatusMsg("Could not copy image automatically.");
-        }
-
-        // Open External Links if needed
-        if (platform === 'twitter') {
-             window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
-        } else if (platform === 'whatsapp') {
-             window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
-        } else if (platform === 'copy') {
-             // Just copy (already done above)
-             setStatusMsg("Image copied to clipboard! 📋");
-        }
-        
-        setGenerating(false);
-        // Clear success message after 3s
-        setTimeout(() => setStatusMsg(""), 4000);
-
-      }, 'image/png');
-
-    } catch (err) {
-      console.error("Image generation failed", err);
-      setGenerating(false);
-      setStatusMsg("Error generating image.");
+    // Desktop Fallback
+    if (platform === 'whatsapp') {
+      window.open(`https://wa.me/?text=${encodeURIComponent(shareText + ' ' + shareUrl)}`, '_blank');
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
     }
   };
 
@@ -225,11 +179,9 @@ function ShareModal({ config, onClose }) {
         <div className="p-6 pb-0 text-center">
           <h3 className="font-bold text-lg text-gray-900 mb-6">Share this Wit</h3>
           
-          {/* THE CARD PREVIEW (No Tilt) */}
-          <div ref={cardRef} className="bg-gradient-to-br from-yellow-400 to-yellow-500 p-1 rounded-xl shadow-lg">
+          {/* VISUAL PREVIEW ONLY (This is just HTML, not shared directly) */}
+          <div className="bg-gradient-to-br from-yellow-400 to-yellow-500 p-1 rounded-xl shadow-lg">
              <div className="bg-white rounded-lg overflow-hidden">
-                
-                {/* Meme Media Display */}
                 <div className="w-full bg-black/5 flex items-center justify-center border-b border-gray-100 relative">
                    {config.memeType === 'video' ? (
                      <div className="relative w-full">
@@ -242,12 +194,10 @@ function ShareModal({ config, onClose }) {
                    ) : (
                      <img 
                         src={config.memeUrl} 
-                        crossOrigin="anonymous"
                         className="w-full max-h-48 object-cover" 
                         alt="Meme Context" 
                      />
                    )}
-                   {/* Overlay WebWits Tag */}
                    <div className="absolute bottom-2 right-2 bg-black/70 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
                       itswebwits.com
                    </div>
@@ -280,58 +230,41 @@ function ShareModal({ config, onClose }) {
                </div>
              </div>
           </div>
-
-          {/* Status Message Area */}
-          <div className="h-6 mt-4 flex items-center justify-center">
-             {statusMsg && (
-                <motion.div 
-                   initial={{ opacity: 0, y: 10 }}
-                   animate={{ opacity: 1, y: 0 }}
-                   className="text-xs font-bold text-green-600 flex items-center gap-1 bg-green-50 px-2 py-1 rounded-full"
-                >
-                   <Check size={12} /> {statusMsg}
-                </motion.div>
-             )}
-          </div>
+          <p className="text-xs text-gray-400 mt-4">
+            Sharing this link will show this card automatically.
+          </p>
         </div>
 
         {/* Share Buttons */}
         <div className="p-6 grid grid-cols-3 gap-3">
-           
-           {/* Copy Image Button */}
            <button 
-             onClick={() => handleShare('copy')}
-             disabled={generating}
+             onClick={handleCopyLink}
              className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
            >
              <div className="w-10 h-10 bg-gradient-to-tr from-purple-500 to-pink-500 text-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                {generating ? <Loader2 className="animate-spin" size={20} /> : <Copy size={20} />}
+                {copied ? <Check size={20} /> : <LinkIcon size={20} />}
              </div>
              <span className="text-[10px] font-bold text-gray-500">
-               Copy Image
+               {copied ? "Copied!" : "Copy Link"}
              </span>
            </button>
 
-           {/* WhatsApp */}
            <button 
-             onClick={() => handleShare('whatsapp')}
-             disabled={generating}
+             onClick={() => handleSocialShare('whatsapp')}
              className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
            >
              <div className="w-10 h-10 bg-green-500 text-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                {generating ? <Loader2 className="animate-spin" size={20} /> : <MessageCircle size={20} />}
+                <MessageCircle size={20} />
              </div>
              <span className="text-[10px] font-bold text-gray-500">WhatsApp</span>
            </button>
 
-           {/* Twitter / X */}
            <button 
-             onClick={() => handleShare('twitter')}
-             disabled={generating}
+             onClick={() => handleSocialShare('twitter')}
              className="flex flex-col items-center gap-2 p-3 rounded-xl bg-gray-50 hover:bg-gray-100 transition-colors group"
            >
              <div className="w-10 h-10 bg-black text-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
-                {generating ? <Loader2 className="animate-spin" size={20} /> : <Twitter size={20} />}
+                <Twitter size={20} />
              </div>
              <span className="text-[10px] font-bold text-gray-500">X.com</span>
            </button>
