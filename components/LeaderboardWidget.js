@@ -1,4 +1,3 @@
-"use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { Trophy, Loader2, Star, Crown, Flame, X } from "lucide-react";
@@ -19,10 +18,10 @@ function LeaderboardList({ leaderboard, scoreKey = "weekly_points" }) {
               index === 2 ? 'bg-gray-800/60 border-orange-700/50' : 'bg-transparent border-transparent'
             }`}
         >
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 min-w-0">
             {/* Rank Badge */}
             <div className={`
-              w-8 h-8 flex items-center justify-center rounded-lg font-black text-sm shadow-lg
+              w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-md font-black text-xs shadow-lg
               ${index === 0 ? 'bg-yellow-400 text-black' : 
                 index === 1 ? 'bg-gray-300 text-black' : 
                 index === 2 ? 'bg-orange-600 text-white' : 'text-gray-500 font-medium'}
@@ -31,19 +30,19 @@ function LeaderboardList({ leaderboard, scoreKey = "weekly_points" }) {
             </div>
             
             {/* User Details */}
-            <div className="flex flex-col">
-              <span className={`font-bold text-sm ${index === 0 ? 'text-yellow-400' : 'text-gray-200'}`}>
+            <div className="flex flex-col min-w-0">
+              <span className={`font-bold text-xs truncate ${index === 0 ? 'text-yellow-400' : 'text-gray-200'}`}>
                 {user.username}
               </span>
-              {index === 0 && <span className="text-[10px] text-yellow-500/80 font-mono uppercase tracking-wider">Current King</span>}
+              {index === 0 && <span className="text-[9px] text-yellow-500/80 font-mono uppercase tracking-wider">Current King</span>}
             </div>
           </div>
           
-          <div className="text-right">
-            <span className="block font-mono font-bold text-white">
+          <div className="text-right pl-2 flex-shrink-0">
+            <span className="block font-mono font-bold text-xs text-white">
               {user[scoreKey] !== undefined ? user[scoreKey] : 0}
             </span>
-            <span className="text-[10px] text-gray-500 uppercase">pts</span>
+            <span className="text-[9px] text-gray-500 uppercase">pts</span>
           </div>
         </div>
       ))}
