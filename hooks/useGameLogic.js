@@ -62,7 +62,7 @@ export function useGameLogic(session) {
         // 1. Get all comments
         const { data: comments, error: commentsError } = await supabase
           .from("comments")
-          .select(`*, profiles(username, avatar_url, country)`)
+          .select(`*, profiles!comments_user_id_fkey(username, avatar_url, country)`)
           .eq("meme_id", active.id);
         
         if (commentsError) console.error("Comments fetch error:", commentsError);
