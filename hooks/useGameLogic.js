@@ -148,48 +148,56 @@ export function useGameLogic(session) {
     }
   };
 
-  const castVote = async (commentId) => {
+const castVote = async (commentId) => {
     if (!session?.user) {
         addToast("Please login to vote!", "error");
         return;
     }
 
-    // 1. Prevent double voting on client side
+    // Determine intent: Are we adding or removing?
     const targetComment = captions.find(c => c.id === commentId);
-    if (targetComment?.hasVoted) return;
+    const isRemoving = targetComment?.hasVoted;
 
-    // 2. Optimistic UI Update (Instant Feedback)
+    // 1. Optimistic UI Update
     setCaptions((current) => 
       current.map((c) => 
         c.id === commentId 
-          ? { ...c, vote_count: (c.vote_count || 0) + 1, hasVoted: true } 
+          ? { 
+              ...c, 
+              // If removing, subtract 1. If adding, add 1.
+              vote_count: Math.max(0, (c.vote_count || 0) + (isRemoving ? -1 : 1)), 
+              hasVoted: !isRemoving 
+            } 
           : c
       )
     );
 
     try {
-      // 3. Call Secure Database Function (RPC)
-      const { error } = await supabase.rpc('cast_vote', { 
+      // 2. Call the new TOGGLE function
+      const { error } = await supabase.rpc('toggle_vote', { 
         vote_comment_id: commentId, 
         vote_user_id: session.user.id 
       });
       
-      if (error) {
-        if (error.code === '23505') {
-            throw new Error("You already voted for this!");
-        }
-        throw error;
-      }
+      if (error) throw error;
       
-      addToast("Vote cast!", "success");
+      // Optional: Different toast messages
+      // if (isRemoving) addToast("Vote removed", "success");
+      // else addToast("Vote cast!", "success");
+
     } catch (err) {
       console.error("Vote failed:", err);
+      addToast("Failed to update vote", "error");
       
-      // 4. Revert Optimistic Update if failed
+      // 3. Revert Optimistic Update if it failed
       setCaptions((current) => 
         current.map((c) => 
           c.id === commentId 
-            ? { ...c, vote_count: (c.vote_count || 0) - 1, hasVoted: false } 
+            ? { 
+                ...c, 
+                vote_count: (c.vote_count || 0) + (isRemoving ? 1 : -1), 
+                hasVoted: isRemoving 
+              } 
             : c
         )
       );
