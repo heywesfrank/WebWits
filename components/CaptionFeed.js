@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Check } from "lucide-react";
+import { Share2, Flag, Trophy, ThumbsUp, Check, Crown } from "lucide-react"; // [!code ++]
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -79,6 +79,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
       {sortedCaptions.map((caption, index) => {
         const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
+        const isTopRanked = index === 0 && sortBy === 'top'; // [!code ++]
         const username = caption.profiles?.username || "anon";
         const avatarUrl = caption.profiles?.avatar_url;
         const countryCode = getCountryCode(caption.profiles?.country);
@@ -93,6 +94,14 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
             <div className="flex-shrink-0 pt-1">
               <div className="relative inline-block">
+                
+                {/* [!code ++] Angled Crown for 1st Place */}
+                {isTopRanked && (
+                  <div className="absolute -top-4 -left-3 z-20 transform -rotate-12">
+                     <Crown size={24} className="fill-yellow-400 text-yellow-600 drop-shadow-sm" />
+                  </div>
+                )}
+
                 <div className="h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm">
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={username} className="h-full w-full object-cover" />
