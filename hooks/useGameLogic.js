@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
-import { filterProfanity } from "@/lib/profanity"; // [!code ++]
+import { filterProfanity } from "@/lib/profanity";
 
 export function useGameLogic(session) {
   const [activeMeme, setActiveMeme] = useState(null);
@@ -27,6 +27,7 @@ export function useGameLogic(session) {
     try {
       setLoading(true);
       
+      // A. Fetch User Profile
       if (session?.user) {
         const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
         setUserProfile(profile);
@@ -35,9 +36,11 @@ export function useGameLogic(session) {
         setUserProfile(null);
       }
 
+      // B. Fetch Active Meme
       let { data: active } = await supabase.from("memes").select("*").eq("status", "active").single();
       setActiveMeme(prev => (prev?.id === active?.id ? prev : active));
       
+      // C. Fetch Archives
       let { data: archives } = await supabase
         .from("memes")
         .select(`*, comments (content, vote_count)`)
@@ -54,14 +57,36 @@ export function useGameLogic(session) {
       });
       setArchivedMemes(processedArchives);
 
+      // D. Fetch Comments & User Votes for Active Meme
       if (active) {
-        const { data } = await supabase
+        // 1. Get all comments
+        const { data: comments } = await supabase
           .from("comments")
           .select(`*, profiles(username, avatar_url, country)`)
           .eq("meme_id", active.id);
-        setCaptions(data || []);
+        
+        let formattedComments = comments || [];
+
+        // 2. If user is logged in, check which ones they voted for
+        if (session?.user) {
+           const { data: myVotes } = await supabase
+             .from("comment_votes") // Queries the new join table
+             .select("comment_id")
+             .eq("user_id", session.user.id);
+           
+           const myVotedIds = new Set(myVotes?.map(v => v.comment_id));
+
+           // Mark comments as voted
+           formattedComments = formattedComments.map(c => ({
+             ...c,
+             hasVoted: myVotedIds.has(c.id)
+           }));
+        }
+
+        setCaptions(formattedComments);
       }
       
+      // E. Fetch Leaderboard
       const { data: topUsers } = await supabase.from("profiles").select("username, weekly_points").order("weekly_points", { ascending: false }).limit(5);
       setLeaderboard(topUsers || []);
 
@@ -90,18 +115,17 @@ export function useGameLogic(session) {
   const submitCaption = async (text) => {
     if (!session?.user || !activeMeme) return false;
     
-    // [!code ++] Filter the text using the imported utility
+    // Filter the text using the utility
     const cleanText = filterProfanity(text);
 
     try {
       const { error } = await supabase.from('comments').insert({
         meme_id: activeMeme.id,
         user_id: session.user.id,
-        content: cleanText // [!code ++] Use cleanText instead of text
+        content: cleanText
       });
       if (error) throw error;
       
-      // [!code ++] Notify user if we cleaned their input
       if (cleanText !== text) {
         addToast("Caption polished & submitted! 🧼", "success");
       } else {
@@ -118,8 +142,54 @@ export function useGameLogic(session) {
   };
 
   const castVote = async (commentId) => {
-    if (!session?.user) return;
-    addToast("Vote cast!", "success");
+    if (!session?.user) {
+        addToast("Please login to vote!", "error");
+        return;
+    }
+
+    // 1. Prevent double voting on client side
+    const targetComment = captions.find(c => c.id === commentId);
+    if (targetComment?.hasVoted) return;
+
+    // 2. Optimistic UI Update (Instant Feedback)
+    setCaptions((current) => 
+      current.map((c) => 
+        c.id === commentId 
+          ? { ...c, vote_count: (c.vote_count || 0) + 1, hasVoted: true } 
+          : c
+      )
+    );
+
+    try {
+      // 3. Call Secure Database Function (RPC)
+      // This maps to the function: cast_vote(vote_comment_id, vote_user_id)
+      const { error } = await supabase.rpc('cast_vote', { 
+        vote_comment_id: commentId, 
+        vote_user_id: session.user.id 
+      });
+      
+      if (error) {
+        // Code 23505 is a unique_violation (duplicate key)
+        if (error.code === '23505') {
+            throw new Error("You already voted for this!");
+        }
+        throw error;
+      }
+      
+      addToast("Vote cast!", "success");
+    } catch (err) {
+      console.error("Vote failed:", err);
+      // addToast(err.message || "Failed to vote", "error");
+      
+      // 4. Revert Optimistic Update if failed
+      setCaptions((current) => 
+        current.map((c) => 
+          c.id === commentId 
+            ? { ...c, vote_count: (c.vote_count || 0) - 1, hasVoted: false } 
+            : c
+        )
+      );
+    }
   };
 
   const shareCaption = async (text) => {
