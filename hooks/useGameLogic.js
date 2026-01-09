@@ -60,21 +60,28 @@ export function useGameLogic(session) {
       // D. Fetch Comments & User Votes for Active Meme
       if (active) {
         // 1. Get all comments
-        const { data: comments } = await supabase
+        const { data: comments, error: commentsError } = await supabase
           .from("comments")
           .select(`*, profiles(username, avatar_url, country)`)
           .eq("meme_id", active.id);
         
+        if (commentsError) console.error("Comments fetch error:", commentsError);
+
         let formattedComments = comments || [];
 
         // 2. If user is logged in, check which ones they voted for
-        if (session?.user) {
-           const { data: myVotes } = await supabase
-             .from("comment_votes") // Queries the new join table
+        if (session?.user && formattedComments.length > 0) {
+           const { data: myVotes, error: votesError } = await supabase
+             .from("comment_votes") 
              .select("comment_id")
              .eq("user_id", session.user.id);
+
+           if (votesError) {
+             console.error("Votes fetch error (check if table exists):", votesError);
+           }
            
-           const myVotedIds = new Set(myVotes?.map(v => v.comment_id));
+           // [!code fix] Added (myVotes || []) to prevent crash if myVotes is null
+           const myVotedIds = new Set((myVotes || []).map(v => v.comment_id));
 
            // Mark comments as voted
            formattedComments = formattedComments.map(c => ({
@@ -162,14 +169,12 @@ export function useGameLogic(session) {
 
     try {
       // 3. Call Secure Database Function (RPC)
-      // This maps to the function: cast_vote(vote_comment_id, vote_user_id)
       const { error } = await supabase.rpc('cast_vote', { 
         vote_comment_id: commentId, 
         vote_user_id: session.user.id 
       });
       
       if (error) {
-        // Code 23505 is a unique_violation (duplicate key)
         if (error.code === '23505') {
             throw new Error("You already voted for this!");
         }
@@ -179,7 +184,6 @@ export function useGameLogic(session) {
       addToast("Vote cast!", "success");
     } catch (err) {
       console.error("Vote failed:", err);
-      // addToast(err.message || "Failed to vote", "error");
       
       // 4. Revert Optimistic Update if failed
       setCaptions((current) => 
