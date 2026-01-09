@@ -22,7 +22,7 @@ export default function MainApp({ session }) {
   const {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, setViewMode, toasts, setToasts, 
-    showOnboarding, setShowOnboarding,
+    showOnboarding, setShowOnboarding, hasCommented,
     handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption
   } = useGameLogic(session);
 
@@ -97,12 +97,18 @@ export default function MainApp({ session }) {
                 {/* Interaction Bar */}
                 {viewMode === 'active' && currentMeme && (
                   session ? (
-                    <form onSubmit={handleSubmit} className="p-4 flex gap-2 bg-gray-50 border-t border-gray-200">
-                        <input type="text" value={newCaption} onChange={(e) => setNewCaption(e.target.value)} placeholder="Write a witty caption..." disabled={submitting} className="flex-1 p-3 rounded-lg bg-white border border-gray-300 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all placeholder:text-gray-500 text-gray-900" />
-                        <button type="submit" disabled={submitting || !newCaption.trim()} className="bg-yellow-400 text-black font-bold p-3 rounded-lg hover:bg-yellow-300 disabled:opacity-50 transition shadow-sm">
-                          {submitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
-                        </button>
-                    </form>
+                    hasCommented ? (
+                        <div className="p-4 bg-gray-50 border-t border-gray-200 text-center text-sm font-bold text-gray-500 flex items-center justify-center gap-2">
+                            <span>You've fired your shot today! Check back tomorrow.</span>
+                        </div>
+                    ) : (
+                        <form onSubmit={handleSubmit} className="p-4 flex gap-2 bg-gray-50 border-t border-gray-200">
+                            <input type="text" value={newCaption} onChange={(e) => setNewCaption(e.target.value)} placeholder="Write a witty caption..." disabled={submitting} className="flex-1 p-3 rounded-lg bg-white border border-gray-300 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all placeholder:text-gray-500 text-gray-900" />
+                            <button type="submit" disabled={submitting || !newCaption.trim()} className="bg-yellow-400 text-black font-bold p-3 rounded-lg hover:bg-yellow-300 disabled:opacity-50 transition shadow-sm">
+                            {submitting ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                            </button>
+                        </form>
+                    )
                   ) : (
                     <div className="p-4 bg-gray-50 border-t border-gray-200 text-center">
                         <Link href="/login" className="inline-flex items-center gap-2 text-sm font-bold text-yellow-600 hover:text-yellow-700 hover:underline">
