@@ -27,6 +27,45 @@ export function useGameLogic(session) {
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
   }, []);
 
+  // Helper: Fetch comments for a specific meme
+  const fetchMemeComments = useCallback(async (memeId) => {
+    if (!memeId) return [];
+
+    const { data: comments, error: commentsError } = await supabase
+      .from("comments")
+      .select(`*, profiles!comments_user_id_fkey(username, avatar_url, country)`)
+      .eq("meme_id", memeId);
+    
+    if (commentsError) {
+      console.error("Comments fetch error:", commentsError);
+      return [];
+    }
+
+    let formattedComments = comments || [];
+
+    // If user is logged in, check which ones they voted for
+    if (session?.user && formattedComments.length > 0) {
+       const { data: myVotes, error: votesError } = await supabase
+         .from("comment_votes") 
+         .select("comment_id")
+         .eq("user_id", session.user.id);
+
+       if (votesError) {
+         console.error("Votes fetch error:", votesError);
+       }
+       
+       const myVotedIds = new Set((myVotes || []).map(v => v.comment_id));
+
+       // Mark comments as voted
+       formattedComments = formattedComments.map(c => ({
+         ...c,
+         hasVoted: myVotedIds.has(c.id)
+       }));
+    }
+
+    return formattedComments;
+  }, [session]);
+
   // 1. Initial Data Fetch
   const fetchData = useCallback(async () => {
     try {
@@ -64,38 +103,8 @@ export function useGameLogic(session) {
 
       // D. Fetch Comments & User Votes for Active Meme
       if (active) {
-        // 1. Get all comments
-        const { data: comments, error: commentsError } = await supabase
-          .from("comments")
-          .select(`*, profiles!comments_user_id_fkey(username, avatar_url, country)`)
-          .eq("meme_id", active.id);
-        
-        if (commentsError) console.error("Comments fetch error:", commentsError);
-
-        let formattedComments = comments || [];
-
-        // 2. If user is logged in, check which ones they voted for
-        if (session?.user && formattedComments.length > 0) {
-           const { data: myVotes, error: votesError } = await supabase
-             .from("comment_votes") 
-             .select("comment_id")
-             .eq("user_id", session.user.id);
-
-           if (votesError) {
-             console.error("Votes fetch error (check if table exists):", votesError);
-           }
-           
-           // [!code fix] Added (myVotes || []) to prevent crash if myVotes is null
-           const myVotedIds = new Set((myVotes || []).map(v => v.comment_id));
-
-           // Mark comments as voted
-           formattedComments = formattedComments.map(c => ({
-             ...c,
-             hasVoted: myVotedIds.has(c.id)
-           }));
-        }
-
-        setCaptions(formattedComments);
+        const comments = await fetchMemeComments(active.id);
+        setCaptions(comments);
       }
       
       // E. Fetch Leaderboard
@@ -107,21 +116,35 @@ export function useGameLogic(session) {
     } finally {
       setLoading(false);
     }
-  }, [session]);
+  }, [session, fetchMemeComments]);
 
   // Realtime Subscription
   useEffect(() => {
     fetchData();
   }, [fetchData]);
 
-  const handleArchiveSelect = (meme) => {
+  const handleArchiveSelect = async (meme) => {
     setSelectedMeme(meme);
     setViewMode('archive-detail');
+    
+    // Fetch comments for the archived meme
+    setLoading(true);
+    const comments = await fetchMemeComments(meme.id);
+    setCaptions(comments);
+    setLoading(false);
   };
 
-  const handleBackToArena = () => {
+  const handleBackToArena = async () => {
     setSelectedMeme(null);
     setViewMode('active');
+
+    // Re-fetch active meme comments
+    if (activeMeme) {
+      setLoading(true);
+      const comments = await fetchMemeComments(activeMeme.id);
+      setCaptions(comments);
+      setLoading(false);
+    }
   };
 
   const submitCaption = async (text) => {
@@ -150,6 +173,7 @@ export function useGameLogic(session) {
         addToast("Caption submitted!", "success");
       }
       
+      // We only strictly need to re-fetch comments here, but fetchData is fine
       fetchData();
       return true;
     } catch (err) {
