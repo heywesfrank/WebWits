@@ -131,7 +131,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                   <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                 )}
               </div>
-              <p className="text-lg text-gray-800 leading-snug font-medium">{caption.content}</p>
+              <p className="text-base text-gray-800 leading-snug font-medium">{caption.content}</p>
               
               {/* UPDATED: Buttons are now ALWAYS visible (removed opacity-0 and group-hover classes) */}
               <div className="flex gap-4 mt-3">
