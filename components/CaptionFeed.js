@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Check, Crown } from "lucide-react"; // [!code ++]
+import { Share2, Flag, Trophy, ThumbsUp, Check } from "lucide-react"; // [!code change] Removed Crown import
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -95,11 +95,13 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             <div className="flex-shrink-0 pt-1">
               <div className="relative inline-block">
                 
-                {/* [!code ++] Angled Crown for 1st Place */}
+                {/* [!code ++] Custom Crown Image for 1st Place */}
                 {isTopRanked && (
-                  <div className="absolute -top-4 -left-3 z-20 transform -rotate-12">
-                     <Crown size={24} className="fill-yellow-400 text-yellow-600 drop-shadow-sm" />
-                  </div>
+                  <img 
+                    src="/crown.png" 
+                    alt="Current Leader"
+                    className="absolute -top-3 -left-2 z-20 w-8 h-auto -rotate-[20deg] filter drop-shadow-sm pointer-events-none"
+                  />
                 )}
 
                 <div className="h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm">
