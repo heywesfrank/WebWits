@@ -36,7 +36,8 @@ export default function Header({ session, profile }) {
         <img 
           src="/logo.png" 
           alt="WebWits" 
-          className="h-16 w-auto object-contain filter drop-shadow-sm transition-transform duration-300 group-hover:scale-105" 
+          // [!code change]: Reduced height on mobile (h-10) and kept original (md:h-16) on desktop
+          className="h-10 md:h-16 w-auto object-contain filter drop-shadow-sm transition-transform duration-300 group-hover:scale-105" 
         />
       </div>
 
@@ -124,8 +125,9 @@ export default function Header({ session, profile }) {
             )}
           </div>
         ) : (
-          <Link href="/login" className="bg-yellow-400 text-black px-5 py-2 rounded-lg font-bold text-sm hover:bg-yellow-300 transition-colors shadow-sm">
-            Sign In
+          // [!code change]: Updated text, added responsive padding (px-3 md:px-5), and whitespace-nowrap
+          <Link href="/login" className="bg-yellow-400 text-black px-3 md:px-5 py-2 rounded-lg font-bold text-sm hover:bg-yellow-300 transition-colors shadow-sm whitespace-nowrap">
+            Sign Up/Login
           </Link>
         )}
       </div>
