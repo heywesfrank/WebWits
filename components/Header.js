@@ -126,7 +126,7 @@ export default function Header({ session, profile }) {
           </div>
         ) : (
           // [!code change]: Updated text, added responsive padding (px-3 md:px-5), and whitespace-nowrap
-          <Link href="/login" className="bg-yellow-400 text-black px-3 md:px-5 py-2 rounded-lg font-bold text-sm hover:bg-yellow-300 transition-colors shadow-sm whitespace-nowrap">
+          <Link href="/login" className="bg-yellow-400 text-white px-3 md:px-5 py-2 rounded-lg font-bold text-sm hover:bg-yellow-300 transition-colors shadow-sm whitespace-nowrap">
             Sign Up/Login
           </Link>
         )}
