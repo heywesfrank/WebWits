@@ -15,6 +15,11 @@ export function useGameLogic(session) {
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [toasts, setToasts] = useState([]);
 
+  // Check if current user has commented on the active meme
+  const hasCommented = session?.user && activeMeme 
+    ? captions.some(c => c.user_id === session.user.id) 
+    : false;
+
   // Toast Helper
   const addToast = useCallback((msg, type = 'success') => {
     const id = Date.now();
@@ -122,6 +127,12 @@ export function useGameLogic(session) {
   const submitCaption = async (text) => {
     if (!session?.user || !activeMeme) return false;
     
+    // Enforce one comment per day
+    if (hasCommented) {
+      addToast("You've already submitted a caption today! 🚫", "error");
+      return false;
+    }
+
     // Filter the text using the utility
     const cleanText = filterProfanity(text);
 
@@ -219,7 +230,7 @@ const castVote = async (commentId) => {
 
   return {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
-    loading, viewMode, toasts, showOnboarding,
+    loading, viewMode, toasts, showOnboarding, hasCommented,
     setViewMode, setToasts, setShowOnboarding,
     fetchData, handleArchiveSelect, handleBackToArena, 
     submitCaption, castVote, shareCaption, reportCaption
