@@ -79,10 +79,10 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
       {sortedCaptions.map((caption, index) => {
         const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
-        // [!code change] Only show crown if we are in archive mode (winner decided)
+        // Only show crown if we are in archive mode (winner decided)
         const isTopRanked = index === 0 && sortBy === 'top' && viewMode === 'archive-detail';
         
-        // [!code ++] Fire Logic for Active Mode
+        // Fire Logic for Active Mode
         const rank = index + 1;
         const showFire = viewMode === 'active' && sortBy === 'top' && rank <= 3;
         const fireCount = showFire ? 4 - rank : 0; // 1st=3, 2nd=2, 3rd=1
@@ -90,6 +90,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         const username = caption.profiles?.username || "anon";
         const avatarUrl = caption.profiles?.avatar_url;
         const countryCode = getCountryCode(caption.profiles?.country);
+        const isInfluencer = caption.profiles?.influencer;
 
         return (
           <div key={caption.id} className={`relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group ${isWinner ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-200'}`}>
@@ -120,6 +121,18 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                     </div>
                   )}
                 </div>
+
+                {/* Influencer Badge (Bottom Left) */}
+                {isInfluencer && (
+                  <img 
+                    src="/badge.png"
+                    alt="Influencer"
+                    title="Influencer"
+                    className="absolute -bottom-1 -left-1 w-4 h-4 object-contain z-20 filter drop-shadow-sm"
+                  />
+                )}
+
+                {/* Country Flag (Bottom Right) */}
                 {countryCode && (
                   <img 
                     src={`https://flagcdn.com/w20/${countryCode}.png`}
@@ -174,7 +187,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
               {isWinner ? <Trophy size={24} className="fill-yellow-400 text-yellow-600" /> : <ThumbsUp size={24} className={`transition-all ${caption.vote_count > 0 ? 'fill-yellow-100' : ''}`} />}
               <span className={`font-bold text-sm ${isWinner ? 'text-yellow-700' : ''}`}>{caption.vote_count}</span>
               
-              {/* [!code ++] Animated Fire Emojis for Top 3 (Active Mode) */}
+              {/* Animated Fire Emojis for Top 3 (Active Mode) */}
               {showFire && (
                 <div className="flex -space-x-1 mt-0.5">
                   {Array.from({ length: fireCount }).map((_, i) => (
