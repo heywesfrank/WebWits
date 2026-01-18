@@ -6,21 +6,6 @@ import { AlertCircle, Mail, Sparkles, KeyRound, ArrowRight } from "lucide-react"
 import HowToPlayButton from "./HowToPlayButton";
 import PrizesButton from "./PrizesButton";
 
-// Helper: VAPID Key conversion
-const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
-
-function urlBase64ToUint8Array(base64String) {
-  if (!base64String) return null;
-  const padding = '='.repeat((4 - base64String.length % 4) % 4);
-  const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
-  const rawData = window.atob(base64);
-  const outputArray = new Uint8Array(rawData.length);
-  for (let i = 0; i < rawData.length; ++i) {
-    outputArray[i] = rawData.charCodeAt(i);
-  }
-  return outputArray;
-}
-
 export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -51,41 +36,6 @@ export default function Login() {
     setLoading(false);
   };
 
-  // Helper: Subscribe Logic
-  const subscribeToPush = async (userId) => {
-    if (!('serviceWorker' in navigator)) return;
-    if (!VAPID_PUBLIC_KEY) {
-       console.warn("VAPID Key missing in .env");
-       return;
-    }
-
-    try {
-      // This 'ready' check can hang if the SW is not active yet.
-      // That is why we removed 'await' from the call site below.
-      const registration = await navigator.serviceWorker.ready;
-      
-      const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-      if (!convertedKey) return;
-
-      const subscription = await registration.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: convertedKey
-      });
-
-      await fetch('/api/web-push/subscribe', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          subscription, 
-          user_id: userId 
-        }),
-      });
-      console.log("Subscribed to push!");
-    } catch (err) {
-      console.error("Push subscription failed:", err);
-    }
-  };
-
   // 2. Verify the Code
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
@@ -103,15 +53,7 @@ export default function Login() {
       setLoading(false);
     } else {
       setInfoMsg("Success! Entering the arena...");
-      
-      // [!code highlight:4]
-      // FIXED: We removed 'await' here.
-      // This allows the router.push() to happen INSTANTLY,
-      // preventing the UI from getting stuck on "Verifying..."
-      if (data?.session?.user?.id) {
-          subscribeToPush(data.session.user.id);
-      }
-
+      // Subscription logic is now handled in MainApp via the NotificationModal
       router.push("/");
       router.refresh();
     }
