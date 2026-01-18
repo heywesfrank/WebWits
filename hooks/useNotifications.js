@@ -39,63 +39,65 @@ export function useNotifications(userId) {
       console.log(`[Push Debug] Permission Result: ${permission}`);
       
       if (permission !== 'granted') {
-        alert("Notifications blocked. Please enable them in Android Settings.");
+        alert("Notifications blocked. Please enable them in Settings.");
         return false;
       }
 
       // 2. Register Service Worker
       console.log("[Push Debug] registering /sw.js ...");
       const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log("[Push Debug] Registration object found:", registration);
-      
-      // Log initial state
-      if (registration.active) console.log("[Push Debug] SW is ACTIVE");
-      if (registration.waiting) console.log("[Push Debug] SW is WAITING");
-      if (registration.installing) console.log("[Push Debug] SW is INSTALLING");
+      console.log("[Push Debug] Registration successful.");
 
-      // 3. Smart Activation Wait (Improved UX)
-      if (!registration.active) {
-          console.log("[Push Debug] No active worker found. Starting polling loop...");
-          
-          await new Promise((resolve) => {
-              let attempts = 0;
-              const interval = setInterval(() => {
-                  attempts++;
-                  // Log status occasionally
-                  if (attempts % 10 === 0) console.log(`[Push Debug] Polling attempt ${attempts}...`);
-
-                  if (registration.active || registration.waiting) {
-                      console.log(`[Push Debug] Worker found after ${attempts} attempts! (Active: ${!!registration.active}, Waiting: ${!!registration.waiting})`);
-                      clearInterval(interval);
-                      resolve();
-                  }
-                  
-                  // Wait up to 8 seconds
-                  if (attempts > 80) {
-                      console.warn("[Push Debug] Polling timed out. Giving up and trying to subscribe anyway.");
-                      clearInterval(interval);
-                      resolve(); 
-                  }
-              }, 100);
-          });
-      } else {
-        console.log("[Push Debug] Worker was already active. Skipping poll.");
+      // 3. FORCE UPDATE: Ensure we aren't using a stale worker
+      try {
+        await registration.update();
+        console.log("[Push Debug] Registration updated.");
+      } catch (e) {
+        console.warn("[Push Debug] Update failed (offline?):", e);
       }
 
-      // 4. Subscribe
+      // 4. WAIT FOR CONTROLLER (The Critical Fix)
+      // We cannot subscribe until navigator.serviceWorker.controller is defined.
+      if (!navigator.serviceWorker.controller) {
+        console.log("[Push Debug] Page not yet controlled by SW. Waiting for controller...");
+        
+        await new Promise((resolve) => {
+          // Listen for the 'controllerchange' event (triggered by clients.claim() in sw.js)
+          const handleControllerChange = () => {
+             console.log("[Push Debug] Controller taken! Proceeding...");
+             navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
+             resolve();
+          };
+          navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
+          
+          // Fallback: If it takes too long (4s), we resolve anyway and let the error handling decide
+          setTimeout(() => {
+             console.warn("[Push Debug] Controller wait timed out. Checking status...");
+             resolve(); 
+          }, 4000);
+        });
+      }
+
+      // 5. DOUBLE CHECK REGISTRATION STATE
+      // Often after a controller change, the 'registration' variable is stale. We get it fresh.
+      const freshReg = await navigator.serviceWorker.getRegistration();
+      if (!freshReg || !freshReg.active) {
+         throw new Error("Service Worker not active. Please reload the page.");
+      }
+
+      // 6. Subscribe
       console.log("[Push Debug] Converting VAPID key...");
       const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       
       console.log("[Push Debug] Calling pushManager.subscribe...");
-      // This is usually where it fails if the SW isn't ready
-      const subscription = await registration.pushManager.subscribe({
+      const subscription = await freshReg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey
       });
       
-      console.log("[Push Debug] Subscription successful:", JSON.stringify(subscription));
+      console.log("[Push Debug] Subscription object:", JSON.stringify(subscription));
 
-      // 5. Send to Database
+      // 7. Send to Database
       console.log("[Push Debug] Sending to /api/web-push/subscribe...");
       const res = await fetch('/api/web-push/subscribe', {
         method: 'POST',
@@ -108,18 +110,19 @@ export function useNotifications(userId) {
         throw new Error(`Database sync failed: ${res.status} ${errText}`);
       }
       
-      console.log("[Push Debug] DB Sync Success. Flow Complete.");
+      console.log("[Push Debug] Success!");
       alert("You're all set! Notifications enabled. 🔔");
       return true;
 
     } catch (error) {
       console.error("[Push Debug] FATAL ERROR:", error);
       
-      if (error.message && error.message.includes("no active service worker")) {
-          console.warn("[Push Debug] Specific Error Caught: No active service worker.");
-          alert("Just a moment... the app is still setting up in the background. Please click 'Enable' one more time!");
+      if (error.message && error.message.includes("not active")) {
+          // If we are STILL stuck, the only guaranteed fix is a reload.
+          const shouldReload = confirm("App setup incomplete. Reload now to finish?");
+          if (shouldReload) window.location.reload();
       } else {
-          alert(`Something went wrong: ${error.message}`);
+          alert(`Error: ${error.message}`);
       }
       return false;
     } finally {
