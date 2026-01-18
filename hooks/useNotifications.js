@@ -18,87 +18,77 @@ export function useNotifications(userId) {
   const [loading, setLoading] = useState(false);
 
   const subscribe = async () => {
-    console.log("[Push Debug] Starting subscription process...");
+    console.log("🚀 [PUSH LOG] Starting Subscribe Flow for user:", userId);
 
-    // Check Support
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.error("[Push Debug] Browser does not support Push/SW");
+      console.error("❌ [PUSH LOG] Browser not supported");
+      alert("Browser not supported");
       return false;
     }
+
     if (!VAPID_PUBLIC_KEY) {
-      console.error("[Push Debug] Missing VAPID Key");
-      alert("Config Error: VAPID Key missing.");
+      console.error("❌ [PUSH LOG] Missing VAPID Key");
+      alert("Missing Configuration");
       return false;
     }
 
     try {
       setLoading(true);
 
-      // 1. Request Permission
+      // 1. Permission
+      console.log("🔍 [PUSH LOG] Checking permission...");
       const permission = await Notification.requestPermission();
-      console.log(`[Push Debug] Permission Result: ${permission}`);
+      console.log("✅ [PUSH LOG] Permission status:", permission);
       
       if (permission !== 'granted') {
-        alert("Notifications blocked. Please enable them in Settings.");
+        alert("Permission denied");
         return false;
       }
 
-      // 2. Register Service Worker
-      console.log("[Push Debug] registering /sw.js ...");
+      // 2. Register
+      console.log("🔍 [PUSH LOG] Registering SW...");
       const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log("[Push Debug] Registration successful.");
+      console.log("✅ [PUSH LOG] Registration found:", registration);
 
-      // 3. FORCE UPDATE: Ensure we aren't using a stale worker
-      try {
-        await registration.update();
-        console.log("[Push Debug] Registration updated.");
-      } catch (e) {
-        console.warn("[Push Debug] Update failed (offline?):", e);
-      }
-
-      // 4. WAIT FOR CONTROLLER (The Critical Fix)
-      // We cannot subscribe until navigator.serviceWorker.controller is defined.
+      // 3. Update & Wait for Controller
+      console.log("🔍 [PUSH LOG] Forcing update...");
+      await registration.update();
+      
       if (!navigator.serviceWorker.controller) {
-        console.log("[Push Debug] Page not yet controlled by SW. Waiting for controller...");
-        
-        await new Promise((resolve) => {
-          // Listen for the 'controllerchange' event (triggered by clients.claim() in sw.js)
-          const handleControllerChange = () => {
-             console.log("[Push Debug] Controller taken! Proceeding...");
-             navigator.serviceWorker.removeEventListener('controllerchange', handleControllerChange);
-             resolve();
-          };
-          navigator.serviceWorker.addEventListener('controllerchange', handleControllerChange);
-          
-          // Fallback: If it takes too long (4s), we resolve anyway and let the error handling decide
-          setTimeout(() => {
-             console.warn("[Push Debug] Controller wait timed out. Checking status...");
-             resolve(); 
-          }, 4000);
-        });
+          console.log("⏳ [PUSH LOG] No controller. Waiting for claim...");
+          await new Promise(resolve => {
+              const handler = () => {
+                  console.log("✅ [PUSH LOG] Controller taken!");
+                  navigator.serviceWorker.removeEventListener('controllerchange', handler);
+                  resolve();
+              }
+              navigator.serviceWorker.addEventListener('controllerchange', handler);
+              setTimeout(() => {
+                  console.warn("⚠️ [PUSH LOG] Controller wait timeout (4s). Proceeding anyway.");
+                  resolve();
+              }, 4000);
+          });
+      } else {
+          console.log("✅ [PUSH LOG] Controller active.");
       }
 
-      // 5. DOUBLE CHECK REGISTRATION STATE
-      // Often after a controller change, the 'registration' variable is stale. We get it fresh.
+      // 4. Get Fresh Registration
       const freshReg = await navigator.serviceWorker.getRegistration();
       if (!freshReg || !freshReg.active) {
-         throw new Error("Service Worker not active. Please reload the page.");
+          throw new Error("Service Worker not active. Reload required.");
       }
 
-      // 6. Subscribe
-      console.log("[Push Debug] Converting VAPID key...");
+      // 5. Subscribe
+      console.log("🔍 [PUSH LOG] Subscribing via PushManager...");
       const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-      
-      console.log("[Push Debug] Calling pushManager.subscribe...");
       const subscription = await freshReg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey
       });
-      
-      console.log("[Push Debug] Subscription object:", JSON.stringify(subscription));
+      console.log("✅ [PUSH LOG] Subscription Object generated:", JSON.stringify(subscription));
 
-      // 7. Send to Database
-      console.log("[Push Debug] Sending to /api/web-push/subscribe...");
+      // 6. DB Call
+      console.log("🔍 [PUSH LOG] Sending to DB...");
       const res = await fetch('/api/web-push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -106,23 +96,22 @@ export function useNotifications(userId) {
       });
 
       if (!res.ok) {
-        const errText = await res.text();
-        throw new Error(`Database sync failed: ${res.status} ${errText}`);
+        const text = await res.text();
+        console.error("❌ [PUSH LOG] DB Error Response:", text);
+        throw new Error(`DB Error: ${text}`);
       }
-      
-      console.log("[Push Debug] Success!");
-      alert("You're all set! Notifications enabled. 🔔");
+
+      console.log("🎉 [PUSH LOG] SUCCESS! Saved to DB.");
+      alert("Notifications enabled successfully!");
       return true;
 
     } catch (error) {
-      console.error("[Push Debug] FATAL ERROR:", error);
-      
-      if (error.message && error.message.includes("not active")) {
-          // If we are STILL stuck, the only guaranteed fix is a reload.
-          const shouldReload = confirm("App setup incomplete. Reload now to finish?");
-          if (shouldReload) window.location.reload();
+      console.error("❌ [PUSH LOG] FATAL ERROR:", error);
+      if (error.message.includes("not active") || error.message.includes("Reload")) {
+          const reload = confirm("Setup incomplete. Reload now to finish?");
+          if (reload) window.location.reload();
       } else {
-          alert(`Error: ${error.message}`);
+          alert("Error: " + error.message);
       }
       return false;
     } finally {
