@@ -3,13 +3,14 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: false, // ALWAYS ENABLED
-  importScripts: ['/custom-sw.js'], // LOAD YOUR PUSH LISTENER
+  disable: false, // Ensure this is false so sw.js is generated!
+  // We remove the importScripts for now to reduce complexity. 
+  // The standard sw.js is enough to start.
 });
 
 const nextConfig = {
   images: {
-    domains: ['你的supabase-project-id.supabase.co', 'images.unsplash.com', 'media.giphy.com'],
+    domains: ['your-project.supabase.co', 'images.unsplash.com', 'media.giphy.com'],
   },
 };
 
