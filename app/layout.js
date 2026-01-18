@@ -7,6 +7,7 @@ const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 export const metadata = {
   title: "WebWits - The Daily Meme Caption Battle",
   description: "Join the ultimate daily caption contest where humor is currency. A new meme drops every 24 hours—submit your best caption, vote on the community favorites, climb the global leaderboard, and win real prizes. Do you have the wit to win?",
+  manifest: "/manifest.json",
   keywords: ["meme contest", "caption battle", "daily memes", "funny captions", "webwits", "online games", "win prizes"],
   openGraph: {
     title: "WebWits - The Daily Meme Caption Battle",
