@@ -9,7 +9,14 @@ export async function GET(request) {
     const content = searchParams.get('content')?.slice(0, 100) || '...';
     const username = searchParams.get('username') || 'Anon';
     const rank = searchParams.get('rank');
-    const memeUrl = searchParams.get('memeUrl');
+    let memeUrl = searchParams.get('memeUrl');
+
+    // [!code ++] FIX: Optimize Giphy URL
+    // The original WebP is often too big (5MB+) or animated, causing the generator to crash.
+    // We replace 'giphy.webp' with '480w_still.jpg' for a lighter, static preview.
+    if (memeUrl && memeUrl.includes('giphy.com')) {
+      memeUrl = memeUrl.replace(/\/giphy\.webp/, '/480w_still.jpg');
+    }
 
     return new ImageResponse(
       (
@@ -55,19 +62,16 @@ export async function GET(request) {
             {/* Bottom Half: Content */}
             <div style={{ display: 'flex', flexDirection: 'column', padding: '40px', justifyContent: 'space-between', height: '45%' }}>
               
-              {/* Rank Badge (Optional) */}
               {rank && (
                 <div style={{ display: 'flex', alignItems: 'center', background: '#fef9c3', color: '#a16207', padding: '8px 20px', borderRadius: '12px', alignSelf: 'flex-start', fontSize: 24, fontWeight: 'bold', marginBottom: '10px' }}>
                    🏆 RANK #{rank}
                 </div>
               )}
 
-              {/* Caption Text */}
               <div style={{ fontSize: 48, fontWeight: 'bold', color: '#111827', lineHeight: 1.1, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
                 "{content}"
               </div>
 
-              {/* Footer */}
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', width: '100%', marginTop: 'auto' }}>
                 <div style={{ fontSize: 28, color: '#6b7280' }}>
                   by <span style={{ color: '#000', fontWeight: 'bold' }}>@{username}</span>
