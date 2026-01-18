@@ -153,6 +153,13 @@ export async function GET(request) {
 
     if (insertError) throw insertError;
 
+    // --- NEW: SEND NOTIFICATION ---
+    await sendNotificationToAll({
+        title: "🔥 New Meme Dropped!",
+        body: "The arena is open. Go be funny.",
+        url: "https://itswebwits.com"
+    });
+
     return NextResponse.json({ success: true, new_meme: data });
 
   } catch (error) {
