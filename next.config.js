@@ -1,12 +1,11 @@
-// next.config.js
+/** @type {import('next').NextConfig} */
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
   skipWaiting: true,
-  disable: process.env.NODE_ENV === 'development', // Disable in dev mode
+  disable: process.env.NODE_ENV === 'development',
 });
 
-/** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
     domains: ['你的supabase-project-id.supabase.co', 'images.unsplash.com', 'media.giphy.com'],
