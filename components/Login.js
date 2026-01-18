@@ -6,7 +6,7 @@ import { AlertCircle, Mail, Sparkles, KeyRound, ArrowRight } from "lucide-react"
 import HowToPlayButton from "./HowToPlayButton";
 import PrizesButton from "./PrizesButton";
 
-// Helper: VAPID Key conversion (Must be outside component)
+// Helper: VAPID Key conversion
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String) {
@@ -60,6 +60,8 @@ export default function Login() {
     }
 
     try {
+      // This 'ready' check can hang if the SW is not active yet.
+      // That is why we removed 'await' from the call site below.
       const registration = await navigator.serviceWorker.ready;
       
       const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
@@ -102,9 +104,12 @@ export default function Login() {
     } else {
       setInfoMsg("Success! Entering the arena...");
       
-      // Attempt Subscription (Non-blocking)
+      // [!code highlight:4]
+      // FIXED: We removed 'await' here.
+      // This allows the router.push() to happen INSTANTLY,
+      // preventing the UI from getting stuck on "Verifying..."
       if (data?.session?.user?.id) {
-          await subscribeToPush(data.session.user.id);
+          subscribeToPush(data.session.user.id);
       }
 
       router.push("/");
