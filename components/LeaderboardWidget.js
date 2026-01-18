@@ -3,6 +3,9 @@ import { supabase } from "@/lib/supabase";
 import { Trophy, Loader2, Star, Crown, X } from "lucide-react";
 import { motion } from "framer-motion";
 
+// Prevent infinite loop by using a stable default reference
+const DEFAULT_LEADERS = [];
+
 // ------------------------------------------------------------------
 // 1. SHARED LIST COMPONENT
 // ------------------------------------------------------------------
@@ -53,20 +56,19 @@ function LeaderboardList({ leaderboard, scoreKey }) {
 // ------------------------------------------------------------------
 // 2. MAIN WIDGET COMPONENT
 // ------------------------------------------------------------------
-export default function LeaderboardWidget({ initialLeaders = [] }) {
-  // Default to Monthly
+export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) {
   const [activeTab, setActiveTab] = useState("monthly");
   const [leaders, setLeaders] = useState(initialLeaders);
   const [loading, setLoading] = useState(false);
 
-  // Updated Tabs: Removed Weekly
   const tabs = [
     { id: "monthly", label: "Monthly", icon: Star, title: "Monthly Leaders" },
     { id: "all_time", label: "All Time", icon: Crown, title: "Hall of Fame" },
   ];
 
   useEffect(() => {
-    // If we are on the default tab and have initial data, use it
+    // Optimization: If on default tab and initial props are valid, use them.
+    // This prevents fetching if the parent already provided the data.
     if (activeTab === "monthly" && initialLeaders.length > 0) {
       setLeaders(initialLeaders);
       return;
@@ -82,7 +84,7 @@ export default function LeaderboardWidget({ initialLeaders = [] }) {
           .from("profiles")
           .select(`username, ${sortColumn}`)
           .order(sortColumn, { ascending: false })
-          .limit(10); // Fetches top 10
+          .limit(10);
 
         if (error) {
            console.error("Error fetching leaders:", error);
@@ -157,7 +159,6 @@ export default function LeaderboardWidget({ initialLeaders = [] }) {
 export function LeaderboardModal({ leaderboard, isOpen, onClose }) {
   if (!isOpen) return null;
   
-  // Mobile modal defaults to showing the Monthly (leaderboard prop passed from MainApp)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:hidden">
       <motion.div 
