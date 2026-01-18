@@ -1,21 +1,31 @@
 import { Calendar, Trophy } from "lucide-react";
 
-export default function ArchiveSection({ archives, onSelectMeme }) { // [!code ++]
-  if (!archives || archives.length === 0) {
+export default function ArchiveSection({ archives, onSelectMeme }) {
+  // Filter archives to only show the current month
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const filteredArchives = (archives || []).filter((m) => {
+    const memeDate = new Date(m.created_at);
+    return memeDate.getMonth() === currentMonth && memeDate.getFullYear() === currentYear;
+  });
+
+  if (!filteredArchives || filteredArchives.length === 0) {
     return (
       <div className="col-span-2 text-center py-12 bg-gray-800/30 rounded-xl border border-gray-700/50 border-dashed">
-        <p className="text-gray-500 font-medium">The archives are empty.</p>
-        <p className="text-gray-600 text-sm mt-1">Check back tomorrow!</p>
+        <p className="text-gray-500 font-medium">No archives for this month.</p>
+        <p className="text-gray-600 text-sm mt-1">Check back later!</p>
       </div>
     );
   }
 
   return (
     <div className="grid grid-cols-2 gap-4 animate-in fade-in duration-500">
-      {archives.map((m) => (
+      {filteredArchives.map((m) => (
         <div 
           key={m.id} 
-          onClick={() => onSelectMeme && onSelectMeme(m)} // [!code ++]
+          onClick={() => onSelectMeme && onSelectMeme(m)}
           className="group relative bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden hover:border-yellow-400/50 transition-all hover:shadow-[0_0_20px_rgba(250,204,21,0.1)] cursor-pointer"
         >
           
