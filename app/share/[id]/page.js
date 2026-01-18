@@ -12,9 +12,15 @@ export async function generateMetadata({ params }) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
+  // [!code fix] Explicitly name the foreign keys in the select string
+  // Using 'memes!comments_meme_id_fkey' forces the join to work
   const { data: comment } = await supabase
     .from('comments')
-    .select(`content, profiles (username), memes (image_url)`)
+    .select(`
+      content, 
+      profiles!comments_user_id_fkey (username), 
+      memes!comments_meme_id_fkey (image_url)
+    `)
     .eq('id', id)
     .single();
 
@@ -24,19 +30,13 @@ export async function generateMetadata({ params }) {
   // 1. Start with the raw URL from DB
   let finalImageUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
 
-  // 2. [!code fix] ROBUST URL RECONSTRUCTION
-  // We don't just replace the extension. We extract the ID and build a clean, public URL.
-  // This bypasses any 'v1' token errors or 404s from Giphy.
+  // 2. Build Clean Giphy URL
   if (finalImageUrl.includes('giphy.com')) {
-    // Regex to find the ID (it's the alphanum string before /giphy.webp)
-    // Example: .../1AjUYHTwbRYzVHQM3x/giphy.webp  -> ID: 1AjUYHTwbRYzVHQM3x
     const match = finalImageUrl.match(/\/([a-zA-Z0-9]+)\/giphy\.(webp|gif|mp4)/);
     
     if (match && match[1]) {
-      // Rebuild using the clean, public 'i.giphy.com' host
       finalImageUrl = `https://i.giphy.com/media/${match[1]}/480w_still.jpg`;
     } else {
-      // Fallback: Just basic replace if regex fails (remove $ anchor for safety)
       finalImageUrl = finalImageUrl.replace('giphy.webp', '480w_still.jpg');
     }
   }
@@ -53,7 +53,6 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      // 3. This is now a clean, safe https://i.giphy.com... URL
       images: [{ url: finalImageUrl, width: 480, height: 480 }], 
       type: 'website',
       siteName: 'WebWits',
