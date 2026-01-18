@@ -179,19 +179,24 @@ export function useGameLogic(session) {
     }
   };
 
-  const submitReply = async (commentId, text) => {
+const submitReply = async (commentId, text) => {
     if (!session?.user) return false;
 
     const cleanText = filterProfanity(text);
 
     try {
-      const { error } = await supabase.from('replies').insert({
-        comment_id: commentId,
-        user_id: session.user.id,
-        content: cleanText
+      // CHANGED: Use the API route instead of direct Supabase insert
+      const res = await fetch('/api/reply', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commentId,
+          userId: session.user.id,
+          content: cleanText
+        })
       });
 
-      if (error) throw error;
+      if (!res.ok) throw new Error("Reply failed");
       
       const updatedComments = await fetchMemeComments(activeMeme?.id || selectedMeme?.id);
       setCaptions(updatedComments);
