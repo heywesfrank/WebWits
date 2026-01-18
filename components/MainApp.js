@@ -50,16 +50,20 @@ export default function MainApp({ session }) {
       // 2. Browser must support it
       if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
 
-      // 3. If blocked, don't annoy them
+      // 3. PWA Check: Only show if running in standalone mode (PWA)
+      const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+      if (!isPWA) return;
+
+      // 4. If blocked, don't annoy them
       if (Notification.permission === 'denied') return;
 
-      // 4. If 'default', ask for permission
+      // 5. If 'default', ask for permission
       if (Notification.permission === 'default') {
          setTimeout(() => setShowNotifModal(true), 2000);
          return;
       }
 
-      // 5. If 'granted', check if we ACTUALLY have a subscription
+      // 6. If 'granted', check if we ACTUALLY have a subscription
       if (Notification.permission === 'granted') {
         try {
           const registration = await navigator.serviceWorker.getRegistration();
