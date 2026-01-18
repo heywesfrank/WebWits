@@ -37,7 +37,7 @@ export function useGameLogic(session) {
         profiles!comments_user_id_fkey(username, avatar_url, country, influencer),
         replies(
           id, content, created_at, user_id,
-          profiles(username, avatar_url)
+          profiles(username, avatar_url, country) 
         )
       `)
       .eq("meme_id", memeId)
@@ -179,7 +179,6 @@ export function useGameLogic(session) {
     }
   };
 
-  // NEW: Submit Reply Logic
   const submitReply = async (commentId, text) => {
     if (!session?.user) return false;
 
@@ -194,7 +193,6 @@ export function useGameLogic(session) {
 
       if (error) throw error;
       
-      // Optimistic update or refetch
       const updatedComments = await fetchMemeComments(activeMeme?.id || selectedMeme?.id);
       setCaptions(updatedComments);
       
@@ -261,6 +259,6 @@ export function useGameLogic(session) {
     loading, viewMode, toasts, showOnboarding, hasCommented,
     setViewMode, setToasts, setShowOnboarding,
     fetchData, handleArchiveSelect, handleBackToArena, 
-    submitCaption, submitReply, castVote, shareCaption, reportCaption // Added submitReply to return
+    submitCaption, submitReply, castVote, shareCaption, reportCaption
   };
 }
