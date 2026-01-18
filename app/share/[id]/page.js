@@ -21,14 +21,14 @@ export async function generateMetadata({ params }) {
   const username = comment?.profiles?.username || 'Anon';
   const content = comment?.content || '';
   
-  // 1. Get the URL from the database (currently a .webp)
+  // 1. Get the raw URL from the database (currently .../giphy.webp)
   let finalImageUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
 
-  // 2. [!code fix] THE MAGIC SWAP
-  // Since your DB has 'giphy.webp', we just change the extension to 'giphy.gif'
-  // WhatsApp will accept this .gif file!
+  // 2. [!code fix] FORCE "SCREENSHOT" MODE
+  // We replace 'giphy.webp' with '480w_still.jpg'.
+  // This tells WhatsApp: "Don't try to play an animation. Just show this photo."
   if (finalImageUrl.includes('giphy.com')) {
-     finalImageUrl = finalImageUrl.replace(/giphy\.webp$/, 'giphy.gif');
+     finalImageUrl = finalImageUrl.replace(/giphy\.webp$/, '480w_still.jpg');
   }
 
   const title = comment ? `"${content}"` : 'WebWits';
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      // 3. Now pointing to the .gif version
+      // 3. This JPG is small, static, and works perfectly in WhatsApp
       images: [{ url: finalImageUrl }], 
       type: 'website',
       siteName: 'WebWits',
