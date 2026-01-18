@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const withPWA = require('next-pwa')({
   dest: 'public',
-  register: true,
+  register: false,
   skipWaiting: true,
   disable: false, // Ensure this is FALSE to generate sw.js
   importScripts: ['/custom-sw.js'],
