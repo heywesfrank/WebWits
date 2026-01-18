@@ -20,14 +20,16 @@ export async function generateMetadata({ params }) {
 
   const username = comment?.profiles?.username || 'Anon';
   const content = comment?.content || '';
-  const rawMemeUrl = comment?.memes?.image_url;
+  
+  // 1. Get the raw meme URL from DB (usually a .webp)
+  let finalImageUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
 
-  // [!code change] Generate a Dynamic OG Image URL
-  // This calls your /api/og route, which converts the meme + text into a PNG.
-  // This solves the WhatsApp "WebP" issue.
-  const ogImageUrl = rawMemeUrl 
-    ? `${DOMAIN}/api/og?content=${encodeURIComponent(content)}&username=${encodeURIComponent(username)}&memeUrl=${encodeURIComponent(rawMemeUrl)}`
-    : `${DOMAIN}/logo.png`;
+  // 2. [!code fix] FORCE STATIC JPG FOR WHATSAPP
+  // WhatsApp strictly requires images under 300KB and does NOT support animations in link previews.
+  // We replace the heavy 'giphy.webp' with the lightweight '480w_still.jpg'.
+  if (finalImageUrl.includes('giphy.com')) {
+     finalImageUrl = finalImageUrl.replace(/giphy\.webp$/, '480w_still.jpg');
+  }
 
   const title = comment ? `"${content}"` : 'WebWits';
   const description = comment 
@@ -41,8 +43,8 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      // [!code change] Point to the generated PNG
-      images: [{ url: ogImageUrl, width: 1200, height: 630 }],
+      // 3. Point directly to the static JPG
+      images: [{ url: finalImageUrl }], 
       type: 'website',
       siteName: 'WebWits',
     },
@@ -50,7 +52,7 @@ export async function generateMetadata({ params }) {
       card: 'summary_large_image',
       title: title,
       description: description,
-      images: [ogImageUrl],
+      images: [finalImageUrl],
     },
   };
 }
