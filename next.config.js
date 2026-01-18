@@ -2,15 +2,14 @@
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
-  skipWaiting: true,
-  disable: false, // Ensure this is false so sw.js is generated!
-  // We remove the importScripts for now to reduce complexity. 
-  // The standard sw.js is enough to start.
+  skipWaiting: true, // This is crucial to skip the "Waiting" phase
+  disable: false,    // MUST BE FALSE FOR PRODUCTION
+  importScripts: ['/custom-sw.js'], // Load your logic
 });
 
 const nextConfig = {
   images: {
-    domains: ['your-project.supabase.co', 'images.unsplash.com', 'media.giphy.com'],
+    domains: ['你的supabase-project-id.supabase.co', 'images.unsplash.com', 'media.giphy.com'],
   },
 };
 
