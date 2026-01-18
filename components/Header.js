@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { LogOut, User, ChevronDown, BookOpen } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
-import InstallPrompt from "./InstallPrompt"; // <-- 1. Import this
+import InstallPrompt from "./InstallPrompt";
 
 function getCountryCode(countryName) {
   return COUNTRY_CODES[countryName]?.toLowerCase() || null;
@@ -33,10 +33,18 @@ export default function Header({ session, profile }) {
       
       {/* Left: Brand & Logo */}
       <div className="flex items-center group cursor-pointer" onClick={() => window.location.href = '/'}>
+        {/* MOBILE: App Icon with Rounded Corners */}
+        <img 
+          src="/icon.png" 
+          alt="WebWits" 
+          className="h-10 w-10 md:hidden rounded-xl object-cover shadow-sm transition-transform duration-300 group-hover:scale-105" 
+        />
+
+        {/* DESKTOP: Full Logo */}
         <img 
           src="/logo.png" 
           alt="WebWits" 
-          className="h-10 md:h-16 w-auto object-contain filter drop-shadow-sm transition-transform duration-300 group-hover:scale-105" 
+          className="hidden md:block h-16 w-auto object-contain filter drop-shadow-sm transition-transform duration-300 group-hover:scale-105" 
         />
       </div>
 
