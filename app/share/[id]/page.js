@@ -12,6 +12,8 @@ export async function generateMetadata({ params }) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
+  // 1. Fetch data with explicit foreign keys
+  // This ensures we successfully get the meme data (unlike the original null error)
   const { data: comment } = await supabase
     .from('comments')
     .select(`
@@ -24,18 +26,30 @@ export async function generateMetadata({ params }) {
 
   const username = comment?.profiles?.username || 'Anon';
   const content = comment?.content || '';
-  const rawMemeUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
-
-  // [!code fix] CONSTRUCT OG IMAGE URL
-  // Instead of using the raw Giphy URL (which is animated/problematic),
-  // we pass it to our /api/og endpoint. This endpoint will fetch the authorized
-  // image and generate a static PNG card with the caption and branding.
-  const searchParams = new URLSearchParams();
-  searchParams.set('content', content);
-  searchParams.set('username', username);
-  searchParams.set('memeUrl', rawMemeUrl);
   
-  const ogImageUrl = `${DOMAIN}/api/og?${searchParams.toString()}`;
+  // 2. Start with raw URL from DB
+  let finalImageUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
+
+  // 3. CLEAN ID EXTRACTION
+  // We extract just the ID to build a clean, static URL.
+  // Input:  .../media/v1.Y2lk.../1AjUYHTwbRYzVHQM3x/giphy.webp
+  // Output: https://media.giphy.com/media/1AjUYHTwbRYzVHQM3x/480w_still.jpg
+  if (finalImageUrl.includes('giphy.com')) {
+    try {
+      const parts = finalImageUrl.split('/');
+      // The ID is always the segment right before the filename ("giphy.webp")
+      const fileIndex = parts.findIndex(part => part.startsWith('giphy.'));
+      
+      if (fileIndex > 0) {
+         const giphyId = parts[fileIndex - 1];
+         // Use the public 'media.giphy.com' endpoint which is more reliable than 'i.giphy.com' for stills
+         finalImageUrl = `https://media.giphy.com/media/${giphyId}/480w_still.jpg`;
+      }
+    } catch (e) {
+      console.error("Error parsing Giphy URL:", e);
+      // Fallback: If parsing fails, use the original (it might show as a gif, but better than broken)
+    }
+  }
 
   const title = comment ? `"${content}"` : 'WebWits';
   const description = comment 
@@ -49,8 +63,8 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      // We point to our generated PNG
-      images: [{ url: ogImageUrl, width: 1200, height: 630 }], 
+      // This is now a clean JPG url
+      images: [{ url: finalImageUrl, width: 480, height: 480 }], 
       type: 'website',
       siteName: 'WebWits',
     },
@@ -58,7 +72,7 @@ export async function generateMetadata({ params }) {
       card: 'summary_large_image',
       title: title,
       description: description,
-      images: [ogImageUrl],
+      images: [finalImageUrl],
     },
   };
 }
