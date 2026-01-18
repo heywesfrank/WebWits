@@ -1,11 +1,13 @@
 "use client";
 import { useState } from "react";
+import { useRouter } from "next/navigation"; // [!code ++] Added this import
 import { supabase } from "@/lib/supabase";
-import { Send, AlertCircle, Mail, Sparkles, KeyRound, ArrowRight } from "lucide-react";
+import { AlertCircle, Mail, Sparkles, KeyRound, ArrowRight } from "lucide-react";
 import HowToPlayButton from "./HowToPlayButton";
 import PrizesButton from "./PrizesButton";
 
 export default function Login() {
+  const router = useRouter(); // [!code ++] Initialize the router
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [showOtpInput, setShowOtpInput] = useState(false);
@@ -22,10 +24,7 @@ export default function Login() {
 
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: {
-        // We still provide this, but the user won't click it if they use the code
-        emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
-      },
+      options: { shouldCreateUser: true },
     });
 
     if (error) {
@@ -43,7 +42,7 @@ export default function Login() {
     setLoading(true);
     setErrorMsg("");
 
-    const { data, error } = await supabase.auth.verifyOtp({
+    const { error } = await supabase.auth.verifyOtp({
       email,
       token: otp,
       type: 'email'
@@ -51,10 +50,11 @@ export default function Login() {
 
     if (error) {
       setErrorMsg(error.message);
-      setLoading(false);
+      setLoading(false); // Stop loading if error
     } else {
-      // Successful login will be caught by the session listener in app/page.js
       setInfoMsg("Success! Entering the arena...");
+      router.push("/"); // [!code ++] REDIRECT TO HOME
+      router.refresh(); // [!code ++] Ensure session is picked up
     }
   };
 
@@ -63,17 +63,13 @@ export default function Login() {
       <div className="w-full max-w-md bg-white border border-gray-200 p-8 rounded-2xl shadow-2xl">
         
         <div className="text-center mb-8">
-          <img 
-            src="/logo.png" 
-            alt="WebWits" 
-            className="w-64 h-auto object-contain mx-auto mb-6" 
-          />
+          <img src="/logo.png" alt="WebWits" className="w-64 h-auto object-contain mx-auto mb-6" />
           <p className="text-gray-600 text-sm">
             {showOtpInput ? "Enter the code sent to your email." : "No passwords. Just wit. Enter your email to join the battle."}
           </p>
         </div>
 
-        {/* If code sent, show Code Input */}
+        {/* OTP INPUT FORM */}
         {showOtpInput ? (
           <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5 animate-in fade-in slide-in-from-right duration-300">
              <div>
@@ -109,10 +105,7 @@ export default function Login() {
               className="group relative w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold p-3 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
             >
               {loading ? "Verifying..." : (
-                <>
-                  <span>Login</span>
-                  <ArrowRight size={18} />
-                </>
+                <><span>Enter Arena</span><ArrowRight size={18} /></>
               )}
             </button>
             
@@ -125,7 +118,7 @@ export default function Login() {
             </button>
           </form>
         ) : (
-          /* Standard Email Form */
+          /* EMAIL INPUT FORM */
           <form onSubmit={handleSendCode} className="flex flex-col gap-5">
             <div>
               <label htmlFor="email" className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
@@ -158,13 +151,8 @@ export default function Login() {
               disabled={loading}
               className="group relative w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold p-3 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
             >
-              {loading ? (
-                "Sending..."
-              ) : (
-                <>
-                  <span>Get Login Code</span>
-                  <Sparkles size={18} />
-                </>
+              {loading ? "Sending..." : (
+                <><span>Get Login Code</span><Sparkles size={18} /></>
               )}
             </button>
           </form>
