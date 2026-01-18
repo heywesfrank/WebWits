@@ -14,17 +14,14 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
-// Helper: Waits for a SW to become "active" if it's currently installing/waiting
+// Helper: Waits for a SW to become "active"
 async function waitForActiveWorker(registration) {
-  if (registration.active) return; // Already active!
-
+  if (registration.active) return;
   const worker = registration.installing || registration.waiting;
-  if (!worker) return; // No worker found at all?
+  if (!worker) return;
 
   return new Promise((resolve, reject) => {
-    // If it's already active by the time we add the listener
     if (worker.state === 'activated') resolve();
-
     const listener = () => {
       if (worker.state === 'activated') {
         worker.removeEventListener('statechange', listener);
@@ -32,12 +29,10 @@ async function waitForActiveWorker(registration) {
       }
     };
     worker.addEventListener('statechange', listener);
-    
-    // Timeout after 10 seconds so we don't hang forever
     setTimeout(() => {
         worker.removeEventListener('statechange', listener);
-        reject(new Error("Service Worker took too long to activate."));
-    }, 10000);
+        reject(new Error("Service Worker activation timed out."));
+    }, 5000);
   });
 }
 
@@ -58,22 +53,35 @@ export function useNotifications(userId) {
     try {
       setLoading(true);
 
-      // 1. Get or Create Registration
+      // 1. Get existing registration
       let registration = await navigator.serviceWorker.getRegistration();
-      if (!registration) {
-        registration = await navigator.serviceWorker.register('/sw.js');
+
+      // 2. SELF-HEALING: If it exists, try to update it. 
+      // If it's "Not Found" (broken), unregister it and start fresh.
+      if (registration) {
+        try {
+          await registration.update();
+        } catch (err) {
+          console.warn("Existing SW is broken. Unregistering...", err);
+          await registration.unregister();
+          registration = null; // Force fresh register below
+        }
       }
 
-      // 2. FORCE UPDATES if it's stuck
-      // This asks the browser to check for a new version immediately
-      await registration.update();
+      // 3. Register Fresh (if needed)
+      if (!registration) {
+         try {
+            registration = await navigator.serviceWorker.register('/sw.js');
+         } catch (err) {
+            // If this fails, sw.js is truly missing from the server
+            throw new Error("Could not find /sw.js on the server. Deployment issue?");
+         }
+      }
 
-      // 3. WAIT for it to be active (The Fix)
+      // 4. Wait for Active
       await waitForActiveWorker(registration);
-
-      // 4. Double check before calling subscribe
       if (!registration.active) {
-         throw new Error("Service Worker is installed but not active. Try closing the app completely and reopening it.");
+         throw new Error("Service Worker installed but didn't activate. Try reloading.");
       }
 
       // 5. Subscribe
