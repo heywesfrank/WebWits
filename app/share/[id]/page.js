@@ -12,7 +12,6 @@ export async function generateMetadata({ params }) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  // 1. Fetch data with explicit foreign keys to avoid nulls
   const { data: comment } = await supabase
     .from('comments')
     .select(`
@@ -25,20 +24,18 @@ export async function generateMetadata({ params }) {
 
   const username = comment?.profiles?.username || 'Anon';
   const content = comment?.content || '';
-  
-  // 2. Start with the raw URL from DB
-  let finalImageUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
+  const rawMemeUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
 
-  // 3. [!code fix] SIMPLE REPLACEMENT STRATEGY
-  // Do not strip the domain or the 'v1...' token path. 
-  // Just swap the file ending to get the static jpg version.
-  if (finalImageUrl.includes('giphy.com')) {
-     // Replace typical Giphy endings with the static 480w jpg
-     finalImageUrl = finalImageUrl
-        .replace('/giphy.webp', '/480w_still.jpg')
-        .replace('/giphy.gif', '/480w_still.jpg')
-        .replace('/giphy.mp4', '/480w_still.jpg');
-  }
+  // [!code fix] CONSTRUCT OG IMAGE URL
+  // Instead of using the raw Giphy URL (which is animated/problematic),
+  // we pass it to our /api/og endpoint. This endpoint will fetch the authorized
+  // image and generate a static PNG card with the caption and branding.
+  const searchParams = new URLSearchParams();
+  searchParams.set('content', content);
+  searchParams.set('username', username);
+  searchParams.set('memeUrl', rawMemeUrl);
+  
+  const ogImageUrl = `${DOMAIN}/api/og?${searchParams.toString()}`;
 
   const title = comment ? `"${content}"` : 'WebWits';
   const description = comment 
@@ -52,7 +49,8 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      images: [{ url: finalImageUrl, width: 480, height: 480 }], 
+      // We point to our generated PNG
+      images: [{ url: ogImageUrl, width: 1200, height: 630 }], 
       type: 'website',
       siteName: 'WebWits',
     },
@@ -60,7 +58,7 @@ export async function generateMetadata({ params }) {
       card: 'summary_large_image',
       title: title,
       description: description,
-      images: [finalImageUrl],
+      images: [ogImageUrl],
     },
   };
 }
