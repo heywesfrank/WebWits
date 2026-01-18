@@ -21,14 +21,14 @@ export async function generateMetadata({ params }) {
   const username = comment?.profiles?.username || 'Anon';
   const content = comment?.content || '';
   
-  // 1. Get the raw meme URL from DB (usually a .webp)
+  // 1. Get the URL from the database (currently a .webp)
   let finalImageUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
 
-  // 2. [!code fix] FORCE STATIC JPG FOR WHATSAPP
-  // WhatsApp strictly requires images under 300KB and does NOT support animations in link previews.
-  // We replace the heavy 'giphy.webp' with the lightweight '480w_still.jpg'.
+  // 2. [!code fix] THE MAGIC SWAP
+  // Since your DB has 'giphy.webp', we just change the extension to 'giphy.gif'
+  // WhatsApp will accept this .gif file!
   if (finalImageUrl.includes('giphy.com')) {
-     finalImageUrl = finalImageUrl.replace(/giphy\.webp$/, '480w_still.jpg');
+     finalImageUrl = finalImageUrl.replace(/giphy\.webp$/, 'giphy.gif');
   }
 
   const title = comment ? `"${content}"` : 'WebWits';
@@ -43,7 +43,7 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      // 3. Point directly to the static JPG
+      // 3. Now pointing to the .gif version
       images: [{ url: finalImageUrl }], 
       type: 'website',
       siteName: 'WebWits',
