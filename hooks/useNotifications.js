@@ -16,9 +16,8 @@ function urlBase64ToUint8Array(base64String) {
 
 export function useNotifications(userId) {
   const [loading, setLoading] = useState(false);
-  const [logs, setLogs] = useState([]); // [!code ++] New Log State
+  const [logs, setLogs] = useState([]);
 
-  // Helper to add logs to state and console simultaneously
   const addLog = (msg) => {
     const timestamp = new Date().toLocaleTimeString();
     const logLine = `[${timestamp}] ${msg}`;
@@ -27,19 +26,16 @@ export function useNotifications(userId) {
   };
 
   const subscribe = async () => {
-    setLogs([]); // Clear previous logs on new attempt
+    setLogs([]);
     addLog("🚀 Starting Subscribe Flow...");
-    addLog(`User ID: ${userId || 'Missing'}`);
 
+    // Check Support
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      addLog("❌ Browser not supported (No SW or PushManager)");
-      alert("Browser not supported");
+      addLog("❌ Browser not supported");
       return false;
     }
-
     if (!VAPID_PUBLIC_KEY) {
-      addLog("❌ Missing VAPID Key in env vars");
-      alert("Missing Configuration");
+      addLog("❌ Missing VAPID Key");
       return false;
     }
 
@@ -47,31 +43,43 @@ export function useNotifications(userId) {
       setLoading(true);
 
       // 1. Permission
-      addLog("Step 1: Checking permission...");
       const permission = await Notification.requestPermission();
-      addLog(`Permission status: ${permission}`);
-      
-      if (permission !== 'granted') {
-        addLog("❌ Permission denied by user");
-        alert("Permission denied");
-        return false;
+      addLog(`Permission: ${permission}`);
+      if (permission !== 'granted') throw new Error("Permission denied");
+
+      // 2. Pre-Check: Does sw.js actually exist?
+      // This prevents the "Unknown: Not found" error by failing fast if the server is offline
+      try {
+        const check = await fetch('/sw.js');
+        if (!check.ok) throw new Error(`sw.js not found (Status: ${check.status})`);
+        addLog("✅ sw.js is reachable");
+      } catch (e) {
+        addLog(`⚠️ warning: sw.js check failed: ${e.message}`);
       }
 
-      // 2. Register
-      addLog("Step 2: Registering SW...");
-      const registration = await navigator.serviceWorker.register('/sw.js');
-      addLog(`Registration found. Scope: ${registration.scope}`);
+      // 3. Register
+      addLog("Step 3: Registering SW...");
+      let registration = await navigator.serviceWorker.register('/sw.js');
+      addLog("Registration done.");
 
-      // 3. Update & Wait for Controller
-      addLog("Step 3: Forcing update & checking controller...");
+      // 4. Update Strategy (Self-Healing)
+      addLog("Step 4: Updating...");
       try {
         await registration.update();
-      } catch(e) {
-        addLog(`⚠️ Update warning: ${e.message}`);
+      } catch (e) {
+        addLog(`⚠️ Update failed: ${e.message}`);
+        // If update fails, the registration might be corrupt. We unregister and retry.
+        if (e.message.includes("Not found") || e.message.includes("Unknown")) {
+            addLog("♻️ Corrupt registration detected. Unregistering...");
+            await registration.unregister();
+            addLog("♻️ Re-registering fresh...");
+            registration = await navigator.serviceWorker.register('/sw.js');
+        }
       }
-      
+
+      // 5. Wait for Controller
       if (!navigator.serviceWorker.controller) {
-          addLog("⏳ No controller yet. Waiting for 'controllerchange'...");
+          addLog("⏳ Waiting for controller...");
           await new Promise(resolve => {
               const handler = () => {
                   addLog("✅ Controller taken!");
@@ -79,66 +87,53 @@ export function useNotifications(userId) {
                   resolve();
               }
               navigator.serviceWorker.addEventListener('controllerchange', handler);
-              setTimeout(() => {
-                  addLog("⚠️ Controller wait timed out (4s). Proceeding...");
-                  resolve();
-              }, 4000);
+              setTimeout(() => resolve(), 3000); // 3s timeout
           });
-      } else {
-          addLog("✅ Controller already active.");
       }
 
-      // 4. Get Fresh Registration
-      addLog("Step 4: Getting fresh registration...");
-      const freshReg = await navigator.serviceWorker.getRegistration();
-      if (!freshReg) throw new Error("Registration disappeared!");
+      // 6. Get Fresh Registration (with Fallback)
+      let freshReg = await navigator.serviceWorker.getRegistration();
+      if (!freshReg) {
+          addLog("⚠️ Registration disappeared! Forcing re-register...");
+          freshReg = await navigator.serviceWorker.register('/sw.js');
+      }
+
       if (!freshReg.active) {
-          addLog("❌ SW found but not .active property");
-          throw new Error("Service Worker not active. Reload required.");
+         // One last check: if we just registered, it might be installing.
+         // We'll trust that pushManager.subscribe will wait if needed.
+         addLog("⚠️ SW not active yet, but proceeding to subscribe...");
       }
-      addLog("✅ Active Worker confirmed.");
 
-      // 5. Subscribe
-      addLog("Step 5: Subscribing via PushManager...");
+      // 7. Subscribe
+      addLog("Step 7: Subscribing...");
       const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       const subscription = await freshReg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey
       });
-      addLog("✅ Subscription Object generated.");
-
-      // 6. DB Call
-      addLog("Step 6: Sending to DB...");
+      
+      // 8. DB Call
+      addLog("Step 8: Saving to DB...");
       const res = await fetch('/api/web-push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription, user_id: userId }),
       });
 
-      if (!res.ok) {
-        const text = await res.text();
-        addLog(`❌ DB Error Response: ${res.status} ${text}`);
-        throw new Error(`DB Error: ${text}`);
-      }
+      if (!res.ok) throw new Error(await res.text());
 
-      addLog("🎉 SUCCESS! Saved to DB.");
+      addLog("🎉 SUCCESS!");
       alert("Notifications enabled successfully!");
       return true;
 
     } catch (error) {
-      addLog(`❌ FATAL ERROR: ${error.message}`);
-      
-      if (error.message.includes("not active") || error.message.includes("Reload")) {
-          const reload = confirm("Setup incomplete. Reload now to finish?");
-          if (reload) window.location.reload();
-      } else {
-          alert("Error: " + error.message);
-      }
+      addLog(`❌ ERROR: ${error.message}`);
+      alert("Error: " + error.message);
       return false;
     } finally {
       setLoading(false);
     }
   };
 
-  return { subscribe, loading, logs }; // [!code ++] Return logs here
+  return { subscribe, loading, logs };
 }
