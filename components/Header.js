@@ -4,6 +4,7 @@ import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
 import { LogOut, User, ChevronDown, BookOpen } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
+import InstallPrompt from "./InstallPrompt"; // <-- 1. Import this
 
 function getCountryCode(countryName) {
   return COUNTRY_CODES[countryName]?.toLowerCase() || null;
@@ -13,12 +14,10 @@ export default function Header({ session, profile }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
 
-  // Helpers to get display values
   const username = profile?.username || session?.user?.email?.split('@')[0];
   const avatarUrl = profile?.avatar_url;
   const countryCode = getCountryCode(profile?.country);
 
-  // Close menu when clicking outside
   useEffect(() => {
     function handleClickOutside(event) {
       if (menuRef.current && !menuRef.current.contains(event.target)) {
@@ -31,21 +30,25 @@ export default function Header({ session, profile }) {
 
   return (
     <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex justify-between items-center transition-all">
+      
       {/* Left: Brand & Logo */}
       <div className="flex items-center group cursor-pointer" onClick={() => window.location.href = '/'}>
         <img 
           src="/logo.png" 
           alt="WebWits" 
-          // [!code change]: Reduced height on mobile (h-10) and kept original (md:h-16) on desktop
           className="h-10 md:h-16 w-auto object-contain filter drop-shadow-sm transition-transform duration-300 group-hover:scale-105" 
         />
+      </div>
+
+      {/* CENTER: Download Button (Mobile Only) */}
+      <div className="md:hidden"> 
+        <InstallPrompt />
       </div>
 
       {/* Right: User Profile OR Sign In */}
       <div className="flex items-center gap-3 sm:gap-4">
         {session ? (
           <div className="relative" ref={menuRef}>
-            {/* User Trigger */}
             <button 
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="flex items-center gap-3 hover:bg-gray-50 p-1.5 rounded-full pr-3 transition-colors border border-transparent hover:border-gray-100"
@@ -64,7 +67,6 @@ export default function Header({ session, profile }) {
                   <img 
                     src={`https://flagcdn.com/w20/${countryCode}.png`}
                     alt={profile.country}
-                    title={profile.country}
                     className="absolute -bottom-1 -right-1 w-4 h-3 rounded-[2px] shadow-sm border border-white object-cover"
                   />
                 )}
@@ -79,12 +81,9 @@ export default function Header({ session, profile }) {
               <ChevronDown size={14} className={`text-gray-400 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
-            {/* Dropdown Menu */}
             {isMenuOpen && (
               <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="p-2 space-y-1">
-                  
-                  {/* Option 1: Profile Page */}
                   <Link 
                     href="/profile"
                     onClick={() => setIsMenuOpen(false)}
@@ -95,8 +94,6 @@ export default function Header({ session, profile }) {
                     </div>
                     My Profile
                   </Link>
-
-                  {/* Option 2: How it Works */}
                   <Link 
                     href="/how-it-works"
                     onClick={() => setIsMenuOpen(false)}
@@ -107,10 +104,7 @@ export default function Header({ session, profile }) {
                     </div>
                     How to Play
                   </Link>
-
                   <div className="h-px bg-gray-100 my-1 mx-2"></div>
-
-                  {/* Option 3: Sign Out */}
                   <button
                     onClick={() => supabase.auth.signOut()}
                     className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-colors text-left"
@@ -125,7 +119,6 @@ export default function Header({ session, profile }) {
             )}
           </div>
         ) : (
-          // [!code change]: Updated text, added responsive padding (px-3 md:px-5), and whitespace-nowrap
           <Link href="/login" className="bg-yellow-400 text-white px-3 md:px-5 py-2 rounded-lg font-bold text-sm hover:bg-yellow-300 transition-colors shadow-sm whitespace-nowrap">
             Sign Up/Login
           </Link>
