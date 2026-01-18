@@ -33,7 +33,8 @@ export function useGameLogic(session) {
 
     const { data: comments, error: commentsError } = await supabase
       .from("comments")
-      .select(`*, profiles!comments_user_id_fkey(username, avatar_url, country)`)
+      // Added 'influencer' to the select query
+      .select(`*, profiles!comments_user_id_fkey(username, avatar_url, country, influencer)`)
       .eq("meme_id", memeId);
     
     if (commentsError) {
