@@ -108,8 +108,13 @@ export function useGameLogic(session) {
         setCaptions(comments);
       }
       
-      // E. Fetch Leaderboard
-      const { data: topUsers } = await supabase.from("profiles").select("username, weekly_points").order("weekly_points", { ascending: false }).limit(5);
+// E. Fetch Leaderboard (CHANGED: Fetch monthly_points instead of weekly)
+      const { data: topUsers } = await supabase
+        .from("profiles")
+        .select("username, monthly_points")
+        .order("monthly_points", { ascending: false })
+        .limit(5);
+        
       setLeaderboard(topUsers || []);
 
     } catch (error) {
