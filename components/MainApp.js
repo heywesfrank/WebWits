@@ -42,7 +42,7 @@ export default function MainApp({ session }) {
   const currentMeme = viewMode === 'active' ? activeMeme : selectedMeme;
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-20 md:pb-0">
+    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-24 md:pb-0">
       <Header session={session} profile={userProfile} onOpenProfile={() => setShowProfileModal(true)} />
       
       {showOnboarding && (
@@ -144,24 +144,39 @@ export default function MainApp({ session }) {
         </div>
       </div>
 
-{/* Mobile Nav */}
-       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 p-3 flex justify-between items-center px-6 z-40 pb-6 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]"> {/* [!code change] */}
-        <button onClick={handleBackToArena} className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'active' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
-          <Flame size={20} /> <span>Battle</span>
-        </button>
-        <button onClick={() => setShowLeaderboardModal(true)} className="flex flex-col items-center gap-1 text-xs font-bold text-gray-400 active:text-gray-900 transition-all">
-          <Trophy size={20} /> <span>Rank</span>
-        </button>
-        <Link href="/prizes" className="flex flex-col items-center gap-1 font-bold text-yellow-600 animate-pulse transition-all hover:text-yellow-700 scale-110 -mt-2"> {/* [!code change] */}
-          <Gift size={28} /> <span className="text-xs sm:text-sm whitespace-nowrap">Free Prizes</span> {/* [!code change] */}
-        </Link>
-        <button onClick={() => setViewMode('archive')} className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'archive' || viewMode === 'archive-detail' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
-          <History size={20} /> <span>Archive</span>
-        </button>
-        <Link href="/how-it-works" className="flex flex-col items-center gap-1 text-xs font-bold text-gray-400 active:text-gray-900 transition-all">
-          <BookOpen size={20} /> <span className="whitespace-nowrap">How to Play</span>
-        </Link>
+      {/* Mobile Nav */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-6 pt-2 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
+        <div className="grid grid-cols-5 items-end justify-items-center w-full px-2">
+          
+          {/* 1. Battle (Left) */}
+          <button onClick={handleBackToArena} className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all ${viewMode === 'active' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
+            <Flame size={20} /> <span>Battle</span>
+          </button>
+
+          {/* 2. Rank (Left) */}
+          <button onClick={() => setShowLeaderboardModal(true)} className="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-gray-400 active:text-gray-900 transition-all">
+            <Trophy size={20} /> <span>Rank</span>
+          </button>
+
+          {/* 3. Free Prizes (Center - Larger & Flashing) */}
+          <Link href="/prizes" className="flex flex-col items-center justify-center gap-1 text-xs font-black text-yellow-600 animate-pulse transition-all hover:text-yellow-700 scale-110 -mt-2">
+            <Gift size={28} className="fill-yellow-100" /> 
+            <span className="whitespace-nowrap leading-none">Free Prizes</span>
+          </Link>
+
+          {/* 4. Archive (Right) */}
+          <button onClick={() => setViewMode('archive')} className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all ${viewMode === 'archive' || viewMode === 'archive-detail' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
+            <History size={20} /> <span>Archive</span>
+          </button>
+
+          {/* 5. How to Play (Right) */}
+          <Link href="/how-it-works" className="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-gray-400 active:text-gray-900 transition-all">
+            <BookOpen size={20} /> <span className="whitespace-nowrap">How to Play</span>
+          </Link>
+          
+        </div>
       </div>
+
     </div>
   );
 }
