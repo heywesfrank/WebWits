@@ -21,14 +21,24 @@ export async function generateMetadata({ params }) {
   const username = comment?.profiles?.username || 'Anon';
   const content = comment?.content || '';
   
-  // 1. Get the raw URL from the database (currently .../giphy.webp)
+  // 1. Start with the raw URL from DB
   let finalImageUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
 
-  // 2. [!code fix] FORCE "SCREENSHOT" MODE
-  // We replace 'giphy.webp' with '480w_still.jpg'.
-  // This tells WhatsApp: "Don't try to play an animation. Just show this photo."
+  // 2. [!code fix] ROBUST URL RECONSTRUCTION
+  // We don't just replace the extension. We extract the ID and build a clean, public URL.
+  // This bypasses any 'v1' token errors or 404s from Giphy.
   if (finalImageUrl.includes('giphy.com')) {
-     finalImageUrl = finalImageUrl.replace(/giphy\.webp$/, '480w_still.jpg');
+    // Regex to find the ID (it's the alphanum string before /giphy.webp)
+    // Example: .../1AjUYHTwbRYzVHQM3x/giphy.webp  -> ID: 1AjUYHTwbRYzVHQM3x
+    const match = finalImageUrl.match(/\/([a-zA-Z0-9]+)\/giphy\.(webp|gif|mp4)/);
+    
+    if (match && match[1]) {
+      // Rebuild using the clean, public 'i.giphy.com' host
+      finalImageUrl = `https://i.giphy.com/media/${match[1]}/480w_still.jpg`;
+    } else {
+      // Fallback: Just basic replace if regex fails (remove $ anchor for safety)
+      finalImageUrl = finalImageUrl.replace('giphy.webp', '480w_still.jpg');
+    }
   }
 
   const title = comment ? `"${content}"` : 'WebWits';
@@ -43,8 +53,8 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      // 3. This JPG is small, static, and works perfectly in WhatsApp
-      images: [{ url: finalImageUrl }], 
+      // 3. This is now a clean, safe https://i.giphy.com... URL
+      images: [{ url: finalImageUrl, width: 480, height: 480 }], 
       type: 'website',
       siteName: 'WebWits',
     },
