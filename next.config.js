@@ -2,9 +2,9 @@
 const withPWA = require('next-pwa')({
   dest: 'public',
   register: true,
-  skipWaiting: true, // This is crucial to skip the "Waiting" phase
-  disable: false,    // MUST BE FALSE FOR PRODUCTION
-  importScripts: ['/custom-sw.js'], // Load your logic
+  skipWaiting: true,
+  disable: false, // Ensure this is FALSE to generate sw.js
+  importScripts: ['/custom-sw.js'],
 });
 
 const nextConfig = {
