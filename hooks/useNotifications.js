@@ -25,31 +25,57 @@ export function useNotifications(userId) {
     setLogs(prev => [...prev, logLine]);
   };
 
-  // [!code ++] NEW HELPER: Strict wait for .active state
+  // Helper: Wait for activation OR installation failure
   const waitUntilActive = async (registration) => {
     if (registration.active) return;
+
+    // Look for the worker that is trying to install
+    const waitingWorker = registration.installing || registration.waiting;
     
-    addLog("⏳ New worker found. Waiting for activation...");
-    return new Promise((resolve, reject) => {
-        let attempts = 0;
+    if (!waitingWorker) {
+        // If there's no worker at all, we can't wait for it
+        addLog("⚠️ No waiting worker found to monitor.");
+        return;
+    }
+
+    addLog(`⏳ Monitoring worker state: ${waitingWorker.state}`);
+
+    return new Promise((resolve) => {
+        // 1. Success Listener
         const interval = setInterval(() => {
-            attempts++;
             if (registration.active) {
                 clearInterval(interval);
                 resolve();
-            } else if (attempts > 50) { // Wait 5 seconds max
-                clearInterval(interval);
-                // We resolve anyway to try our luck, but log the warning
-                addLog("⚠️ Activation timeout. Proceeding...");
-                resolve();
             }
         }, 100);
+
+        // 2. Failure Listener (Redundant = Installation Failed)
+        const stateListener = () => {
+             addLog(`ℹ️ Worker state changed: ${waitingWorker.state}`);
+             if (waitingWorker.state === 'redundant') {
+                 addLog("❌ Worker died (redundant). Script error or install failed.");
+                 clearInterval(interval);
+                 waitingWorker.removeEventListener('statechange', stateListener);
+                 resolve(); // Resolve to let the main flow handle the error
+             }
+        };
+        waitingWorker.addEventListener('statechange', stateListener);
+
+        // 3. Timeout (10 seconds)
+        setTimeout(() => {
+             if (!registration.active) {
+                addLog("⚠️ Activation timeout (10s).");
+                clearInterval(interval);
+                waitingWorker.removeEventListener('statechange', stateListener);
+                resolve();
+             }
+        }, 10000);
     });
   };
 
   const subscribe = async () => {
     setLogs([]);
-    addLog("🚀 Starting Subscribe Flow...");
+    addLog("🚀 Starting Subscribe Flow (v4 - Cache Buster)...");
 
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       addLog("❌ Browser not supported");
@@ -68,39 +94,45 @@ export function useNotifications(userId) {
       addLog(`Permission: ${permission}`);
       if (permission !== 'granted') throw new Error("Permission denied");
 
-      // 2. Pre-Check: sw.js existence
+      // 2. File Integrity Check
+      // We check BOTH files. If custom-sw.js is missing, importScripts will fail.
       try {
-        const check = await fetch('/sw.js');
-        if (!check.ok) throw new Error(`sw.js not found (Status: ${check.status})`);
-        addLog("✅ sw.js is reachable");
+        const swCheck = await fetch('/sw.js');
+        if (!swCheck.ok) throw new Error(`sw.js missing (${swCheck.status})`);
+        
+        const customCheck = await fetch('/custom-sw.js');
+        if (!customCheck.ok) throw new Error(`custom-sw.js missing (${customCheck.status})`);
+        
+        addLog("✅ Both SW files are reachable.");
       } catch (e) {
-        addLog(`⚠️ warning: sw.js check failed: ${e.message}`);
+        addLog(`❌ File check failed: ${e.message}`);
+        throw new Error("Service Worker files missing. Cannot proceed.");
       }
 
-      // 3. Register
-      addLog("Step 3: Registering SW...");
-      let registration = await navigator.serviceWorker.register('/sw.js');
-      addLog("Registration done.");
+      // 3. Register with Cache Busting
+      // Adding ?v=TIMESTAMP forces the browser to ignore any broken cached versions
+      const swUrl = `/sw.js?v=${Date.now()}`;
+      addLog(`Step 3: Registering ${swUrl}...`);
+      
+      let registration = await navigator.serviceWorker.register(swUrl);
+      addLog("Registration call done.");
 
-      // 4. Update Strategy (Self-Healing)
-      addLog("Step 4: Updating...");
+      // 4. Update & Self-Heal
+      addLog("Step 4: Checking status...");
       try {
         await registration.update();
       } catch (e) {
         addLog(`⚠️ Update failed: ${e.message}`);
-        if (e.message.includes("Not found") || e.message.includes("Unknown")) {
-            addLog("♻️ Corrupt registration detected. Unregistering...");
-            await registration.unregister();
-            // Small delay to let the browser clean up
-            await new Promise(r => setTimeout(r, 200)); 
-            addLog("♻️ Re-registering fresh...");
-            registration = await navigator.serviceWorker.register('/sw.js');
-            // [!code ++] Wait for this specific new registration to activate
-            await waitUntilActive(registration);
-        }
+        // If update failed, it's corrupt. Unregister.
+        addLog("♻️ Unregistering corrupt SW...");
+        await registration.unregister();
+        
+        addLog("♻️ Re-registering fresh...");
+        registration = await navigator.serviceWorker.register(swUrl);
+        await waitUntilActive(registration);
       }
 
-      // 5. Wait for Controller (skip if we just re-registered and waited above)
+      // 5. Controller Wait
       if (!navigator.serviceWorker.controller) {
           addLog("⏳ Waiting for controller...");
           await new Promise(resolve => {
@@ -110,26 +142,24 @@ export function useNotifications(userId) {
                   resolve();
               }
               navigator.serviceWorker.addEventListener('controllerchange', handler);
-              setTimeout(() => resolve(), 3000); 
+              setTimeout(() => resolve(), 4000); 
           });
       }
 
-      // 6. Get Fresh Registration (The Robust Fix)
+      // 6. Fresh Reg Check
       let freshReg = await navigator.serviceWorker.getRegistration();
-      
-      // If it disappeared (which happened in your logs), we re-register AND WAIT.
       if (!freshReg) {
-          addLog("⚠️ Registration disappeared! Forcing re-register...");
-          freshReg = await navigator.serviceWorker.register('/sw.js');
-          // [!code ++] CRITICAL FIX: Wait for it to become active before subscribing
+          addLog("⚠️ Registration disappeared. Re-registering one last time...");
+          freshReg = await navigator.serviceWorker.register(swUrl);
           await waitUntilActive(freshReg);
       } else if (!freshReg.active) {
-          // If it exists but isn't active yet
           await waitUntilActive(freshReg);
       }
 
-      if (!freshReg.active) {
-         throw new Error("Service Worker failed to activate. Please reload.");
+      // Final Status Check
+      if (!freshReg?.active) {
+         // If we are here, the worker died during install or timed out.
+         throw new Error("Service Worker failed to install. Check console for script errors.");
       }
 
       // 7. Subscribe
@@ -156,7 +186,10 @@ export function useNotifications(userId) {
 
     } catch (error) {
       addLog(`❌ ERROR: ${error.message}`);
-      alert("Error: " + error.message);
+      // Don't alert "Error" if it's just the reload prompt
+      if (!error.message.includes("reload")) {
+          alert("Error: " + error.message);
+      }
       return false;
     } finally {
       setLoading(false);
