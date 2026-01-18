@@ -40,51 +40,55 @@ export function useNotifications(userId) {
         return false;
       }
 
-      // --- STEP 2: Register & Wait for ACTIVE ---
-      // We register the SW
+      // --- STEP 2: Register ---
+      // We register (or get existing registration)
       const registration = await navigator.serviceWorker.register('/sw.js');
 
-      // HELPER: Wait specifically for registration.active
-      // This loops every 100ms up to 50 times (5 seconds) to catch the moment it activates.
-      const waitForActive = async () => {
-        if (registration.active) return registration.active;
-        
-        return new Promise((resolve, reject) => {
-            let attempts = 0;
-            const interval = setInterval(() => {
-                attempts++;
-                if (registration.active) {
-                    clearInterval(interval);
-                    resolve(registration.active);
-                } else if (attempts > 50) { // 5 seconds max
-                    clearInterval(interval);
-                    reject(new Error("Service Worker installed but failed to activate."));
-                }
-            }, 100);
-        });
-      };
+      // --- STEP 3: Smart Wait for ACTIVE (Fail-Fast) ---
+      // If it's already active, great.
+      if (registration.active) {
+          // Proceed immediately
+      } else {
+          // If not active, we poll for 4 seconds MAX.
+          // We DO NOT use navigator.serviceWorker.ready because it causes the "hanging" issue.
+          await new Promise((resolve, reject) => {
+              let attempts = 0;
+              const interval = setInterval(() => {
+                  attempts++;
+                  
+                  // Check if it became active
+                  if (registration.active) {
+                      clearInterval(interval);
+                      resolve();
+                  } 
+                  // If there is a waiting worker, we can try to skip waiting (optional optimization)
+                  else if (registration.waiting) {
+                      // It's stuck in waiting, but we'll let the timeout handle the rejection
+                      // to keep logic simple.
+                  }
 
-      try {
-          await waitForActive();
-      } catch (e) {
-          // Fallback: If polling failed, try the browser's native .ready one last time
-          console.warn("Polling active timed out, trying navigator.serviceWorker.ready...");
-          await navigator.serviceWorker.ready;
+                  // STOP after 4 seconds (40 attempts * 100ms)
+                  if (attempts > 40) {
+                      clearInterval(interval);
+                      reject(new Error("Service Worker took too long to activate."));
+                  }
+              }, 100);
+          });
       }
 
-      // Final Check: We MUST have an active worker to subscribe
+      // Double check just to be safe before calling subscribe
       if (!registration.active) {
-          throw new Error("No active service worker found. Please reload the page.");
+          throw new Error("Service Worker not active. Please reload.");
       }
 
-      // --- STEP 3: Subscribe ---
+      // --- STEP 4: Subscribe ---
       const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey
       });
 
-      // --- STEP 4: Save to Database ---
+      // --- STEP 5: Save to Database ---
       const res = await fetch('/api/web-push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -98,7 +102,14 @@ export function useNotifications(userId) {
 
     } catch (error) {
       console.error("Subscription Error:", error);
-      alert(`Error: ${error.message}`);
+      
+      if (error.message.includes("took too long") || error.message.includes("reload")) {
+          alert("Updates installed! Please reload the app and try again.");
+          // Optional: Force reload automatically
+          // window.location.reload(); 
+      } else {
+          alert(`Error: ${error.message}`);
+      }
       return false;
     } finally {
       setLoading(false);
