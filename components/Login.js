@@ -1,19 +1,20 @@
 "use client";
 import { useState } from "react";
 import { supabase } from "@/lib/supabase";
-import { Send, AlertCircle, Mail, Sparkles, KeyRound, ArrowRight } from "lucide-react"; // [!code ++]
+import { Send, AlertCircle, Mail, Sparkles, KeyRound, ArrowRight } from "lucide-react";
 import HowToPlayButton from "./HowToPlayButton";
 import PrizesButton from "./PrizesButton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState(""); // [!code ++]
-  const [showOtpInput, setShowOtpInput] = useState(false); // [!code ++]
+  const [otp, setOtp] = useState("");
+  const [showOtpInput, setShowOtpInput] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [infoMsg, setInfoMsg] = useState("");
 
-  const handleMagicLink = async (e) => {
+  // 1. Request the Code
+  const handleSendCode = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
@@ -22,6 +23,7 @@ export default function Login() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
+        // We still provide this, but the user won't click it if they use the code
         emailRedirectTo: typeof window !== 'undefined' ? window.location.origin : undefined,
       },
     });
@@ -29,13 +31,13 @@ export default function Login() {
     if (error) {
       setErrorMsg(error.message);
     } else {
-      setInfoMsg("Check your email for the code!"); // [!code change]
-      setShowOtpInput(true); // [!code ++]
+      setInfoMsg("Check your email for the code!");
+      setShowOtpInput(true);
     }
     setLoading(false);
   };
 
-  // [!code ++] New function to handle manual code entry
+  // 2. Verify the Code
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -51,9 +53,8 @@ export default function Login() {
       setErrorMsg(error.message);
       setLoading(false);
     } else {
-      // Login successful - Supabase listener in page.js will handle the session update
-      // Optionally redirect or show success state here
-      setInfoMsg("Success! Logging you in...");
+      // Successful login will be caught by the session listener in app/page.js
+      setInfoMsg("Success! Entering the arena...");
     }
   };
 
@@ -72,7 +73,7 @@ export default function Login() {
           </p>
         </div>
 
-        {/* If we sent the code, show the Code Input Form */}
+        {/* If code sent, show Code Input */}
         {showOtpInput ? (
           <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5 animate-in fade-in slide-in-from-right duration-300">
              <div>
@@ -117,7 +118,7 @@ export default function Login() {
             
             <button 
               type="button"
-              onClick={() => { setShowOtpInput(false); setInfoMsg(""); }}
+              onClick={() => { setShowOtpInput(false); setInfoMsg(""); setOtp(""); }}
               className="text-xs text-center text-gray-400 hover:text-gray-600"
             >
               Start over with a different email
@@ -125,7 +126,7 @@ export default function Login() {
           </form>
         ) : (
           /* Standard Email Form */
-          <form onSubmit={handleMagicLink} className="flex flex-col gap-5">
+          <form onSubmit={handleSendCode} className="flex flex-col gap-5">
             <div>
               <label htmlFor="email" className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
                 Email Address
@@ -158,7 +159,7 @@ export default function Login() {
               className="group relative w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold p-3 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
             >
               {loading ? (
-                "Sending Code..."
+                "Sending..."
               ) : (
                 <>
                   <span>Get Login Code</span>
