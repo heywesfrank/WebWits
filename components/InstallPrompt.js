@@ -41,11 +41,11 @@ export default function InstallPrompt() {
   return (
     <button 
       onClick={handleInstall}
-      // Matches the "Sign Up/Login" button style exactly
-      className="bg-yellow-400 text-white px-3 py-2 rounded-lg font-bold text-sm hover:bg-yellow-300 transition-colors shadow-sm whitespace-nowrap flex items-center gap-2"
+      // Updated to look like a text link: Dark Blue text (yellow-800), no background
+      className="flex items-center gap-1.5 text-yellow-800 hover:text-yellow-600 font-bold text-sm transition-colors whitespace-nowrap active:opacity-70"
     >
       <Download size={16} />
-      <span>Download Free</span>
+      <span className="underline underline-offset-2">Download Free</span>
     </button>
   );
 }
