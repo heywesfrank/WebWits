@@ -25,11 +25,32 @@ export function useNotifications(userId) {
     setLogs(prev => [...prev, logLine]);
   };
 
+  // [!code ++] NEW HELPER: Strict wait for .active state
+  const waitUntilActive = async (registration) => {
+    if (registration.active) return;
+    
+    addLog("⏳ New worker found. Waiting for activation...");
+    return new Promise((resolve, reject) => {
+        let attempts = 0;
+        const interval = setInterval(() => {
+            attempts++;
+            if (registration.active) {
+                clearInterval(interval);
+                resolve();
+            } else if (attempts > 50) { // Wait 5 seconds max
+                clearInterval(interval);
+                // We resolve anyway to try our luck, but log the warning
+                addLog("⚠️ Activation timeout. Proceeding...");
+                resolve();
+            }
+        }, 100);
+    });
+  };
+
   const subscribe = async () => {
     setLogs([]);
     addLog("🚀 Starting Subscribe Flow...");
 
-    // Check Support
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
       addLog("❌ Browser not supported");
       return false;
@@ -47,8 +68,7 @@ export function useNotifications(userId) {
       addLog(`Permission: ${permission}`);
       if (permission !== 'granted') throw new Error("Permission denied");
 
-      // 2. Pre-Check: Does sw.js actually exist?
-      // This prevents the "Unknown: Not found" error by failing fast if the server is offline
+      // 2. Pre-Check: sw.js existence
       try {
         const check = await fetch('/sw.js');
         if (!check.ok) throw new Error(`sw.js not found (Status: ${check.status})`);
@@ -68,16 +88,19 @@ export function useNotifications(userId) {
         await registration.update();
       } catch (e) {
         addLog(`⚠️ Update failed: ${e.message}`);
-        // If update fails, the registration might be corrupt. We unregister and retry.
         if (e.message.includes("Not found") || e.message.includes("Unknown")) {
             addLog("♻️ Corrupt registration detected. Unregistering...");
             await registration.unregister();
+            // Small delay to let the browser clean up
+            await new Promise(r => setTimeout(r, 200)); 
             addLog("♻️ Re-registering fresh...");
             registration = await navigator.serviceWorker.register('/sw.js');
+            // [!code ++] Wait for this specific new registration to activate
+            await waitUntilActive(registration);
         }
       }
 
-      // 5. Wait for Controller
+      // 5. Wait for Controller (skip if we just re-registered and waited above)
       if (!navigator.serviceWorker.controller) {
           addLog("⏳ Waiting for controller...");
           await new Promise(resolve => {
@@ -87,21 +110,26 @@ export function useNotifications(userId) {
                   resolve();
               }
               navigator.serviceWorker.addEventListener('controllerchange', handler);
-              setTimeout(() => resolve(), 3000); // 3s timeout
+              setTimeout(() => resolve(), 3000); 
           });
       }
 
-      // 6. Get Fresh Registration (with Fallback)
+      // 6. Get Fresh Registration (The Robust Fix)
       let freshReg = await navigator.serviceWorker.getRegistration();
+      
+      // If it disappeared (which happened in your logs), we re-register AND WAIT.
       if (!freshReg) {
           addLog("⚠️ Registration disappeared! Forcing re-register...");
           freshReg = await navigator.serviceWorker.register('/sw.js');
+          // [!code ++] CRITICAL FIX: Wait for it to become active before subscribing
+          await waitUntilActive(freshReg);
+      } else if (!freshReg.active) {
+          // If it exists but isn't active yet
+          await waitUntilActive(freshReg);
       }
 
       if (!freshReg.active) {
-         // One last check: if we just registered, it might be installing.
-         // We'll trust that pushManager.subscribe will wait if needed.
-         addLog("⚠️ SW not active yet, but proceeding to subscribe...");
+         throw new Error("Service Worker failed to activate. Please reload.");
       }
 
       // 7. Subscribe
