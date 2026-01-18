@@ -29,11 +29,12 @@ export default function Header({ session, profile }) {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex justify-between items-center transition-all relative">
+    // Removed 'relative' as we don't need absolute positioning anymore
+    <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex justify-between items-center transition-all">
       
-      {/* Left: Brand & Logo */}
-      <div className="flex items-center group cursor-pointer" onClick={() => window.location.href = '/'}>
-        {/* MOBILE: App Icon with Rounded Corners */}
+      {/* Left: Brand & Logo - Added flex-shrink-0 to prevent squishing */}
+      <div className="flex-shrink-0 flex items-center group cursor-pointer" onClick={() => window.location.href = '/'}>
+        {/* MOBILE: App Icon */}
         <img 
           src="/icon.png" 
           alt="WebWits" 
@@ -48,13 +49,16 @@ export default function Header({ session, profile }) {
         />
       </div>
 
-      {/* CENTER: Install Button (Mobile Only) - ABSOLUTE POSITIONED */}
-      <div className="absolute left-1/2 transform -translate-x-1/2 md:hidden">
+      {/* CENTER: Install Button (Mobile Only) - FLEXBOX APPROACH
+          flex-1: Takes up all remaining space between Left and Right
+          justify-center: Centers the link inside that space
+      */}
+      <div className="flex-1 flex justify-center md:hidden min-w-0 px-2">
          <InstallPrompt />
       </div>
 
-      {/* Right: User Profile OR Sign In */}
-      <div className="flex items-center gap-2 sm:gap-4">
+      {/* Right: User Profile OR Sign In - Added flex-shrink-0 */}
+      <div className="flex-shrink-0 flex items-center gap-2 sm:gap-4">
         
         {session ? (
           <div className="relative" ref={menuRef}>
