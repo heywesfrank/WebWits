@@ -4,9 +4,9 @@ import { Trophy, Loader2, Star, Crown, X } from "lucide-react";
 import { motion } from "framer-motion";
 
 // ------------------------------------------------------------------
-// 1. SHARED LIST COMPONENT (Internal)
+// 1. SHARED LIST COMPONENT
 // ------------------------------------------------------------------
-function LeaderboardList({ leaderboard, scoreKey = "weekly_points" }) {
+function LeaderboardList({ leaderboard, scoreKey }) {
   return (
     <div className="space-y-4">
       {leaderboard.map((user, index) => (
@@ -34,12 +34,11 @@ function LeaderboardList({ leaderboard, scoreKey = "weekly_points" }) {
               <span className={`font-bold text-xs truncate ${index === 0 ? 'text-yellow-400' : 'text-gray-200'}`}>
                 {user.username}
               </span>
-              {index === 0 && <span className="text-[9px] text-yellow-500/80 font-mono uppercase tracking-wider">Current King</span>}
+              {index === 0 && <span className="text-[9px] text-yellow-500/80 font-mono uppercase tracking-wider">Top Gun</span>}
             </div>
           </div>
           
           <div className="text-right pl-2 flex-shrink-0">
-            {/* UPDATED: Score is white on mobile, black on desktop for 1st place */}
             <span className={`block font-mono font-bold text-xs ${index === 0 ? 'text-white md:text-black' : 'text-white'}`}>
               {user[scoreKey] !== undefined ? user[scoreKey] : 0}
             </span>
@@ -52,45 +51,38 @@ function LeaderboardList({ leaderboard, scoreKey = "weekly_points" }) {
 }
 
 // ------------------------------------------------------------------
-// 2. MAIN WIDGET COMPONENT (Sidebar)
+// 2. MAIN WIDGET COMPONENT
 // ------------------------------------------------------------------
-export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
-  const [activeTab, setActiveTab] = useState("weekly");
-  const [leaders, setLeaders] = useState(initialWeeklyLeaders);
+export default function LeaderboardWidget({ initialLeaders = [] }) {
+  // Default to Monthly
+  const [activeTab, setActiveTab] = useState("monthly");
+  const [leaders, setLeaders] = useState(initialLeaders);
   const [loading, setLoading] = useState(false);
 
-  // UPDATED: Removed "Daily" tab
+  // Updated Tabs: Removed Weekly
   const tabs = [
-    { id: "weekly", label: "Weekly", icon: Trophy, title: "Weekly Leaders" },
-    { id: "monthly", label: "Monthly", icon: Star, title: "Monthly Stars" },
+    { id: "monthly", label: "Monthly", icon: Star, title: "Monthly Leaders" },
     { id: "all_time", label: "All Time", icon: Crown, title: "Hall of Fame" },
   ];
 
   useEffect(() => {
-    // Optimization: Use initial data for weekly tab to avoid re-fetching immediately
-    if (activeTab === "weekly" && initialWeeklyLeaders.length > 0) {
-      setLeaders(initialWeeklyLeaders);
+    // If we are on the default tab and have initial data, use it
+    if (activeTab === "monthly" && initialLeaders.length > 0) {
+      setLeaders(initialLeaders);
       return;
     }
 
     const fetchLeaders = async () => {
       setLoading(true);
       try {
-        let sortColumn = "weekly_points";
-        
-        // Map tabs to DB columns (Ensure these columns exist in your 'profiles' table)
-        switch (activeTab) {
-          case "weekly": sortColumn = "weekly_points"; break;
-          case "monthly": sortColumn = "monthly_points"; break;
-          case "all_time": sortColumn = "total_points"; break;
-          default: sortColumn = "weekly_points";
-        }
+        let sortColumn = "monthly_points";
+        if (activeTab === "all_time") sortColumn = "total_points";
 
         const { data, error } = await supabase
           .from("profiles")
           .select(`username, ${sortColumn}`)
           .order(sortColumn, { ascending: false })
-          .limit(5);
+          .limit(10); // Fetches top 10
 
         if (error) {
            console.error("Error fetching leaders:", error);
@@ -106,24 +98,17 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
     };
 
     fetchLeaders();
-  }, [activeTab, initialWeeklyLeaders]);
+  }, [activeTab, initialLeaders]);
 
   const activeTabInfo = tabs.find(t => t.id === activeTab);
-  const Icon = activeTabInfo?.icon || Trophy;
+  const Icon = activeTabInfo?.icon || Star;
 
-  // Determine which property to display
   const getScoreKey = () => {
-     switch(activeTab) {
-         case 'monthly': return 'monthly_points';
-         case 'all_time': return 'total_points';
-         default: return 'weekly_points';
-     }
+     return activeTab === 'all_time' ? 'total_points' : 'monthly_points';
   };
 
   return (
-    // FIX 1: Removed 'sticky top-24' from here. It is now handled in the parent container.
     <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm transition-all">
-      {/* Header */}
       <div className="flex items-center gap-2 mb-4 text-yellow-500 pb-2 border-b border-gray-100">
         <Icon size={20} className="animate-in zoom-in duration-300" key={activeTab} />
         <h2 className="font-bold text-lg font-display">{activeTabInfo?.title}</h2>
@@ -135,7 +120,7 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
-            className={`flex-1 py-1.5 text-[10px] sm:text-xs font-bold rounded-md transition-all duration-200 ${
+            className={`flex-1 py-2 text-xs font-bold rounded-md transition-all duration-200 ${
               activeTab === tab.id
                 ? "bg-white text-yellow-600 shadow-sm border border-gray-200"
                 : "text-gray-400 hover:text-gray-600 hover:bg-gray-100"
@@ -146,12 +131,11 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
         ))}
       </div>
 
-      {/* List Content */}
       <div className="min-h-[200px]">
         {loading ? (
           <div className="flex flex-col items-center justify-center h-40 space-y-2 opacity-50">
             <Loader2 className="animate-spin text-yellow-500" size={24} />
-            <span className="text-xs text-gray-400 font-medium">Loading stats...</span>
+            <span className="text-xs text-gray-400 font-medium">Calculating ranks...</span>
           </div>
         ) : leaders.length > 0 ? (
           <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
@@ -159,7 +143,7 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
           </div>
         ) : (
           <div className="text-center py-8 text-gray-400 text-sm">
-            <p>No leaders found for this period.</p>
+            <p>No scores recorded yet.</p>
           </div>
         )}
       </div>
@@ -168,11 +152,12 @@ export default function LeaderboardWidget({ initialWeeklyLeaders = [] }) {
 }
 
 // ------------------------------------------------------------------
-// 3. MODAL COMPONENT (Mobile Popup)
+// 3. MODAL COMPONENT (Mobile)
 // ------------------------------------------------------------------
 export function LeaderboardModal({ leaderboard, isOpen, onClose }) {
   if (!isOpen) return null;
   
+  // Mobile modal defaults to showing the Monthly (leaderboard prop passed from MainApp)
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 md:hidden">
       <motion.div 
@@ -182,15 +167,14 @@ export function LeaderboardModal({ leaderboard, isOpen, onClose }) {
       >
         <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
           <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
-            <Trophy size={20} /> Leaderboard
+            <Star size={20} /> Monthly Leaders
           </h2>
           <button onClick={onClose} className="text-gray-400 hover:text-white">
             <X size={24} />
           </button>
         </div>
         <div className="overflow-y-auto flex-1">
-          {/* Mobile modal defaults to showing the data passed in (usually weekly) */}
-          <LeaderboardList leaderboard={leaderboard} scoreKey="weekly_points" />
+          <LeaderboardList leaderboard={leaderboard} scoreKey="monthly_points" />
         </div>
       </motion.div>
     </div>
