@@ -15,20 +15,20 @@ function LeaderboardList({ leaderboard, scoreKey }) {
       {leaderboard.map((user, index) => (
         <div 
           key={index} 
-          className={`relative flex items-center justify-between p-3 rounded-xl border transition-all hover:scale-[1.02] 
-            ${index === 0 ? 'bg-amber-50 border-amber-200' : 
-              index === 1 ? 'bg-slate-50 border-slate-200' : 
-              index === 2 ? 'bg-orange-50 border-orange-200' : 
-              'bg-transparent border-transparent hover:bg-yellow-50'
+          className={`relative flex items-center justify-between p-3 rounded-xl border-2 transition-all hover:scale-[1.02] 
+            ${index === 0 ? 'bg-white border-amber-500' : 
+              index === 1 ? 'bg-white border-slate-500' : 
+              index === 2 ? 'bg-white border-orange-600' : 
+              'bg-transparent border-transparent hover:bg-gray-50'
             }`}
         >
           <div className="flex items-center gap-2 min-w-0">
             {/* Rank Badge */}
             <div className={`
               w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-md font-black text-xs shadow-sm
-              ${index === 0 ? 'bg-amber-400 text-white' : 
-                index === 1 ? 'bg-slate-400 text-white' : 
-                index === 2 ? 'bg-orange-400 text-white' : 
+              ${index === 0 ? 'bg-amber-500 text-white' : 
+                index === 1 ? 'bg-slate-500 text-white' : 
+                index === 2 ? 'bg-orange-600 text-white' : 
                 'bg-yellow-100 text-yellow-600'}
             `}>
               {index + 1}
@@ -37,9 +37,9 @@ function LeaderboardList({ leaderboard, scoreKey }) {
             {/* User Details */}
             <div className="flex flex-col min-w-0">
               <span className={`font-bold text-xs truncate ${
-                index === 0 ? 'text-amber-900' : 
-                index === 1 ? 'text-slate-900' : 
-                index === 2 ? 'text-orange-900' : 
+                index === 0 ? 'text-amber-700' : 
+                index === 1 ? 'text-slate-700' : 
+                index === 2 ? 'text-orange-800' : 
                 'text-yellow-900'
               }`}>
                 {user.username}
@@ -187,7 +187,6 @@ export function LeaderboardModal({ leaderboard, isOpen, onClose }) {
           </button>
         </div>
         <div className="overflow-y-auto flex-1">
-          {/* Note: In dark modal, we might want to invert text colors, but using shared component for now with standard backgrounds */}
            <div className="bg-white/5 rounded-xl p-2">
               <LeaderboardList leaderboard={leaderboard} scoreKey="monthly_points" />
            </div>
