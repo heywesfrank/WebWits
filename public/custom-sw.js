@@ -1,13 +1,19 @@
-// Force immediate activation
+// public/custom-sw.js
+
+console.log("[SW] Custom Service Worker Loaded");
+
 self.addEventListener('install', (event) => {
+  console.log("[SW] Install Event");
+  // Force this new worker to become the active one, kicking out the old one
   self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
+  console.log("[SW] Activate Event");
+  // Immediately take control of the page (so we don't have to reload)
   event.waitUntil(self.clients.claim());
 });
 
-// Existing Push Logic
 self.addEventListener('push', function(event) {
   if (!(self.Notification && self.Notification.permission === 'granted')) {
     return;
@@ -18,7 +24,7 @@ self.addEventListener('push', function(event) {
     try {
       data = event.data.json();
     } catch (e) {
-      console.warn('Push event but no JSON data');
+      console.warn('[SW] Push event but no JSON data');
       return;
     }
   }
@@ -26,7 +32,7 @@ self.addEventListener('push', function(event) {
   const title = data.title || "WebWits";
   const options = {
     body: data.body || "New update!",
-    icon: '/icon.png', // Fallback to standard icon
+    icon: '/icon.png',
     badge: '/badge.png',
     data: {
       url: data.url || '/'
