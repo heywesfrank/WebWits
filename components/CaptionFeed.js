@@ -7,7 +7,6 @@ function getCountryCode(countryName) {
   return COUNTRY_CODES[countryName]?.toLowerCase() || null;
 }
 
-// Helper for simple "time ago" format to match IG style
 function timeAgo(dateString) {
   const date = new Date(dateString);
   const now = new Date();
@@ -26,7 +25,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
   const [sortBy, setSortBy] = useState("top");
   
   // Reply State
-  const [activeReplyId, setActiveReplyId] = useState(null); // Which comment is being replied to
+  const [activeReplyId, setActiveReplyId] = useState(null); 
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
   
@@ -178,7 +177,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                       <button 
                         onClick={() => {
                            setActiveReplyId(activeReplyId === caption.id ? null : caption.id);
-                           // Small delay to allow render before focus
                            setTimeout(() => document.getElementById(`reply-input-${caption.id}`)?.focus(), 50);
                         }} 
                         className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition font-bold"
@@ -193,37 +191,50 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
               {/* ----- REPLIES SECTION ----- */}
               {(caption.replies?.length > 0 || activeReplyId === caption.id) && (
                 <div className="mt-4 space-y-3">
-                  {caption.replies?.map((reply) => (
-                    <div key={reply.id} className="flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-300">
-                       <div className="w-6 h-6 rounded-full bg-gray-100 overflow-hidden flex-shrink-0 mt-0.5 ring-1 ring-gray-100">
-                          {reply.profiles?.avatar_url ? (
-                            <img src={reply.profiles.avatar_url} className="w-full h-full object-cover" />
-                          ) : (
-                            <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-gray-400">?</div>
-                          )}
-                       </div>
-                       <div className="flex-1">
-                          <div className="text-sm leading-snug">
-                             <span className="font-bold mr-2 text-gray-900 text-xs">{reply.profiles?.username}</span>
-                             <span className="text-gray-700">{reply.content}</span>
-                          </div>
-                          <div className="flex gap-3 mt-1">
-                             <span className="text-[10px] text-gray-400 font-medium">{timeAgo(reply.created_at)}</span>
-                             {session && viewMode === 'active' && (
-                               <button 
-                                 onClick={() => {
-                                   setActiveReplyId(caption.id);
-                                   setTimeout(() => document.getElementById(`reply-input-${caption.id}`)?.focus(), 50);
-                                 }}
-                                 className="text-[10px] text-gray-500 font-bold hover:text-gray-800"
-                               >
-                                 Reply
-                               </button>
-                             )}
-                          </div>
-                       </div>
-                    </div>
-                  ))}
+                  {caption.replies?.map((reply) => {
+                     const replyCountryCode = getCountryCode(reply.profiles?.country);
+                     
+                     return (
+                        <div key={reply.id} className="flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-300">
+                           <div className="relative flex-shrink-0 mt-0.5">
+                              <div className="w-6 h-6 rounded-full bg-gray-100 overflow-hidden ring-1 ring-gray-100">
+                                  {reply.profiles?.avatar_url ? (
+                                    <img src={reply.profiles.avatar_url} className="w-full h-full object-cover" />
+                                  ) : (
+                                    <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-gray-400">?</div>
+                                  )}
+                              </div>
+                              {replyCountryCode && (
+                                <img 
+                                  src={`https://flagcdn.com/w20/${replyCountryCode}.png`}
+                                  className="absolute -bottom-0.5 -right-0.5 w-3 h-2 rounded-[1px] shadow-sm border border-white object-cover"
+                                />
+                              )}
+                           </div>
+                           
+                           <div className="flex-1">
+                              <div className="text-sm leading-snug">
+                                 <span className="font-bold mr-2 text-gray-900 text-xs">{reply.profiles?.username}</span>
+                                 <span className="text-gray-700">{reply.content}</span>
+                              </div>
+                              <div className="flex gap-3 mt-1">
+                                 <span className="text-[10px] text-gray-400 font-medium">{timeAgo(reply.created_at)}</span>
+                                 {session && viewMode === 'active' && (
+                                   <button 
+                                     onClick={() => {
+                                       setActiveReplyId(caption.id);
+                                       setTimeout(() => document.getElementById(`reply-input-${caption.id}`)?.focus(), 50);
+                                     }}
+                                     className="text-[10px] text-gray-500 font-bold hover:text-gray-800"
+                                   >
+                                     Reply
+                                   </button>
+                                 )}
+                              </div>
+                           </div>
+                        </div>
+                     );
+                  })}
 
                   {/* REPLY INPUT */}
                   {activeReplyId === caption.id && (
