@@ -20,9 +20,9 @@ export function useNotifications(userId) {
 
   const addLog = (msg) => {
     const timestamp = new Date().toLocaleTimeString();
-    const logLine = `[${timestamp}] ${msg}`;
-    console.log(logLine);
-    setLogs(prev => [...prev, logLine]);
+    // Log to console so you can inspect via remote debugging if needed
+    console.log(`[PushLog] ${msg}`); 
+    setLogs(prev => [...prev, `[${timestamp}] ${msg}`]);
   };
 
   const waitUntilActive = async (registration) => {
@@ -69,28 +69,62 @@ export function useNotifications(userId) {
   };
 
   const subscribe = async () => {
-    setLogs([]);
-    addLog("🚀 Starting Direct Registration Flow...");
-
-    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      addLog("❌ Browser not supported");
-      return false;
-    }
-    if (!VAPID_PUBLIC_KEY) {
-      addLog("❌ Missing VAPID Key");
-      return false;
-    }
+    setLogs([]); // Clear previous attempts
+    addLog("🕵️ STARTING DEEP DEBUG...");
 
     try {
       setLoading(true);
 
-      // 1. Permission
-      const permission = await Notification.requestPermission();
-      addLog(`Permission: ${permission}`);
-      if (permission !== 'granted') throw new Error("Permission denied");
+      // --- CHECK 1: ENVIRONMENT ---
+      const isSecure = window.isSecureContext;
+      const hasSW = 'serviceWorker' in navigator;
+      const hasPush = 'PushManager' in window;
+      
+      addLog(`Environment: Secure=${isSecure}, SW=${hasSW}, Push=${hasPush}`);
 
-      // 2. Direct File Check
-      // We are now checking custom-sw.js ONLY
+      if (!isSecure) {
+        throw new Error("❌ Insecure Context. HTTPS required.");
+      }
+      if (!hasSW || !hasPush) {
+        throw new Error("❌ Push API not supported in this browser engine.");
+      }
+
+      // --- CHECK 2: CURRENT STATE ---
+      // What does the browser *think* the permission is right now?
+      const currentPerm = Notification.permission;
+      addLog(`Current 'Notification.permission': ${currentPerm}`);
+
+      // Try the advanced Permissions Query API (gives more detail than Notification.permission)
+      if (navigator.permissions && navigator.permissions.query) {
+        try {
+            const queryStatus = await navigator.permissions.query({ name: 'notifications' });
+            addLog(`🔎 Navigator Query Status: ${queryStatus.state}`);
+        } catch (qErr) {
+            addLog(`⚠️ Permission Query failed: ${qErr.message}`);
+        }
+      }
+
+      // --- CHECK 3: REQUEST PERMISSION ---
+      addLog("🚀 Calling Notification.requestPermission()...");
+      
+      const permission = await Notification.requestPermission();
+      addLog(`📢 Request Result: ${permission}`);
+
+      if (permission === 'denied') {
+        throw new Error("❌ Browser explicitly DENIED permission. (Check 'Sites and Downloads' in Samsung Internet settings again)");
+      }
+      if (permission === 'default') {
+        throw new Error("⚠️ Permission ignored/dismissed (Result: default).");
+      }
+      if (permission !== 'granted') {
+        throw new Error(`❌ Unknown permission state: ${permission}`);
+      }
+
+      // --- CHECK 4: SW REGISTRATION ---
+      // Only proceed if permission passed
+      addLog("✅ Permission Granted. Checking Service Worker...");
+      
+      // Direct File Check
       try {
         const customCheck = await fetch('/custom-sw.js');
         if (!customCheck.ok) throw new Error(`custom-sw.js missing (${customCheck.status})`);
@@ -100,67 +134,68 @@ export function useNotifications(userId) {
         throw new Error("Service Worker file missing.");
       }
 
-      // 3. Register custom-sw.js DIRECTLY
-      // Bypassing /sw.js prevents next-pwa conflicts
+      // Register custom-sw.js
       const swUrl = `/custom-sw.js?v=${Date.now()}`;
-      addLog(`Step 3: Registering ${swUrl}...`);
+      addLog(`Registering ${swUrl}...`);
       
       let registration = await navigator.serviceWorker.register(swUrl);
       addLog("Registration call done.");
 
-      // 4. Update & Self-Heal
-      addLog("Step 4: Ensuring Freshness...");
+      // Update
       try {
         await registration.update();
       } catch (e) {
-        addLog(`⚠️ Update failed: ${e.message}`);
-        // If update failed, unregister and retry
-        addLog("♻️ Unregistering...");
-        await registration.unregister();
-        addLog("♻️ Re-registering...");
-        registration = await navigator.serviceWorker.register(swUrl);
+        addLog(`⚠️ Update failed (non-fatal): ${e.message}`);
       }
       
-      // Monitor Activation
       await waitUntilActive(registration);
 
-      // 5. Wait for Controller
+      // 5. Controller Wait
       if (!navigator.serviceWorker.controller) {
           addLog("⏳ Waiting for controller...");
           await new Promise(resolve => {
+              // Timeout safety
+              const t = setTimeout(() => {
+                addLog("⚠️ Controller wait timed out. Proceeding anyway...");
+                resolve();
+              }, 3000);
+
               const handler = () => {
                   addLog("✅ Controller taken!");
+                  clearTimeout(t);
                   navigator.serviceWorker.removeEventListener('controllerchange', handler);
                   resolve();
               }
               navigator.serviceWorker.addEventListener('controllerchange', handler);
-              setTimeout(() => resolve(), 4000); 
           });
       }
 
       // 6. Get Fresh Registration
       let freshReg = await navigator.serviceWorker.getRegistration();
-      if (!freshReg || !freshReg.active) {
-          // One last retry if the previous attempt got stuck
-           addLog("⚠️ SW not active. Forcing re-register of custom-sw.js...");
+      if (!freshReg?.active) {
+           addLog("⚠️ SW not active. Retrying registration...");
            freshReg = await navigator.serviceWorker.register(swUrl);
            await waitUntilActive(freshReg);
       }
-
+      
       if (!freshReg?.active) {
-         throw new Error("Service Worker failed to activate. Check console.");
+         throw new Error("Service Worker failed to activate.");
       }
 
       // 7. Subscribe
-      addLog("Step 7: Subscribing...");
+      addLog("Generating keys...");
+      if (!VAPID_PUBLIC_KEY) throw new Error("VAPID Key is missing from env");
+      
       const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      
+      addLog("Attempting pushManager.subscribe...");
       const subscription = await freshReg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey
       });
       
       // 8. DB Call
-      addLog("Step 8: Saving to DB...");
+      addLog("Saving to DB...");
       const res = await fetch('/api/web-push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -174,8 +209,8 @@ export function useNotifications(userId) {
       return true;
 
     } catch (error) {
-      addLog(`❌ ERROR: ${error.message}`);
-      alert("Error: " + error.message);
+      addLog(`🛑 FATAL: ${error.message}`);
+      // Don't alert here so you can read the logs in the modal
       return false;
     } finally {
       setLoading(false);
