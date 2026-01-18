@@ -29,7 +29,7 @@ export default function Header({ session, profile }) {
   }, []);
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex justify-between items-center transition-all">
+    <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex justify-between items-center transition-all relative">
       
       {/* Left: Brand & Logo */}
       <div className="flex items-center group cursor-pointer" onClick={() => window.location.href = '/'}>
@@ -48,14 +48,14 @@ export default function Header({ session, profile }) {
         />
       </div>
 
-      {/* Right: Install Button + User Profile OR Sign In */}
+      {/* CENTER: Install Button (Mobile Only) - ABSOLUTE POSITIONED */}
+      <div className="absolute left-1/2 transform -translate-x-1/2 md:hidden">
+         <InstallPrompt />
+      </div>
+
+      {/* Right: User Profile OR Sign In */}
       <div className="flex items-center gap-2 sm:gap-4">
         
-        {/* Install Button (Mobile Only) */}
-        <div className="md:hidden">
-           <InstallPrompt />
-        </div>
-
         {session ? (
           <div className="relative" ref={menuRef}>
             <button 
