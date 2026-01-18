@@ -73,7 +73,6 @@ export async function GET(request) {
       
       // A. MONTHLY RESET CHECK
       // If today is the 1st of the month, reset everyone's monthly_points to 0
-      // The points calculated below will effectively be the first points of the new month.
       const currentDay = new Date().getDate();
       if (currentDay === 1) {
          await supabase.from('profiles').update({ monthly_points: 0 }).neq('id', '00000000-0000-0000-0000-000000000000');
@@ -102,7 +101,6 @@ export async function GET(request) {
           });
 
           // 3. Update User Profiles
-          // We fetch the current stats for these users first to ensure accuracy
           const userIds = Object.keys(userPoints);
           if (userIds.length > 0) {
             const { data: currentProfiles } = await supabase
@@ -111,7 +109,8 @@ export async function GET(request) {
               .in('id', userIds);
 
             const updates = currentProfiles.map(profile => {
-              const points earned = userPoints[profile.id] || 0;
+              // FIX: Removed the space in the variable name below
+              const pointsEarned = userPoints[profile.id] || 0;
               return {
                 id: profile.id,
                 monthly_points: (profile.monthly_points || 0) + pointsEarned,
