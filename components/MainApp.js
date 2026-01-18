@@ -21,7 +21,7 @@ import { useGameLogic } from "@/hooks/useGameLogic";
 export default function MainApp({ session }) {
   const {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
-    loading, viewMode, setViewMode, toasts, setToasts, 
+    loading, viewMode, setViewMode, toasts, setToasts, submitReply,
     showOnboarding, setShowOnboarding, hasCommented,
     handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption
   } = useGameLogic(session);
@@ -131,6 +131,7 @@ export default function MainApp({ session }) {
                 onVote={castVote}
                 onShare={shareCaption}
                 onReport={reportCaption}
+                onReply={submitReply}
               />
             </>
           )}
