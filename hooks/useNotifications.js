@@ -18,60 +18,69 @@ export function useNotifications(userId) {
   const [loading, setLoading] = useState(false);
 
   const subscribe = async () => {
-    if (!('serviceWorker' in navigator)) {
-      alert("Browser does not support Service Workers");
+    // --- CHECK 1: Browser Support ---
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      alert("This browser does not support push notifications.");
       return false;
     }
-    if (!userId) return false;
+    
+    // --- CHECK 2: VAPID Key Existence ---
     if (!VAPID_PUBLIC_KEY) {
-      alert("Critical Error: NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing.");
+      alert("Configuration Error: NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing.");
       return false;
     }
 
     try {
       setLoading(true);
 
-      // 1. Ensure the Service Worker is registered
-      // We explicitly register to ensure it exists, though next-pwa usually handles this.
-      // This is idempotent (safe to call multiple times).
-      await navigator.serviceWorker.register('/sw.js');
-
-      // 2. Wait for the Service Worker to be ACTIVE
-      // 'ready' is a Promise that never rejects and waits until the SW is actually active.
-      // This completely solves the "no active service worker" error.
-      const registration = await navigator.serviceWorker.ready;
-
-      // 3. Double check (rare edge case on some Android versions)
-      if (!registration.active) {
-        throw new Error("Service Worker registered but not active. Please refresh.");
+      // --- STEP 1: Explicit Permission Request ---
+      // We do this BEFORE touching the Service Worker to avoid hanging if the prompt is blocked.
+      const permission = await Notification.requestPermission();
+      if (permission !== 'granted') {
+        alert("Notifications blocked. Please enable them in your browser settings.");
+        return false;
       }
 
-      // 4. Subscribe
+      // --- STEP 2: Register Service Worker ---
+      // We register explicitly to ensure the browser knows where to look.
+      await navigator.serviceWorker.register('/sw.js');
+
+      // --- STEP 3: Wait for Active Worker (With Timeout) ---
+      // This prevents the "Enabling..." loop if sw.js fails to install.
+      const waitForReady = navigator.serviceWorker.ready;
+      const timeout = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("Service Worker timed out (10s). Try reloading.")), 10000)
+      );
+
+      const registration = await Promise.race([waitForReady, timeout]);
+
+      // --- STEP 4: Subscribe ---
       const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey
       });
 
-      // 5. Send to DB
+      // --- STEP 5: Save to Database ---
       const res = await fetch('/api/web-push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription, user_id: userId }),
       });
 
-      if (!res.ok) throw new Error('Database sync failed');
+      if (!res.ok) throw new Error('Failed to save subscription to server.');
       
       alert("Success! Notifications enabled. 🔔");
       return true;
 
     } catch (error) {
       console.error("Subscription Error:", error);
-      // specific error handling for user
-      if (error.message.includes("no active service worker")) {
-         alert("Please refresh the page and try again. The app is updating.");
+      
+      // Specific error messages for the user
+      if (error.message.includes("timed out")) {
+        alert("Error: The app is updating. Please reload the page and try again.");
       } else {
-         alert(`Error: ${error.message}`);
+        alert(`Error: ${error.message}`);
       }
       return false;
     } finally {
