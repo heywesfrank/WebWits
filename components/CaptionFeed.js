@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Check } from "lucide-react"; // [!code change] Removed Crown import
+import { Share2, Flag, Trophy, ThumbsUp, Check } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -79,7 +79,14 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
       {sortedCaptions.map((caption, index) => {
         const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
-        const isTopRanked = index === 0 && sortBy === 'top'; // [!code ++]
+        // [!code change] Only show crown if we are in archive mode (winner decided)
+        const isTopRanked = index === 0 && sortBy === 'top' && viewMode === 'archive-detail';
+        
+        // [!code ++] Fire Logic for Active Mode
+        const rank = index + 1;
+        const showFire = viewMode === 'active' && sortBy === 'top' && rank <= 3;
+        const fireCount = showFire ? 4 - rank : 0; // 1st=3, 2nd=2, 3rd=1
+
         const username = caption.profiles?.username || "anon";
         const avatarUrl = caption.profiles?.avatar_url;
         const countryCode = getCountryCode(caption.profiles?.country);
@@ -95,7 +102,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             <div className="flex-shrink-0 pt-1">
               <div className="relative inline-block">
                 
-                {/* [!code ++] Custom Crown Image for 1st Place */}
+                {/* Custom Crown Image for 1st Place (Archive Only) */}
                 {isTopRanked && (
                   <img 
                     src="/crown.png" 
@@ -133,7 +140,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
               </div>
               <p className="text-base text-gray-800 leading-snug font-medium">{caption.content}</p>
               
-              {/* UPDATED: Buttons are now ALWAYS visible (removed opacity-0 and group-hover classes) */}
               <div className="flex gap-4 mt-3">
                 <button 
                   onClick={() => handleShareClick(caption, index)} 
@@ -167,6 +173,32 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             >
               {isWinner ? <Trophy size={24} className="fill-yellow-400 text-yellow-600" /> : <ThumbsUp size={24} className={`transition-all ${caption.vote_count > 0 ? 'fill-yellow-100' : ''}`} />}
               <span className={`font-bold text-sm ${isWinner ? 'text-yellow-700' : ''}`}>{caption.vote_count}</span>
+              
+              {/* [!code ++] Animated Fire Emojis for Top 3 (Active Mode) */}
+              {showFire && (
+                <div className="flex -space-x-1 mt-0.5">
+                  {Array.from({ length: fireCount }).map((_, i) => (
+                    <motion.span
+                      key={i}
+                      animate={{
+                        scale: [1, 1.25, 1],
+                        rotate: [0, i % 2 === 0 ? 10 : -10, 0],
+                        y: [0, -2, 0]
+                      }}
+                      transition={{
+                        duration: 0.6,
+                        repeat: Infinity,
+                        repeatType: "reverse",
+                        delay: i * 0.15
+                      }}
+                      className="text-sm select-none"
+                    >
+                      🔥
+                    </motion.span>
+                  ))}
+                </div>
+              )}
+
             </motion.button>
           </div>
         );
