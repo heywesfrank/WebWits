@@ -152,14 +152,14 @@ export default function MainApp({ session }) {
         <button onClick={() => setShowLeaderboardModal(true)} className="flex flex-col items-center gap-1 text-xs font-bold text-gray-400 active:text-gray-900 transition-all">
           <Trophy size={20} /> <span>Rank</span>
         </button>
-        <Link href="/prizes" className="flex flex-col items-center gap-1 text-xs font-bold text-gray-400 active:text-gray-900 transition-all">
-          <Gift size={20} /> <span>Prizes</span>
+        <Link href="/prizes" className="flex flex-col items-center gap-1 text-xs font-bold text-yellow-600 animate-pulse transition-all hover:text-yellow-700">
+          <Gift size={20} /> <span className="whitespace-nowrap">Free Prizes</span>
         </Link>
         <button onClick={() => setViewMode('archive')} className={`flex flex-col items-center gap-1 text-xs font-bold transition-all ${viewMode === 'archive' || viewMode === 'archive-detail' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
           <History size={20} /> <span>Archive</span>
         </button>
         <Link href="/how-it-works" className="flex flex-col items-center gap-1 text-xs font-bold text-gray-400 active:text-gray-900 transition-all">
-          <BookOpen size={20} /> <span>How to</span>
+          <BookOpen size={20} /> <span className="whitespace-nowrap">How to Play</span>
         </Link>
       </div>
     </div>
