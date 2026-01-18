@@ -48,13 +48,14 @@ export default function Header({ session, profile }) {
         />
       </div>
 
-      {/* CENTER: Download Button (Mobile Only) */}
-      <div className="md:hidden"> 
-        <InstallPrompt />
-      </div>
+      {/* Right: Install Button + User Profile OR Sign In */}
+      <div className="flex items-center gap-2 sm:gap-4">
+        
+        {/* Install Button (Mobile Only) */}
+        <div className="md:hidden">
+           <InstallPrompt />
+        </div>
 
-      {/* Right: User Profile OR Sign In */}
-      <div className="flex items-center gap-3 sm:gap-4">
         {session ? (
           <div className="relative" ref={menuRef}>
             <button 
