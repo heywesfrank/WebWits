@@ -10,14 +10,7 @@ export async function GET(request) {
     const username = searchParams.get('username') || 'Anon';
     const rank = searchParams.get('rank');
     let memeUrl = searchParams.get('memeUrl');
-
-    // [!code ++] FIX: Optimize Giphy URL
-    // The original WebP is often too big (5MB+) or animated, causing the generator to crash.
-    // We replace 'giphy.webp' with '480w_still.jpg' for a lighter, static preview.
-    if (memeUrl && memeUrl.includes('giphy.com')) {
-      memeUrl = memeUrl.replace(/\/giphy\.webp/, '/480w_still.jpg');
-    }
-
+    
     return new ImageResponse(
       (
         <div
@@ -28,7 +21,7 @@ export async function GET(request) {
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(to bottom right, #facc15, #eab308)', // Yellow background
+            background: 'linear-gradient(to bottom right, #facc15, #eab308)', 
             padding: '20px',
             fontFamily: 'sans-serif',
           }}
