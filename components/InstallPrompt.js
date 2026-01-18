@@ -41,7 +41,6 @@ export default function InstallPrompt() {
   return (
     <button 
       onClick={handleInstall}
-      // Removed underline classes. Just text and icon.
       className="flex items-center gap-1.5 text-yellow-800 hover:text-yellow-600 font-bold text-sm transition-colors whitespace-nowrap active:opacity-70"
     >
       <Download size={16} />
