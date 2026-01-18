@@ -1,14 +1,34 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Check } from "lucide-react"; 
+import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
   return COUNTRY_CODES[countryName]?.toLowerCase() || null;
 }
 
-export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport }) {
+// Helper for simple "time ago" format to match IG style
+function timeAgo(dateString) {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffInSeconds = Math.floor((now - date) / 1000);
+
+  if (diffInSeconds < 60) return `${diffInSeconds}s`;
+  const diffInMinutes = Math.floor(diffInSeconds / 60);
+  if (diffInMinutes < 60) return `${diffInMinutes}m`;
+  const diffInHours = Math.floor(diffInMinutes / 60);
+  if (diffInHours < 24) return `${diffInHours}h`;
+  const diffInDays = Math.floor(diffInHours / 24);
+  return `${diffInDays}d`;
+}
+
+export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport, onReply }) {
   const [sortBy, setSortBy] = useState("top");
+  
+  // Reply State
+  const [activeReplyId, setActiveReplyId] = useState(null); // Which comment is being replied to
+  const [replyText, setReplyText] = useState("");
+  const [submittingReply, setSubmittingReply] = useState(false);
   
   // Track which specific caption was just copied
   const [copiedId, setCopiedId] = useState(null);
@@ -18,7 +38,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
   );
 
   const handleShareClick = async (caption, index) => {
-    // 1. Build the Dynamic Text & URL
     const rank = sortBy === 'top' ? index + 1 : null;
     const shareUrl = `https://itswebwits.com/share/${caption.id}`;
     
@@ -29,13 +48,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
       shareText = `Can you beat this comment? "${caption.content}"`;
     }
     
-    // Combine for clipboard (Desktop)
     const clipboardText = `${shareText} ${shareUrl}`;
-
-    // 2. Platform Detection
-    // We only use the native Share Menu (navigator.share) on Mobile devices.
-    // On Desktop, we force a "Copy to Clipboard" because the native menu 
-    // often freezes or looks broken on Windows/Mac.
     const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
     if (isMobile && navigator.share) {
@@ -45,15 +58,10 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
           text: shareText,
           url: shareUrl,
         });
-      } catch (err) {
-        // User cancelled, ignore
-      }
+      } catch (err) { }
     } else {
-      // 3. Desktop Fallback: Copy to Clipboard immediately
       try {
         await navigator.clipboard.writeText(clipboardText);
-        
-        // Show visual feedback
         setCopiedId(caption.id);
         setTimeout(() => setCopiedId(null), 3000);
       } catch (err) {
@@ -61,6 +69,15 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         alert("Could not copy link. Manually copy this URL:\n" + shareUrl);
       }
     }
+  };
+
+  const submitReply = async (commentId) => {
+    if (!replyText.trim()) return;
+    setSubmittingReply(true);
+    await onReply(commentId, replyText);
+    setReplyText("");
+    setActiveReplyId(null);
+    setSubmittingReply(false);
   };
 
   return (
@@ -79,13 +96,11 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
       {sortedCaptions.map((caption, index) => {
         const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
-        // Only show crown if we are in archive mode (winner decided)
         const isTopRanked = index === 0 && sortBy === 'top' && viewMode === 'archive-detail';
         
-        // Fire Logic for Active Mode
         const rank = index + 1;
         const showFire = viewMode === 'active' && sortBy === 'top' && rank <= 3;
-        const fireCount = showFire ? 4 - rank : 0; // 1st=3, 2nd=2, 3rd=1
+        const fireCount = showFire ? 4 - rank : 0; 
 
         const username = caption.profiles?.username || "anon";
         const avatarUrl = caption.profiles?.avatar_url;
@@ -102,8 +117,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
             <div className="flex-shrink-0 pt-1">
               <div className="relative inline-block">
-                
-                {/* Custom Crown Image for 1st Place (Archive Only) */}
                 {isTopRanked && (
                   <img 
                     src="/crown.png" 
@@ -122,38 +135,27 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                   )}
                 </div>
 
-                {/* Influencer Badge (Bottom Left) */}
                 {isInfluencer && (
-                  <img 
-                    src="/badge.png"
-                    alt="Influencer"
-                    title="Influencer"
-                    className="absolute -bottom-1 -left-1 w-4 h-4 object-contain z-20 filter drop-shadow-sm"
-                  />
+                  <img src="/badge.png" alt="Influencer" className="absolute -bottom-1 -left-1 w-4 h-4 object-contain z-20 filter drop-shadow-sm" />
                 )}
 
-                {/* Country Flag (Bottom Right) */}
                 {countryCode && (
-                  <img 
-                    src={`https://flagcdn.com/w20/${countryCode}.png`}
-                    alt={caption.profiles.country}
-                    title={caption.profiles.country}
-                    className="absolute -bottom-1 -right-1 w-4 h-3 rounded-[2px] shadow-sm border border-white object-cover"
-                  />
+                  <img src={`https://flagcdn.com/w20/${countryCode}.png`} alt={caption.profiles.country} className="absolute -bottom-1 -right-1 w-4 h-3 rounded-[2px] shadow-sm border border-white object-cover" />
                 )}
               </div>
             </div>
 
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`}>@{username}</span>
                 {session && caption.user_id === session.user.id && (
                   <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                 )}
+                <span className="text-[10px] text-gray-400">{timeAgo(caption.created_at)}</span>
               </div>
-              <p className="text-base text-gray-800 leading-snug font-medium">{caption.content}</p>
+              <p className="text-base text-gray-800 leading-snug font-medium break-words">{caption.content}</p>
               
-              <div className="flex gap-4 mt-3">
+              <div className="flex gap-4 mt-3 items-center">
                 <button 
                   onClick={() => handleShareClick(caption, index)} 
                   className={`flex items-center gap-1 text-xs transition font-bold ${
@@ -167,14 +169,84 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                 </button>
                 
                 {viewMode === 'active' && (
-                  <button 
-                    onClick={() => onReport(caption.id)} 
-                    className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition"
-                  >
-                    <Flag size={12} /> Report
-                  </button>
+                  <>
+                    <button onClick={() => onReport(caption.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition font-bold">
+                      <Flag size={12} /> Report
+                    </button>
+                    
+                    {session && (
+                      <button 
+                        onClick={() => {
+                           setActiveReplyId(activeReplyId === caption.id ? null : caption.id);
+                           // Small delay to allow render before focus
+                           setTimeout(() => document.getElementById(`reply-input-${caption.id}`)?.focus(), 50);
+                        }} 
+                        className="flex items-center gap-1 text-xs text-gray-400 hover:text-gray-700 transition font-bold"
+                      >
+                         Reply
+                      </button>
+                    )}
+                  </>
                 )}
               </div>
+
+              {/* ----- REPLIES SECTION ----- */}
+              {(caption.replies?.length > 0 || activeReplyId === caption.id) && (
+                <div className="mt-4 space-y-3">
+                  {caption.replies?.map((reply) => (
+                    <div key={reply.id} className="flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-300">
+                       <div className="w-6 h-6 rounded-full bg-gray-100 overflow-hidden flex-shrink-0 mt-0.5 ring-1 ring-gray-100">
+                          {reply.profiles?.avatar_url ? (
+                            <img src={reply.profiles.avatar_url} className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-gray-400">?</div>
+                          )}
+                       </div>
+                       <div className="flex-1">
+                          <div className="text-sm leading-snug">
+                             <span className="font-bold mr-2 text-gray-900 text-xs">{reply.profiles?.username}</span>
+                             <span className="text-gray-700">{reply.content}</span>
+                          </div>
+                          <div className="flex gap-3 mt-1">
+                             <span className="text-[10px] text-gray-400 font-medium">{timeAgo(reply.created_at)}</span>
+                             {session && viewMode === 'active' && (
+                               <button 
+                                 onClick={() => {
+                                   setActiveReplyId(caption.id);
+                                   setTimeout(() => document.getElementById(`reply-input-${caption.id}`)?.focus(), 50);
+                                 }}
+                                 className="text-[10px] text-gray-500 font-bold hover:text-gray-800"
+                               >
+                                 Reply
+                               </button>
+                             )}
+                          </div>
+                       </div>
+                    </div>
+                  ))}
+
+                  {/* REPLY INPUT */}
+                  {activeReplyId === caption.id && (
+                     <div className="flex gap-2 items-center pt-1 animate-in fade-in slide-in-from-top-1">
+                        <input
+                          id={`reply-input-${caption.id}`}
+                          value={replyText}
+                          onChange={(e) => setReplyText(e.target.value)}
+                          onKeyDown={(e) => e.key === 'Enter' && submitReply(caption.id)}
+                          placeholder={`Reply to ${username}...`}
+                          className="flex-1 bg-gray-50 border border-gray-200 focus:bg-white focus:border-gray-300 focus:ring-0 rounded-full px-4 py-2 text-sm transition-all outline-none placeholder:text-gray-400"
+                        />
+                        <button 
+                          disabled={!replyText.trim() || submittingReply}
+                          onClick={() => submitReply(caption.id)}
+                          className="text-blue-500 font-bold text-sm disabled:opacity-50 hover:text-blue-600 px-1"
+                        >
+                          Post
+                        </button>
+                     </div>
+                  )}
+                </div>
+              )}
             </div>
             
             <motion.button
@@ -182,28 +254,18 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
               whileTap={viewMode === 'active' ? { scale: 0.9 } : {}}
               onClick={() => onVote(caption.id)}
               disabled={viewMode === 'archive-detail'} 
-              className={`flex flex-col items-center justify-center gap-1 p-2 rounded-lg transition-colors ${caption.hasVoted ? 'text-yellow-500' : viewMode === 'archive-detail' ? 'text-gray-400 cursor-default' : 'text-gray-400 hover:text-yellow-500'}`}
+              className={`flex flex-col items-center justify-center gap-1 p-2 h-fit rounded-lg transition-colors ${caption.hasVoted ? 'text-yellow-500' : viewMode === 'archive-detail' ? 'text-gray-400 cursor-default' : 'text-gray-400 hover:text-yellow-500'}`}
             >
               {isWinner ? <Trophy size={24} className="fill-yellow-400 text-yellow-600" /> : <ThumbsUp size={24} className={`transition-all ${caption.vote_count > 0 ? 'fill-yellow-100' : ''}`} />}
               <span className={`font-bold text-sm ${isWinner ? 'text-yellow-700' : ''}`}>{caption.vote_count}</span>
               
-              {/* Animated Fire Emojis for Top 3 (Active Mode) */}
               {showFire && (
                 <div className="flex -space-x-1 mt-0.5">
                   {Array.from({ length: fireCount }).map((_, i) => (
                     <motion.span
                       key={i}
-                      animate={{
-                        scale: [1, 1.25, 1],
-                        rotate: [0, i % 2 === 0 ? 10 : -10, 0],
-                        y: [0, -2, 0]
-                      }}
-                      transition={{
-                        duration: 0.6,
-                        repeat: Infinity,
-                        repeatType: "reverse",
-                        delay: i * 0.15
-                      }}
+                      animate={{ scale: [1, 1.25, 1], rotate: [0, i % 2 === 0 ? 10 : -10, 0], y: [0, -2, 0] }}
+                      transition={{ duration: 0.6, repeat: Infinity, repeatType: "reverse", delay: i * 0.15 }}
                       className="text-sm select-none"
                     >
                       🔥
@@ -211,7 +273,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                   ))}
                 </div>
               )}
-
             </motion.button>
           </div>
         );
