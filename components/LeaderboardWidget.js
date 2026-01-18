@@ -16,9 +16,9 @@ function LeaderboardList({ leaderboard, scoreKey }) {
         <div 
           key={index} 
           className={`relative flex items-center justify-between p-3 rounded-xl border-2 transition-all hover:scale-[1.02] 
-            ${index === 0 ? 'bg-white border-amber-500' : 
-              index === 1 ? 'bg-white border-slate-500' : 
-              index === 2 ? 'bg-white border-orange-600' : 
+            ${index === 0 ? 'bg-white border-[#D4AF37]' : // Gold
+              index === 1 ? 'bg-white border-[#C0C0C0]' : // Silver
+              index === 2 ? 'bg-white border-[#CD7F32]' : // Bronze
               'bg-transparent border-transparent hover:bg-gray-50'
             }`}
         >
@@ -26,9 +26,9 @@ function LeaderboardList({ leaderboard, scoreKey }) {
             {/* Rank Badge */}
             <div className={`
               w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-md font-black text-xs shadow-sm
-              ${index === 0 ? 'bg-amber-500 text-white' : 
-                index === 1 ? 'bg-slate-500 text-white' : 
-                index === 2 ? 'bg-orange-600 text-white' : 
+              ${index === 0 ? 'bg-[#D4AF37] text-white' : 
+                index === 1 ? 'bg-[#C0C0C0] text-white' : 
+                index === 2 ? 'bg-[#CD7F32] text-white' : 
                 'bg-yellow-100 text-yellow-600'}
             `}>
               {index + 1}
@@ -37,22 +37,22 @@ function LeaderboardList({ leaderboard, scoreKey }) {
             {/* User Details */}
             <div className="flex flex-col min-w-0">
               <span className={`font-bold text-xs truncate ${
-                index === 0 ? 'text-amber-700' : 
-                index === 1 ? 'text-slate-700' : 
-                index === 2 ? 'text-orange-800' : 
+                index === 0 ? 'text-[#D4AF37]' : 
+                index === 1 ? 'text-[#757575]' : // Darker silver for readability
+                index === 2 ? 'text-[#CD7F32]' : 
                 'text-yellow-900'
               }`}>
                 {user.username}
               </span>
-              {index === 0 && <span className="text-[9px] text-amber-600/80 font-mono uppercase tracking-wider">Top Gun</span>}
+              {index === 0 && <span className="text-[9px] text-[#D4AF37]/80 font-mono uppercase tracking-wider">Top Gun</span>}
             </div>
           </div>
           
           <div className="text-right pl-2 flex-shrink-0">
             <span className={`block font-mono font-bold text-xs ${
-               index === 0 ? 'text-amber-900' : 
-               index === 1 ? 'text-slate-900' : 
-               index === 2 ? 'text-orange-900' : 
+               index === 0 ? 'text-[#D4AF37]' : 
+               index === 1 ? 'text-[#757575]' : 
+               index === 2 ? 'text-[#CD7F32]' : 
                'text-gray-500'
             }`}>
               {user[scoreKey] !== undefined ? user[scoreKey] : 0}
