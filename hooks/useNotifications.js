@@ -18,20 +18,33 @@ export function useNotifications(userId) {
   const [loading, setLoading] = useState(false);
 
   const subscribe = async () => {
-    if (!('serviceWorker' in navigator)) return false;
+    if (!('serviceWorker' in navigator)) {
+      alert("Browser does not support Service Workers");
+      return false;
+    }
     if (!userId) return false;
+
+    // 1. Check for Key immediately
+    if (!VAPID_PUBLIC_KEY) {
+      alert("Critical Error: NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing in your deployment settings.");
+      return false;
+    }
 
     try {
       setLoading(true);
 
-      // 1. FORCE REGISTRATION
-      // Don't just wait. Check if it exists, if not, register it immediately.
+      // 2. Force Register sw.js
       let registration = await navigator.serviceWorker.getRegistration();
       if (!registration) {
-        registration = await navigator.serviceWorker.register('/sw.js');
+        // Try registering explicitly
+        try {
+          registration = await navigator.serviceWorker.register('/sw.js');
+        } catch (regError) {
+          throw new Error(`SW Register Failed: ${regError.message}`);
+        }
       }
 
-      // 2. Wait for it to be active to avoid "Subscribe on null" errors
+      // 3. Wait for Active (Wait up to 5s)
       if (!registration.active) {
         await new Promise(resolve => {
            const interval = setInterval(() => {
@@ -40,32 +53,41 @@ export function useNotifications(userId) {
                  resolve();
               }
            }, 100);
-           // Fallback timeout after 3s to try anyway
-           setTimeout(() => { clearInterval(interval); resolve(); }, 3000);
+           setTimeout(() => { clearInterval(interval); resolve(); }, 5000);
         });
       }
 
-      // 3. Subscribe
+      // Double check active state
+      if (!registration.active) {
+         // Proceeding anyway, but warning console
+         console.warn("Service Worker verified but not yet 'active'. Subscription might fail.");
+      }
+
+      // 4. Subscribe
+      const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      if (!convertedKey) throw new Error("VAPID Key conversion failed.");
+
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        applicationServerKey: convertedKey
       });
 
-      // 4. Send to DB
+      // 5. Send to DB
       const res = await fetch('/api/web-push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ subscription, user_id: userId }),
       });
 
-      if (!res.ok) throw new Error('Failed to sync with server');
+      if (!res.ok) throw new Error('Database sync failed');
       
-      alert("Notifications Active! 🔔");
+      alert("Success! Notifications enabled. 🔔");
       return true;
 
     } catch (error) {
       console.error("Subscription Error:", error);
-      alert("Could not enable notifications. Please check your system settings.");
+      // ALERT THE REAL ERROR to help debug
+      alert(`Error: ${error.message}`);
       return false;
     } finally {
       setLoading(false);
