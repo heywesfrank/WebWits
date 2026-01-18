@@ -3,6 +3,7 @@ import { useState } from "react";
 import { supabase } from "@/lib/supabase";
 import { Send, AlertCircle, Mail, Sparkles } from "lucide-react";
 import HowToPlayButton from "./HowToPlayButton";
+import PrizesButton from "./PrizesButton";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -109,9 +110,10 @@ export default function Login() {
           </form>
         )}
 
-        {/* Added: How to Play Button */}
+        {/* Added: How to Play & Prizes Buttons */}
         <div className="mt-8 pt-6 border-t border-gray-100">
           <HowToPlayButton />
+          <PrizesButton />
         </div>
 
       </div>
