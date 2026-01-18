@@ -12,8 +12,6 @@ export async function generateMetadata({ params }) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   );
 
-  // 1. Fetch data with explicit foreign keys
-  // This ensures we successfully get the meme data (unlike the original null error)
   const { data: comment } = await supabase
     .from('comments')
     .select(`
@@ -27,28 +25,29 @@ export async function generateMetadata({ params }) {
   const username = comment?.profiles?.username || 'Anon';
   const content = comment?.content || '';
   
-  // 2. Start with raw URL from DB
-  let finalImageUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
+  // Default fallback
+  let finalImageUrl = `${DOMAIN}/logo.png`;
+  let rawMemeUrl = comment?.memes?.image_url;
 
-  // 3. CLEAN ID EXTRACTION
-  // We extract just the ID to build a clean, static URL.
-  // Input:  .../media/v1.Y2lk.../1AjUYHTwbRYzVHQM3x/giphy.webp
-  // Output: https://media.giphy.com/media/1AjUYHTwbRYzVHQM3x/480w_still.jpg
-  if (finalImageUrl.includes('giphy.com')) {
+  if (rawMemeUrl && rawMemeUrl.includes('giphy.com')) {
     try {
-      const parts = finalImageUrl.split('/');
-      // The ID is always the segment right before the filename ("giphy.webp")
+      const parts = rawMemeUrl.split('/');
+      // Extract the ID (segment before the filename)
       const fileIndex = parts.findIndex(part => part.startsWith('giphy.'));
       
       if (fileIndex > 0) {
          const giphyId = parts[fileIndex - 1];
-         // Use the public 'media.giphy.com' endpoint which is more reliable than 'i.giphy.com' for stills
-         finalImageUrl = `https://media.giphy.com/media/${giphyId}/480w_still.jpg`;
+         // [!code fix] Use 'giphy_s.gif' (Static GIF).
+         // This is the safest, smallest static rendition that always exists.
+         // WhatsApp accepts static GIFs as preview images.
+         finalImageUrl = `https://media.giphy.com/media/${giphyId}/giphy_s.gif`;
       }
     } catch (e) {
       console.error("Error parsing Giphy URL:", e);
-      // Fallback: If parsing fails, use the original (it might show as a gif, but better than broken)
+      finalImageUrl = rawMemeUrl || finalImageUrl;
     }
+  } else if (rawMemeUrl) {
+    finalImageUrl = rawMemeUrl;
   }
 
   const title = comment ? `"${content}"` : 'WebWits';
@@ -63,8 +62,8 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      // This is now a clean JPG url
-      images: [{ url: finalImageUrl, width: 480, height: 480 }], 
+      // Removed hardcoded width/height so WhatsApp calculates it from the actual file
+      images: [{ url: finalImageUrl }], 
       type: 'website',
       siteName: 'WebWits',
     },
