@@ -19,7 +19,7 @@ function LeaderboardList({ leaderboard, scoreKey }) {
             ${index === 0 ? 'bg-white border-[#D4AF37]' : // Gold
               index === 1 ? 'bg-white border-[#C0C0C0]' : // Silver
               index === 2 ? 'bg-white border-[#CD7F32]' : // Bronze
-              'bg-transparent border-transparent hover:bg-gray-50'
+              'bg-white border-[#0284c7] hover:bg-gray-50' // Rest: App Blue
             }`}
         >
           <div className="flex items-center gap-2 min-w-0">
@@ -29,7 +29,7 @@ function LeaderboardList({ leaderboard, scoreKey }) {
               ${index === 0 ? 'bg-[#D4AF37] text-white' : 
                 index === 1 ? 'bg-[#C0C0C0] text-white' : 
                 index === 2 ? 'bg-[#CD7F32] text-white' : 
-                'bg-yellow-100 text-yellow-600'}
+                'bg-[#0284c7] text-white'} 
             `}>
               {index + 1}
             </div>
@@ -38,9 +38,9 @@ function LeaderboardList({ leaderboard, scoreKey }) {
             <div className="flex flex-col min-w-0">
               <span className={`font-bold text-xs truncate ${
                 index === 0 ? 'text-[#D4AF37]' : 
-                index === 1 ? 'text-[#757575]' : // Darker silver for readability
+                index === 1 ? 'text-[#757575]' : 
                 index === 2 ? 'text-[#CD7F32]' : 
-                'text-yellow-900'
+                'text-[#0284c7]'
               }`}>
                 {user.username}
               </span>
