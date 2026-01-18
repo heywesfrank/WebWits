@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen } from "lucide-react";
 
@@ -14,6 +14,7 @@ import Onboarding from "./Onboarding";
 import LeaderboardWidget, { LeaderboardModal } from "./LeaderboardWidget";
 import MemeStage from "./MemeStage";
 import CaptionFeed from "./CaptionFeed";
+import NotificationModal from "./NotificationModal"; // [!code ++]
 
 // Hooks
 import { useGameLogic } from "@/hooks/useGameLogic";
@@ -30,6 +31,7 @@ export default function MainApp({ session }) {
   const [submitting, setSubmitting] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
+  const [showNotifModal, setShowNotifModal] = useState(false); // [!code ++]
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -38,6 +40,18 @@ export default function MainApp({ session }) {
     if (success) setNewCaption("");
     setSubmitting(false);
   };
+
+  // Logic to trigger Notification Modal [!code ++]
+  useEffect(() => {
+    // Only check if user is logged in AND onboarding is finished
+    if (session?.user && !showOnboarding) {
+      if ('Notification' in window && Notification.permission === 'default') {
+        // Small delay to not overwhelm the user immediately
+        const timer = setTimeout(() => setShowNotifModal(true), 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [session, showOnboarding]);
 
   const currentMeme = viewMode === 'active' ? activeMeme : selectedMeme;
 
@@ -50,10 +64,18 @@ export default function MainApp({ session }) {
           session={session} 
           onComplete={() => { 
             setShowOnboarding(false); 
+            // Reload isn't strictly necessary with state updates, but keeping your original logic
             window.location.reload(); 
           }} 
         />
       )}
+      
+      {/* Notification Modal [!code ++] */}
+      <NotificationModal 
+        session={session} 
+        isOpen={showNotifModal} 
+        onClose={() => setShowNotifModal(false)} 
+      />
       
       <ToastContainer toasts={toasts} removeToast={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
       <UserProfileModal user={session?.user} profile={userProfile} isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
@@ -139,7 +161,6 @@ export default function MainApp({ session }) {
 
         {/* Sidebar */}
         <div className="hidden md:block md:col-span-1 space-y-6 sticky top-24 h-fit">
-          {/* FIX: Changed prop from initialWeeklyLeaders to initialLeaders */}
           <LeaderboardWidget initialLeaders={leaderboard} />
           <HowToPlayButton />
           <PrizesButton />
