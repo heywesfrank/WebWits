@@ -2,14 +2,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase";
-import { AlertCircle, Mail, Sparkles, KeyRound, ArrowRight, Bell } from "lucide-react"; // [!code ++] Added Bell icon for visual feedback
+import { AlertCircle, Mail, Sparkles, KeyRound, ArrowRight } from "lucide-react";
 import HowToPlayButton from "./HowToPlayButton";
 import PrizesButton from "./PrizesButton";
 
-// [!code ++] 1. Add VAPID helpers at the top
+// Helper: VAPID Key conversion (Must be outside component)
 const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY;
 
 function urlBase64ToUint8Array(base64String) {
+  if (!base64String) return null;
   const padding = '='.repeat((4 - base64String.length % 4) % 4);
   const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
   const rawData = window.atob(base64);
@@ -29,7 +30,7 @@ export default function Login() {
   const [errorMsg, setErrorMsg] = useState("");
   const [infoMsg, setInfoMsg] = useState("");
 
-  // ... handleSendCode stays the same ...
+  // 1. Request the Code
   const handleSendCode = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -50,28 +51,25 @@ export default function Login() {
     setLoading(false);
   };
 
-  // [!code ++] 2. The Auto-Subscribe Helper
+  // Helper: Subscribe Logic
   const subscribeToPush = async (userId) => {
-    // Basic checks
     if (!('serviceWorker' in navigator)) return;
     if (!VAPID_PUBLIC_KEY) {
-        console.warn("VAPID Key missing");
-        return;
+       console.warn("VAPID Key missing in .env");
+       return;
     }
 
     try {
-      // 1. Wait for Service Worker
       const registration = await navigator.serviceWorker.ready;
+      
+      const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
+      if (!convertedKey) return;
 
-      // 2. Request Subscription (Triggers the browser popup)
-      // Since this is called inside the async flow of the button click, 
-      // most browsers will still accept it as a user gesture.
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY)
+        applicationServerKey: convertedKey
       });
 
-      // 3. Save to DB
       await fetch('/api/web-push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -80,21 +78,18 @@ export default function Login() {
           user_id: userId 
         }),
       });
-      
       console.log("Subscribed to push!");
     } catch (err) {
       console.error("Push subscription failed:", err);
-      // We do NOT block login if this fails (e.g. user denies permission)
     }
   };
 
-  // [!code warning] 3. Updated Verification Handler
+  // 2. Verify the Code
   const handleVerifyOtp = async (e) => {
     e.preventDefault();
     setLoading(true);
     setErrorMsg("");
 
-    // A. Verify the User
     const { data, error } = await supabase.auth.verifyOtp({
       email,
       token: otp,
@@ -107,48 +102,121 @@ export default function Login() {
     } else {
       setInfoMsg("Success! Entering the arena...");
       
-      // [!code ++] B. Trigger Subscription using the new User ID
+      // Attempt Subscription (Non-blocking)
       if (data?.session?.user?.id) {
           await subscribeToPush(data.session.user.id);
       }
 
-      // C. Redirect
       router.push("/");
       router.refresh();
     }
   };
 
   return (
-     // ... JSX remains exactly the same ...
-     <div className="flex min-h-screen flex-col items-center justify-center bg-white p-4 text-gray-900">
+    <div className="flex min-h-screen flex-col items-center justify-center bg-white p-4 text-gray-900">
       <div className="w-full max-w-md bg-white border border-gray-200 p-8 rounded-2xl shadow-2xl">
-        {/* ... Logo Section ... */}
         
-        {/* ... OTP FORM ... */}
+        <div className="text-center mb-8">
+          <img src="/logo.png" alt="WebWits" className="w-64 h-auto object-contain mx-auto mb-6" />
+          <p className="text-gray-600 text-sm">
+            {showOtpInput ? "Enter the code sent to your email." : "No passwords. Just wit. Enter your email to join the battle."}
+          </p>
+        </div>
+
+        {/* OTP INPUT FORM */}
         {showOtpInput ? (
-          <form onSubmit={handleVerifyOtp} className="...">
-             {/* ... Inputs ... */}
-             
+          <form onSubmit={handleVerifyOtp} className="flex flex-col gap-5 animate-in fade-in slide-in-from-right duration-300">
+             <div>
+              <label htmlFor="otp" className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+                Confirmation Code
+              </label>
+              <div className="relative">
+                <input
+                  id="otp"
+                  type="text"
+                  placeholder="123456"
+                  value={otp}
+                  onChange={(e) => setOtp(e.target.value)}
+                  disabled={loading}
+                  autoFocus
+                  className="w-full p-3 pl-10 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all disabled:opacity-50 text-xl tracking-widest font-mono"
+                  required
+                />
+                <KeyRound size={18} className="absolute left-3 top-3.5 text-gray-400" />
+              </div>
+            </div>
+
+            {errorMsg && (
+              <div className="p-3 rounded bg-red-50 border border-red-200 flex items-center gap-2 text-red-600 text-sm">
+                <AlertCircle size={16} />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold p-3 rounded-lg transition-all ..."
+              className="group relative w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold p-3 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
             >
-              {loading ? "Entering..." : (
+              {loading ? "Verifying..." : (
                 <><span>Enter Arena</span><ArrowRight size={18} /></>
               )}
             </button>
             
-            {/* ... Back Button ... */}
+            <button 
+              type="button"
+              onClick={() => { setShowOtpInput(false); setInfoMsg(""); setOtp(""); }}
+              className="text-xs text-center text-gray-400 hover:text-gray-600"
+            >
+              Start over with a different email
+            </button>
           </form>
         ) : (
-          /* ... Email Form ... */
-           <form onSubmit={handleSendCode} className="flex flex-col gap-5">
-             {/* ... */}
-           </form>
+          /* EMAIL INPUT FORM */
+          <form onSubmit={handleSendCode} className="flex flex-col gap-5">
+            <div>
+              <label htmlFor="email" className="block text-xs font-medium text-gray-500 uppercase tracking-wider mb-1.5">
+                Email Address
+              </label>
+              <div className="relative">
+                <input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={loading}
+                  className="w-full p-3 pl-10 rounded-lg bg-gray-50 border border-gray-300 text-gray-900 placeholder-gray-400 focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 outline-none transition-all disabled:opacity-50"
+                  required
+                />
+                <Mail size={18} className="absolute left-3 top-3.5 text-gray-400" />
+              </div>
+            </div>
+
+            {errorMsg && (
+              <div className="p-3 rounded bg-red-50 border border-red-200 flex items-center gap-2 text-red-600 text-sm">
+                <AlertCircle size={16} />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="group relative w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold p-3 rounded-lg transition-all transform hover:scale-[1.01] active:scale-[0.99] disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2 shadow-md"
+            >
+              {loading ? "Sending..." : (
+                <><span>Get Login Code</span><Sparkles size={18} /></>
+              )}
+            </button>
+          </form>
         )}
-        
-        {/* ... Footer Buttons ... */}
+
+        <div className="mt-8 pt-6 border-t border-gray-100">
+          <HowToPlayButton />
+          <PrizesButton />
+        </div>
+
       </div>
     </div>
   );
