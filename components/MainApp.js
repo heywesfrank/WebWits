@@ -138,7 +138,8 @@ export default function MainApp({ session }) {
 
         {/* Sidebar */}
         <div className="hidden md:block md:col-span-1 space-y-6 sticky top-24 h-fit">
-          <LeaderboardWidget initialWeeklyLeaders={leaderboard} />
+          {/* FIX: Changed prop from initialWeeklyLeaders to initialLeaders */}
+          <LeaderboardWidget initialLeaders={leaderboard} />
           <HowToPlayButton />
           <PrizesButton />
         </div>
@@ -148,28 +149,23 @@ export default function MainApp({ session }) {
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-6 pt-2 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
         <div className="grid grid-cols-5 items-end justify-items-center w-full px-2">
           
-          {/* 1. Battle (Left) */}
           <button onClick={handleBackToArena} className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all ${viewMode === 'active' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
             <Flame size={20} /> <span>Battle</span>
           </button>
 
-          {/* 2. Rank (Left) */}
           <button onClick={() => setShowLeaderboardModal(true)} className="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-gray-400 active:text-gray-900 transition-all">
             <Trophy size={20} /> <span>Rank</span>
           </button>
 
-          {/* 3. Free Prizes (Center - Larger & Flashing) */}
           <Link href="/prizes" className="flex flex-col items-center justify-center gap-1 text-xs font-black text-yellow-600 animate-pulse transition-all hover:text-yellow-700 scale-110 -mt-2">
             <Gift size={28} className="fill-yellow-100" /> 
             <span className="whitespace-nowrap leading-none">Free Prizes</span>
           </Link>
 
-          {/* 4. Archive (Right) */}
           <button onClick={() => setViewMode('archive')} className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all ${viewMode === 'archive' || viewMode === 'archive-detail' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
             <History size={20} /> <span>Archive</span>
           </button>
 
-          {/* 5. How to Play (Right) */}
           <Link href="/how-it-works" className="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-gray-400 active:text-gray-900 transition-all">
             <BookOpen size={20} /> <span className="whitespace-nowrap">How to Play</span>
           </Link>
