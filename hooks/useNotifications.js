@@ -16,18 +16,29 @@ function urlBase64ToUint8Array(base64String) {
 
 export function useNotifications(userId) {
   const [loading, setLoading] = useState(false);
+  const [logs, setLogs] = useState([]); // [!code ++] New Log State
+
+  // Helper to add logs to state and console simultaneously
+  const addLog = (msg) => {
+    const timestamp = new Date().toLocaleTimeString();
+    const logLine = `[${timestamp}] ${msg}`;
+    console.log(logLine);
+    setLogs(prev => [...prev, logLine]);
+  };
 
   const subscribe = async () => {
-    console.log("🚀 [PUSH LOG] Starting Subscribe Flow for user:", userId);
+    setLogs([]); // Clear previous logs on new attempt
+    addLog("🚀 Starting Subscribe Flow...");
+    addLog(`User ID: ${userId || 'Missing'}`);
 
     if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-      console.error("❌ [PUSH LOG] Browser not supported");
+      addLog("❌ Browser not supported (No SW or PushManager)");
       alert("Browser not supported");
       return false;
     }
 
     if (!VAPID_PUBLIC_KEY) {
-      console.error("❌ [PUSH LOG] Missing VAPID Key");
+      addLog("❌ Missing VAPID Key in env vars");
       alert("Missing Configuration");
       return false;
     }
@@ -36,59 +47,68 @@ export function useNotifications(userId) {
       setLoading(true);
 
       // 1. Permission
-      console.log("🔍 [PUSH LOG] Checking permission...");
+      addLog("Step 1: Checking permission...");
       const permission = await Notification.requestPermission();
-      console.log("✅ [PUSH LOG] Permission status:", permission);
+      addLog(`Permission status: ${permission}`);
       
       if (permission !== 'granted') {
+        addLog("❌ Permission denied by user");
         alert("Permission denied");
         return false;
       }
 
       // 2. Register
-      console.log("🔍 [PUSH LOG] Registering SW...");
+      addLog("Step 2: Registering SW...");
       const registration = await navigator.serviceWorker.register('/sw.js');
-      console.log("✅ [PUSH LOG] Registration found:", registration);
+      addLog(`Registration found. Scope: ${registration.scope}`);
 
       // 3. Update & Wait for Controller
-      console.log("🔍 [PUSH LOG] Forcing update...");
-      await registration.update();
+      addLog("Step 3: Forcing update & checking controller...");
+      try {
+        await registration.update();
+      } catch(e) {
+        addLog(`⚠️ Update warning: ${e.message}`);
+      }
       
       if (!navigator.serviceWorker.controller) {
-          console.log("⏳ [PUSH LOG] No controller. Waiting for claim...");
+          addLog("⏳ No controller yet. Waiting for 'controllerchange'...");
           await new Promise(resolve => {
               const handler = () => {
-                  console.log("✅ [PUSH LOG] Controller taken!");
+                  addLog("✅ Controller taken!");
                   navigator.serviceWorker.removeEventListener('controllerchange', handler);
                   resolve();
               }
               navigator.serviceWorker.addEventListener('controllerchange', handler);
               setTimeout(() => {
-                  console.warn("⚠️ [PUSH LOG] Controller wait timeout (4s). Proceeding anyway.");
+                  addLog("⚠️ Controller wait timed out (4s). Proceeding...");
                   resolve();
               }, 4000);
           });
       } else {
-          console.log("✅ [PUSH LOG] Controller active.");
+          addLog("✅ Controller already active.");
       }
 
       // 4. Get Fresh Registration
+      addLog("Step 4: Getting fresh registration...");
       const freshReg = await navigator.serviceWorker.getRegistration();
-      if (!freshReg || !freshReg.active) {
+      if (!freshReg) throw new Error("Registration disappeared!");
+      if (!freshReg.active) {
+          addLog("❌ SW found but not .active property");
           throw new Error("Service Worker not active. Reload required.");
       }
+      addLog("✅ Active Worker confirmed.");
 
       // 5. Subscribe
-      console.log("🔍 [PUSH LOG] Subscribing via PushManager...");
+      addLog("Step 5: Subscribing via PushManager...");
       const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
       const subscription = await freshReg.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey
       });
-      console.log("✅ [PUSH LOG] Subscription Object generated:", JSON.stringify(subscription));
+      addLog("✅ Subscription Object generated.");
 
       // 6. DB Call
-      console.log("🔍 [PUSH LOG] Sending to DB...");
+      addLog("Step 6: Sending to DB...");
       const res = await fetch('/api/web-push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -97,16 +117,17 @@ export function useNotifications(userId) {
 
       if (!res.ok) {
         const text = await res.text();
-        console.error("❌ [PUSH LOG] DB Error Response:", text);
+        addLog(`❌ DB Error Response: ${res.status} ${text}`);
         throw new Error(`DB Error: ${text}`);
       }
 
-      console.log("🎉 [PUSH LOG] SUCCESS! Saved to DB.");
+      addLog("🎉 SUCCESS! Saved to DB.");
       alert("Notifications enabled successfully!");
       return true;
 
     } catch (error) {
-      console.error("❌ [PUSH LOG] FATAL ERROR:", error);
+      addLog(`❌ FATAL ERROR: ${error.message}`);
+      
       if (error.message.includes("not active") || error.message.includes("Reload")) {
           const reload = confirm("Setup incomplete. Reload now to finish?");
           if (reload) window.location.reload();
@@ -119,5 +140,5 @@ export function useNotifications(userId) {
     }
   };
 
-  return { subscribe, loading };
+  return { subscribe, loading, logs }; // [!code ++] Return logs here
 }
