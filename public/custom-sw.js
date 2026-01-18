@@ -4,14 +4,12 @@ console.log("[SW] Custom Service Worker Loaded");
 
 self.addEventListener('install', (event) => {
   console.log("[SW] Install Event");
-  // Force this new worker to become the active one, kicking out the old one
-  self.skipWaiting();
+  self.skipWaiting(); // Force activation
 });
 
 self.addEventListener('activate', (event) => {
   console.log("[SW] Activate Event");
-  // Immediately take control of the page (so we don't have to reload)
-  event.waitUntil(self.clients.claim());
+  event.waitUntil(self.clients.claim()); // Grab control immediately
 });
 
 self.addEventListener('push', function(event) {
