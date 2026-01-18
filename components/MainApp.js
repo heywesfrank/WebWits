@@ -14,7 +14,7 @@ import Onboarding from "./Onboarding";
 import LeaderboardWidget, { LeaderboardModal } from "./LeaderboardWidget";
 import MemeStage from "./MemeStage";
 import CaptionFeed from "./CaptionFeed";
-import NotificationModal from "./NotificationModal"; // [!code ++]
+import NotificationModal from "./NotificationModal"; 
 
 // Hooks
 import { useGameLogic } from "@/hooks/useGameLogic";
@@ -31,7 +31,7 @@ export default function MainApp({ session }) {
   const [submitting, setSubmitting] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
-  const [showNotifModal, setShowNotifModal] = useState(false); // [!code ++]
+  const [showNotifModal, setShowNotifModal] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -41,16 +41,43 @@ export default function MainApp({ session }) {
     setSubmitting(false);
   };
 
-  // Logic to trigger Notification Modal [!code ++]
+  // [!code fix] IMPROVED NOTIFICATION CHECK
   useEffect(() => {
-    // Only check if user is logged in AND onboarding is finished
-    if (session?.user && !showOnboarding) {
-      if ('Notification' in window && Notification.permission === 'default') {
-        // Small delay to not overwhelm the user immediately
-        const timer = setTimeout(() => setShowNotifModal(true), 1000);
-        return () => clearTimeout(timer);
+    const checkNotificationStatus = async () => {
+      // 1. Must be logged in and done with onboarding
+      if (!session?.user || showOnboarding) return;
+      
+      // 2. Browser must support it
+      if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
+
+      // 3. If blocked, don't annoy them
+      if (Notification.permission === 'denied') return;
+
+      // 4. If 'default', ask for permission
+      if (Notification.permission === 'default') {
+         setTimeout(() => setShowNotifModal(true), 2000);
+         return;
       }
-    }
+
+      // 5. If 'granted', check if we ACTUALLY have a subscription
+      if (Notification.permission === 'granted') {
+        try {
+          const registration = await navigator.serviceWorker.getRegistration();
+          if (registration) {
+            const sub = await registration.pushManager.getSubscription();
+            // If no subscription exists, show the modal again so they can retry!
+            if (!sub) {
+               console.log("Permission granted but no subscription found. Prompting user...");
+               setTimeout(() => setShowNotifModal(true), 2000);
+            }
+          }
+        } catch (err) {
+          console.error("Error checking subscription:", err);
+        }
+      }
+    };
+
+    checkNotificationStatus();
   }, [session, showOnboarding]);
 
   const currentMeme = viewMode === 'active' ? activeMeme : selectedMeme;
@@ -64,13 +91,11 @@ export default function MainApp({ session }) {
           session={session} 
           onComplete={() => { 
             setShowOnboarding(false); 
-            // Reload isn't strictly necessary with state updates, but keeping your original logic
             window.location.reload(); 
           }} 
         />
       )}
       
-      {/* Notification Modal [!code ++] */}
       <NotificationModal 
         session={session} 
         isOpen={showNotifModal} 
@@ -83,11 +108,8 @@ export default function MainApp({ session }) {
       <LeaderboardModal leaderboard={leaderboard} isOpen={showLeaderboardModal} onClose={() => setShowLeaderboardModal(false)} />
 
       <div className="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-        
         {/* Main Column */}
         <div className="md:col-span-2 space-y-6">
-          
-          {/* Game Mode Toggles */}
           <div className="hidden md:flex bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
             <button onClick={handleBackToArena} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition ${viewMode === 'active' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>
               <Flame size={16} /> Active Battle
@@ -101,14 +123,12 @@ export default function MainApp({ session }) {
              <ArchiveSection archives={archivedMemes} onSelectMeme={handleArchiveSelect} />
           ) : (
             <>
-              {/* Back Button (Archive Detail) */}
               {viewMode === 'archive-detail' && (
                 <button onClick={() => setViewMode('archive')} className="flex items-center gap-2 text-sm font-bold text-gray-500 hover:text-black mb-2 transition-colors">
                   <ArrowLeft size={16} /> Back to Archives
                 </button>
               )}
 
-              {/* Meme Card */}
               <div className="bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden relative">
                 <MemeStage 
                   meme={currentMeme} 
@@ -116,7 +136,6 @@ export default function MainApp({ session }) {
                   loading={loading && !currentMeme} 
                 />
                 
-                {/* Interaction Bar */}
                 {viewMode === 'active' && currentMeme && (
                   session ? (
                     hasCommented ? (
@@ -144,7 +163,6 @@ export default function MainApp({ session }) {
                 )}
               </div>
 
-              {/* Feed */}
               <CaptionFeed 
                 captions={captions}
                 meme={currentMeme} 
@@ -159,7 +177,6 @@ export default function MainApp({ session }) {
           )}
         </div>
 
-        {/* Sidebar */}
         <div className="hidden md:block md:col-span-1 space-y-6 sticky top-24 h-fit">
           <LeaderboardWidget initialLeaders={leaderboard} />
           <HowToPlayButton />
@@ -167,34 +184,26 @@ export default function MainApp({ session }) {
         </div>
       </div>
 
-      {/* Mobile Nav */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-50 pb-6 pt-2 shadow-[0_-5px_10px_rgba(0,0,0,0.05)]">
         <div className="grid grid-cols-5 items-end justify-items-center w-full px-2">
-          
           <button onClick={handleBackToArena} className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all ${viewMode === 'active' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
             <Flame size={20} /> <span>Battle</span>
           </button>
-
           <button onClick={() => setShowLeaderboardModal(true)} className="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-gray-400 active:text-gray-900 transition-all">
             <Trophy size={20} /> <span>Rank</span>
           </button>
-
           <Link href="/prizes" className="flex flex-col items-center justify-center gap-1 text-xs font-black text-yellow-600 animate-pulse transition-all hover:text-yellow-700 scale-110 -mt-2">
             <Gift size={28} className="fill-yellow-100" /> 
             <span className="whitespace-nowrap leading-none">Free Prizes</span>
           </Link>
-
           <button onClick={() => setViewMode('archive')} className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all ${viewMode === 'archive' || viewMode === 'archive-detail' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
             <History size={20} /> <span>Archive</span>
           </button>
-
           <Link href="/how-it-works" className="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-gray-400 active:text-gray-900 transition-all">
             <BookOpen size={20} /> <span className="whitespace-nowrap">How to Play</span>
           </Link>
-          
         </div>
       </div>
-
     </div>
   );
 }
