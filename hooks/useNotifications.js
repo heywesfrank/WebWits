@@ -34,7 +34,6 @@ export function useNotifications(userId) {
       setLoading(true);
 
       // --- STEP 1: Explicit Permission Request ---
-      // We do this BEFORE touching the Service Worker to avoid hanging if the prompt is blocked.
       const permission = await Notification.requestPermission();
       if (permission !== 'granted') {
         alert("Notifications blocked. Please enable them in your browser settings.");
@@ -42,17 +41,26 @@ export function useNotifications(userId) {
       }
 
       // --- STEP 2: Register Service Worker ---
-      // We register explicitly to ensure the browser knows where to look.
-      await navigator.serviceWorker.register('/sw.js');
+      // We explicitly register /sw.js. If it's already there, this just returns the registration.
+      const registration = await navigator.serviceWorker.register('/sw.js');
 
-      // --- STEP 3: Wait for Active Worker (With Timeout) ---
-      // This prevents the "Enabling..." loop if sw.js fails to install.
-      const waitForReady = navigator.serviceWorker.ready;
-      const timeout = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("Service Worker timed out (10s). Try reloading.")), 10000)
-      );
+      // --- STEP 3: Ensure Active Worker (The Fix) ---
+      // Instead of relying solely on .ready (which can hang), we check if we already have a valid registration.
+      let activeWorker = registration.active || registration.waiting || registration.installing;
+      
+      // If we have no worker at all, THEN we wait for .ready as a last resort
+      if (!activeWorker) {
+          const waitForReady = navigator.serviceWorker.ready;
+          const timeout = new Promise((_, reject) => 
+            setTimeout(() => reject(new Error("Service Worker timed out. Try reloading.")), 10000)
+          );
+          const readyReg = await Promise.race([waitForReady, timeout]);
+          activeWorker = readyReg.active;
+      }
 
-      const registration = await Promise.race([waitForReady, timeout]);
+      if (!activeWorker) {
+        throw new Error("Could not find an active Service Worker.");
+      }
 
       // --- STEP 4: Subscribe ---
       const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
@@ -68,7 +76,7 @@ export function useNotifications(userId) {
         body: JSON.stringify({ subscription, user_id: userId }),
       });
 
-      if (!res.ok) throw new Error('Failed to save subscription to server.');
+      if (!res.ok) throw new Error('Database sync failed');
       
       alert("Success! Notifications enabled. 🔔");
       return true;
@@ -76,9 +84,9 @@ export function useNotifications(userId) {
     } catch (error) {
       console.error("Subscription Error:", error);
       
-      // Specific error messages for the user
       if (error.message.includes("timed out")) {
-        alert("Error: The app is updating. Please reload the page and try again.");
+        // Fallback: If it timed out, it might actually be working in the background.
+        alert("It's taking a while... Try clicking the button one more time.");
       } else {
         alert(`Error: ${error.message}`);
       }
