@@ -15,8 +15,6 @@ export async function GET(request) {
     const today = new Date().toISOString().split('T')[0];
 
     // --- STEP 0: IDEMPOTENCY CHECK ---
-    // Check if a meme for today already exists.
-    // If it does, stop immediately to prevent double-runs or overwriting.
     const { data: existingToday } = await supabase
       .from('memes')
       .select('id, status')
@@ -30,7 +28,7 @@ export async function GET(request) {
         meme: existingToday
       });
     }
-    
+
     // --- STEP 1: Fetch a Unique GIF (No Repeats) ---
     let contentUrl = null;
     let posterUrl = null;
@@ -39,8 +37,6 @@ export async function GET(request) {
 
     while (!isUnique && attempts < 5) {
       attempts++;
-      
-      // Fetch from Giphy with no-store to avoid caching
       const giphyRes = await fetch(
         `https://api.giphy.com/v1/gifs/random?api_key=${GIPHY_API_KEY}&tag=funny&rating=pg-13`,
         { cache: 'no-store' }
@@ -52,7 +48,6 @@ export async function GET(request) {
 
       const tempContentUrl = gif.images.original.mp4;
       
-      // Check if this GIF URL already exists in our DB
       const { data: existing } = await supabase
         .from('memes')
         .select('id')
@@ -63,36 +58,77 @@ export async function GET(request) {
         contentUrl = tempContentUrl;
         posterUrl = gif.images.original.webp;
         isUnique = true;
-      } else {
-        console.log(`Duplicate GIF found (Attempt ${attempts}), retrying...`);
       }
     }
 
     if (!isUnique) throw new Error("Failed to find a unique GIF after 5 attempts");
 
-    // --- STEP 2: Archive ALL currently active memes (Self-Healing) ---
+    // --- STEP 2: Archive & SCORE active memes ---
     const { data: activeMemes } = await supabase
       .from('memes')
       .select('id')
       .eq('status', 'active');
 
     if (activeMemes && activeMemes.length > 0) {
+      
+      // A. MONTHLY RESET CHECK
+      // If today is the 1st of the month, reset everyone's monthly_points to 0
+      // The points calculated below will effectively be the first points of the new month.
+      const currentDay = new Date().getDate();
+      if (currentDay === 1) {
+         await supabase.from('profiles').update({ monthly_points: 0 }).neq('id', '00000000-0000-0000-0000-000000000000');
+         console.log("First of the month: Monthly points reset.");
+      }
+
       for (const meme of activeMemes) {
         let winningCaption = null;
 
-        // Find winner for this specific meme
-        const { data: topComments } = await supabase
+        // 1. Get all comments and their vote counts
+        const { data: comments } = await supabase
           .from('comments')
-          .select('content, vote_count')
+          .select('id, content, vote_count, user_id')
           .eq('meme_id', meme.id)
-          .order('vote_count', { ascending: false })
-          .limit(1);
+          .order('vote_count', { ascending: false });
 
-        if (topComments && topComments.length > 0) {
-          winningCaption = topComments[0].content;
+        if (comments && comments.length > 0) {
+          winningCaption = comments[0].content;
+
+          // 2. Aggregate points per user
+          const userPoints = {};
+          comments.forEach(comment => {
+            if (comment.vote_count > 0) {
+              userPoints[comment.user_id] = (userPoints[comment.user_id] || 0) + comment.vote_count;
+            }
+          });
+
+          // 3. Update User Profiles
+          // We fetch the current stats for these users first to ensure accuracy
+          const userIds = Object.keys(userPoints);
+          if (userIds.length > 0) {
+            const { data: currentProfiles } = await supabase
+              .from('profiles')
+              .select('id, monthly_points, total_points')
+              .in('id', userIds);
+
+            const updates = currentProfiles.map(profile => {
+              const points earned = userPoints[profile.id] || 0;
+              return {
+                id: profile.id,
+                monthly_points: (profile.monthly_points || 0) + pointsEarned,
+                total_points: (profile.total_points || 0) + pointsEarned,
+                updated_at: new Date()
+              };
+            });
+
+            const { error: upsertError } = await supabase
+              .from('profiles')
+              .upsert(updates);
+              
+            if (upsertError) console.error("Error updating points:", upsertError);
+          }
         }
 
-        // Archive it
+        // 4. Archive the meme
         await supabase
           .from('memes')
           .update({ 
@@ -104,7 +140,6 @@ export async function GET(request) {
     }
 
     // --- STEP 3: Insert the New Meme ---
-    // We reuse the 'today' variable defined at the top
     const { data, error: insertError } = await supabase
       .from('memes')
       .insert({
