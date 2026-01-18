@@ -14,6 +14,33 @@ function urlBase64ToUint8Array(base64String) {
   return outputArray;
 }
 
+// Helper: Waits for a SW to become "active" if it's currently installing/waiting
+async function waitForActiveWorker(registration) {
+  if (registration.active) return; // Already active!
+
+  const worker = registration.installing || registration.waiting;
+  if (!worker) return; // No worker found at all?
+
+  return new Promise((resolve, reject) => {
+    // If it's already active by the time we add the listener
+    if (worker.state === 'activated') resolve();
+
+    const listener = () => {
+      if (worker.state === 'activated') {
+        worker.removeEventListener('statechange', listener);
+        resolve();
+      }
+    };
+    worker.addEventListener('statechange', listener);
+    
+    // Timeout after 10 seconds so we don't hang forever
+    setTimeout(() => {
+        worker.removeEventListener('statechange', listener);
+        reject(new Error("Service Worker took too long to activate."));
+    }, 10000);
+  });
+}
+
 export function useNotifications(userId) {
   const [loading, setLoading] = useState(false);
 
@@ -23,56 +50,40 @@ export function useNotifications(userId) {
       return false;
     }
     if (!userId) return false;
-
-    // 1. Check for Key immediately
     if (!VAPID_PUBLIC_KEY) {
-      alert("Critical Error: NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing in your deployment settings.");
+      alert("Critical Error: NEXT_PUBLIC_VAPID_PUBLIC_KEY is missing.");
       return false;
     }
 
     try {
       setLoading(true);
 
-      // 2. Force Register sw.js
+      // 1. Get or Create Registration
       let registration = await navigator.serviceWorker.getRegistration();
       if (!registration) {
-        // Try registering explicitly
-        try {
-          registration = await navigator.serviceWorker.register('/sw.js');
-        } catch (regError) {
-          throw new Error(`SW Register Failed: ${regError.message}`);
-        }
+        registration = await navigator.serviceWorker.register('/sw.js');
       }
 
-      // 3. Wait for Active (Wait up to 5s)
+      // 2. FORCE UPDATES if it's stuck
+      // This asks the browser to check for a new version immediately
+      await registration.update();
+
+      // 3. WAIT for it to be active (The Fix)
+      await waitForActiveWorker(registration);
+
+      // 4. Double check before calling subscribe
       if (!registration.active) {
-        await new Promise(resolve => {
-           const interval = setInterval(() => {
-              if (registration.active) {
-                 clearInterval(interval);
-                 resolve();
-              }
-           }, 100);
-           setTimeout(() => { clearInterval(interval); resolve(); }, 5000);
-        });
+         throw new Error("Service Worker is installed but not active. Try closing the app completely and reopening it.");
       }
 
-      // Double check active state
-      if (!registration.active) {
-         // Proceeding anyway, but warning console
-         console.warn("Service Worker verified but not yet 'active'. Subscription might fail.");
-      }
-
-      // 4. Subscribe
+      // 5. Subscribe
       const convertedKey = urlBase64ToUint8Array(VAPID_PUBLIC_KEY);
-      if (!convertedKey) throw new Error("VAPID Key conversion failed.");
-
       const subscription = await registration.pushManager.subscribe({
         userVisibleOnly: true,
         applicationServerKey: convertedKey
       });
 
-      // 5. Send to DB
+      // 6. Send to DB
       const res = await fetch('/api/web-push/subscribe', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -86,7 +97,6 @@ export function useNotifications(userId) {
 
     } catch (error) {
       console.error("Subscription Error:", error);
-      // ALERT THE REAL ERROR to help debug
       alert(`Error: ${error.message}`);
       return false;
     } finally {
