@@ -20,9 +20,15 @@ export async function generateMetadata({ params }) {
 
   const username = comment?.profiles?.username || 'Anon';
   const content = comment?.content || '';
-  const imageUrl = comment?.memes?.image_url || `${DOMAIN}/logo.png`;
+  const rawMemeUrl = comment?.memes?.image_url;
 
-  // Fallback title/desc if comment not found
+  // [!code change] Generate a Dynamic OG Image URL
+  // This calls your /api/og route, which converts the meme + text into a PNG.
+  // This solves the WhatsApp "WebP" issue.
+  const ogImageUrl = rawMemeUrl 
+    ? `${DOMAIN}/api/og?content=${encodeURIComponent(content)}&username=${encodeURIComponent(username)}&memeUrl=${encodeURIComponent(rawMemeUrl)}`
+    : `${DOMAIN}/logo.png`;
+
   const title = comment ? `"${content}"` : 'WebWits';
   const description = comment 
     ? `Can you beat this caption by @${username}?` 
@@ -35,7 +41,8 @@ export async function generateMetadata({ params }) {
     openGraph: {
       title: title,
       description: description,
-      images: [{ url: imageUrl, width: 800, height: 600 }],
+      // [!code change] Point to the generated PNG
+      images: [{ url: ogImageUrl, width: 1200, height: 630 }],
       type: 'website',
       siteName: 'WebWits',
     },
@@ -43,7 +50,7 @@ export async function generateMetadata({ params }) {
       card: 'summary_large_image',
       title: title,
       description: description,
-      images: [imageUrl],
+      images: [ogImageUrl],
     },
   };
 }
