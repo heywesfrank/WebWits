@@ -1,0 +1,11 @@
+// app/robots.js
+export default function robots() {
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: ['/api/', '/profile'], // Don't crawl API or private user profiles
+    },
+    sitemap: 'https://itswebwits.com/sitemap.xml',
+  };
+}
