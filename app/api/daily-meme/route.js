@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { sendNotificationToUser, sendNotificationToAll } from '@/lib/sendPush';
 
 // Prevent Next.js from caching this route
 export const dynamic = 'force-dynamic';
@@ -72,7 +73,6 @@ export async function GET(request) {
     if (activeMemes && activeMemes.length > 0) {
       
       // A. MONTHLY RESET CHECK
-      // If today is the 1st of the month, reset everyone's monthly_points to 0
       const currentDay = new Date().getDate();
       if (currentDay === 1) {
          await supabase.from('profiles').update({ monthly_points: 0 }).neq('id', '00000000-0000-0000-0000-000000000000');
@@ -92,6 +92,17 @@ export async function GET(request) {
         if (comments && comments.length > 0) {
           winningCaption = comments[0].content;
 
+          // --- NEW: NOTIFY DAILY WINNER (Feature #2) ---
+          const winnerId = comments[0].user_id;
+          if (winnerId) {
+             await sendNotificationToUser(winnerId, {
+                title: "🏆 VICTORY!",
+                body: `Your caption won yesterday's battle! "${winningCaption.substring(0, 25)}..."`,
+                url: "https://itswebwits.com"
+             });
+          }
+          // ---------------------------------------------
+
           // 2. Aggregate points per user
           const userPoints = {};
           comments.forEach(comment => {
@@ -109,7 +120,6 @@ export async function GET(request) {
               .in('id', userIds);
 
             const updates = currentProfiles.map(profile => {
-              // FIX: Removed the space in the variable name below
               const pointsEarned = userPoints[profile.id] || 0;
               return {
                 id: profile.id,
@@ -153,7 +163,7 @@ export async function GET(request) {
 
     if (insertError) throw insertError;
 
-    // --- NEW: SEND NOTIFICATION ---
+    // --- SEND NOTIFICATION ---
     await sendNotificationToAll({
         title: "🔥 New Meme Dropped!",
         body: "The arena is open. Go be funny.",
