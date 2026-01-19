@@ -12,6 +12,13 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim()); // Grab control immediately
 });
 
+// [!code focus:4] Required for PWA Standalone Mode
+self.addEventListener('fetch', (event) => {
+  // Simple pass-through. The presence of this listener tells the browser
+  // that the app is capable of handling offline requests (even if we just pass them through).
+  return; 
+});
+
 self.addEventListener('push', function(event) {
   if (!(self.Notification && self.Notification.permission === 'granted')) {
     return;
