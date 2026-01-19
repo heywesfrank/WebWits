@@ -1,6 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import { supabase } from "@/lib/supabase";
 import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen } from "lucide-react";
 
 // Components
@@ -19,13 +20,33 @@ import NotificationModal from "./NotificationModal";
 // Hooks
 import { useGameLogic } from "@/hooks/useGameLogic";
 
-export default function MainApp({ session }) {
+export default function MainApp({ initialMeme, initialLeaderboard }) {
+  // 1. Handle Session State locally (since app/page.js is now a Server Component)
+  const [session, setSession] = useState(null);
+
+  useEffect(() => {
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // 2. Pass initial data to the hook to hydrate state immediately
   const {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, setViewMode, toasts, setToasts, submitReply,
     showOnboarding, setShowOnboarding, hasCommented,
     handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption
-  } = useGameLogic(session);
+  } = useGameLogic(session, initialMeme, initialLeaderboard);
 
   const [newCaption, setNewCaption] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -41,37 +62,28 @@ export default function MainApp({ session }) {
     setSubmitting(false);
   };
 
-  // [!code fix] IMPROVED NOTIFICATION CHECK
+  // Notification Check Logic
   useEffect(() => {
     const checkNotificationStatus = async () => {
-      // 1. Must be logged in and done with onboarding
       if (!session?.user || showOnboarding) return;
-      
-      // 2. Browser must support it
       if (!('Notification' in window) || !('serviceWorker' in navigator)) return;
 
-      // 3. PWA Check: Only show if running in standalone mode (PWA)
       const isPWA = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
       if (!isPWA) return;
 
-      // 4. If blocked, don't annoy them
       if (Notification.permission === 'denied') return;
 
-      // 5. If 'default', ask for permission
       if (Notification.permission === 'default') {
          setTimeout(() => setShowNotifModal(true), 2000);
          return;
       }
 
-      // 6. If 'granted', check if we ACTUALLY have a subscription
       if (Notification.permission === 'granted') {
         try {
           const registration = await navigator.serviceWorker.getRegistration();
           if (registration) {
             const sub = await registration.pushManager.getSubscription();
-            // If no subscription exists, show the modal again so they can retry!
             if (!sub) {
-               console.log("Permission granted but no subscription found. Prompting user...");
                setTimeout(() => setShowNotifModal(true), 2000);
             }
           }
@@ -137,6 +149,7 @@ export default function MainApp({ session }) {
                 <MemeStage 
                   meme={currentMeme} 
                   isActive={viewMode === 'active'} 
+                  // Fix: Don't show skeleton if we have the meme (SSR), even if "loading" logic is running for comments
                   loading={loading && !currentMeme} 
                 />
                 
