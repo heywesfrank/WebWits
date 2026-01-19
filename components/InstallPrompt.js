@@ -1,14 +1,17 @@
 "use client";
 import { useState, useEffect } from "react";
-import { Download, X, Ban, ShieldAlert } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Download, X, Ban } from "lucide-react";
 
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(true);
   const [showModal, setShowModal] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     // Check if already in standalone mode
     const inStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     setIsStandalone(inStandalone);
@@ -37,7 +40,6 @@ export default function InstallPrompt() {
     } else if (isIOS) {
       alert("📲 To install on iOS:\n\n1. Tap the 'Share' icon (square with arrow)\n2. Scroll down and tap 'Add to Home Screen'");
     }
-    // Close the modal after the attempt
     setShowModal(false);
   };
 
@@ -56,8 +58,8 @@ export default function InstallPrompt() {
         <span>Download Free</span>
       </button>
 
-      {/* Thrashing Modal */}
-      {showModal && (
+      {/* Thrashing Modal - Portaled to Body to escape Header stacking context */}
+      {showModal && mounted && createPortal(
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-sm bg-white border border-gray-200 shadow-2xl rounded-2xl p-6 relative animate-in zoom-in-95 duration-200">
             
@@ -99,7 +101,7 @@ export default function InstallPrompt() {
                 className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4"
               >
                 <Download size={20} />
-                <span>Install the "Rebel" App</span>
+                <span>Install the App</span>
               </button>
               
               <p className="text-[10px] text-gray-400 font-medium">
@@ -107,7 +109,8 @@ export default function InstallPrompt() {
               </p>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
