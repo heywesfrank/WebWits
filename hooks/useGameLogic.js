@@ -185,7 +185,6 @@ const submitReply = async (commentId, text) => {
     const cleanText = filterProfanity(text);
 
     try {
-      // CHANGED: Use the API route instead of direct Supabase insert
       const res = await fetch('/api/reply', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -209,14 +208,30 @@ const submitReply = async (commentId, text) => {
     }
   };
 
+  // [!code warning] OLD CODE:
+  /*
+  const castVote = async (commentId) => {
+    if (!session?.user) { ... }
+    const targetComment = captions.find(c => c.id === commentId);
+    ...
+    try {
+      const { error } = await supabase.rpc('toggle_vote', { ... });
+      if (error) throw error;
+    } catch (err) { ... }
+  };
+  */
+
+  // [!code success] NEW CODE (Updated for Feature #1):
   const castVote = async (commentId) => {
     if (!session?.user) {
         addToast("Please login to vote!", "error");
         return;
     }
+
     const targetComment = captions.find(c => c.id === commentId);
     const isRemoving = targetComment?.hasVoted;
 
+    // 1. Optimistic Update
     setCaptions((current) => 
       current.map((c) => 
         c.id === commentId 
@@ -230,14 +245,22 @@ const submitReply = async (commentId, text) => {
     );
 
     try {
-      const { error } = await supabase.rpc('toggle_vote', { 
-        vote_comment_id: commentId, 
-        vote_user_id: session.user.id 
+      // 2. Call API instead of RPC directly
+      const res = await fetch('/api/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commentId,
+          userId: session.user.id
+        })
       });
-      if (error) throw error;
+
+      if (!res.ok) throw new Error("Vote failed");
+
     } catch (err) {
       console.error("Vote failed:", err);
       addToast("Failed to update vote", "error");
+      // Revert optimistic update on error
       setCaptions((current) => 
         current.map((c) => 
           c.id === commentId ? { ...c, vote_count: (c.vote_count || 0) + (isRemoving ? 1 : -1), hasVoted: isRemoving } : c
