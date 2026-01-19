@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { Download, X, Ban } from "lucide-react";
+import { Download, X } from "lucide-react";
 
 export default function InstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState(null);
@@ -71,15 +71,11 @@ export default function InstallPrompt() {
               <X size={20} />
             </button>
 
-            <div className="text-center space-y-4 pt-2">
-              {/* Icon */}
-              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Ban size={32} className="text-red-500" />
-              </div>
-
-              {/* Header */}
+            <div className="text-center space-y-4 pt-6">
+              
+              {/* Header - Changed text & removed red font */}
               <h2 className="text-2xl font-black text-gray-900 font-display leading-tight">
-                The App Store is a <span className="text-red-500">Scam.</span>
+                App stores are overrated
               </h2>
 
               {/* Witty Body Text */}
@@ -101,7 +97,7 @@ export default function InstallPrompt() {
                 className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4"
               >
                 <Download size={20} />
-                <span>Install the App</span>
+                <span>Install the "Rebel" App</span>
               </button>
               
               <p className="text-[10px] text-gray-400 font-medium">
