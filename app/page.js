@@ -1,27 +1,31 @@
-"use client";
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+// app/page.js
+import { createClient } from '@supabase/supabase-js';
 import MainApp from "@/components/MainApp";
 
-export default function Home() {
-  const [session, setSession] = useState(null);
+// 1. Force dynamic rendering so the meme updates daily without rebuilding
+export const dynamic = 'force-dynamic';
 
-  useEffect(() => {
-    // Check initial session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+export default async function Home() {
+  // 2. Fetch data on the server
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.SUPABASE_SERVICE_ROLE_KEY // Use service role for server-side read access
+  );
 
-    // Listen for changes (login/logout)
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
+  // Parallel data fetching for speed
+  const [memeRes, leadersRes] = await Promise.all([
+    supabase.from("memes").select("*").eq("status", "active").single(),
+    supabase.from("profiles").select("username, monthly_points").order("monthly_points", { ascending: false }).limit(5)
+  ]);
 
-    return () => subscription.unsubscribe();
-  }, []);
+  const activeMeme = memeRes.data;
+  const initialLeaderboard = leadersRes.data || [];
 
-  // Delegate all UI and Logic to MainApp
-  return <MainApp session={session} />;
+  // 3. Pass this "pre-fetched" data to your Client Component
+  return (
+    <MainApp 
+      initialMeme={activeMeme} 
+      initialLeaderboard={initialLeaderboard} 
+    />
+  );
 }
