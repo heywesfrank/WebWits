@@ -97,7 +97,7 @@ export default function InstallPrompt() {
                 className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-3.5 rounded-xl shadow-md hover:shadow-lg hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center gap-2 mt-4"
               >
                 <Download size={20} />
-                <span>Install the "Rebel" App</span>
+                <span>Install the App</span>
               </button>
               
               <p className="text-[10px] text-gray-400 font-medium">
