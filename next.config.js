@@ -3,14 +3,12 @@ const withPWA = require('next-pwa')({
   dest: 'public',
   register: false,
   skipWaiting: true,
-  disable: false, // Ensure this is FALSE to generate sw.js
-  importScripts: ['/custom-sw.js'],
+  disable: true, 
+
 });
 
 const nextConfig = {
-  images: {
-    domains: ['https://cspocpzxekndwdquzedo.supabase.co', 'images.unsplash.com', 'media.giphy.com'],
-  },
+  // ... your existing config
 };
 
 module.exports = withPWA(nextConfig);
