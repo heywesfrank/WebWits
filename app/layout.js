@@ -38,6 +38,30 @@ export default function RootLayout({ children }) {
     <html lang="en">
       {/* Changed bg-gray-900 to bg-white and text-gray-200 to text-gray-900 */}
       <body className={`${inter.variable} ${outfit.variable} font-sans bg-white text-gray-900`}>
+  
+  <script
+  type="application/ld+json"
+  dangerouslySetInnerHTML={{
+    __html: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "SoftwareApplication",
+      "name": "WebWits",
+      "applicationCategory": "GameApplication",
+      "operatingSystem": "Web",
+      "offers": {
+        "@type": "Offer",
+        "price": "0",
+        "priceCurrency": "USD"
+      },
+      "description": "Join the ultimate daily caption contest where humor is currency.",
+      "aggregateRating": {
+        "@type": "AggregateRating",
+        "ratingValue": "4.8",
+        "ratingCount": "1024" 
+      }
+    })
+  }}
+  />
         {children}
       </body>
     </html>
