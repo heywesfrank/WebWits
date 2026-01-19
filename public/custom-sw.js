@@ -31,7 +31,7 @@ self.addEventListener('push', function(event) {
   const options = {
     body: data.body || "New update!",
     icon: '/icon.png',
-    badge: '/icon.png',
+    badge: '/badge-tray.png',
     data: {
       url: data.url || '/'
     }
