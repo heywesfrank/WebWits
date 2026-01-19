@@ -19,15 +19,17 @@ export default function MemeStage({ meme, isActive, loading }) {
       )}
 
       {/* Media */}
-      {meme.type === 'video' ? (
-        <video 
-          src={meme.content_url || meme.image_url} 
-          autoPlay muted loop playsInline
-          className="w-full h-auto max-h-[600px] object-contain bg-black pointer-events-none" 
-        />
-      ) : (
-        <img src={meme.image_url} alt="Daily Challenge" className="w-full h-auto object-cover" />
-      )}
-    </div>
-  );
-}
+{meme.type === 'video' ? (
+  <video ... />
+) : (
+  <div className="relative w-full h-auto max-h-[600px]">
+    <Image 
+      src={meme.image_url} 
+      alt={`Daily Meme Challenge ${meme.publish_date}`} // Improve Alt Text
+      width={600} // Set appropriate max width
+      height={600} // Set appropriate max height
+      className="w-full h-auto object-contain"
+      priority={true} // Priority loading for the LCP element
+    />
+  </div>
+)}
