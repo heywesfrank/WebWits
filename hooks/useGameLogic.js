@@ -2,15 +2,18 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { filterProfanity } from "@/lib/profanity";
 
-export function useGameLogic(session) {
-  const [activeMeme, setActiveMeme] = useState(null);
+export function useGameLogic(session, initialMeme = null, initialLeaderboard = []) {
+  // Initialize state with Server-Side props if available
+  const [activeMeme, setActiveMeme] = useState(initialMeme);
+  const [leaderboard, setLeaderboard] = useState(initialLeaderboard);
+  
+  // Don't show loading skeleton if we already have the meme from SSR
+  const [loading, setLoading] = useState(!initialMeme);
+
   const [selectedMeme, setSelectedMeme] = useState(null);
   const [captions, setCaptions] = useState([]);
-  const [leaderboard, setLeaderboard] = useState([]);
   const [archivedMemes, setArchivedMemes] = useState([]);
   const [userProfile, setUserProfile] = useState(null);
-  
-  const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState("active");
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [toasts, setToasts] = useState([]);
@@ -41,7 +44,7 @@ export function useGameLogic(session) {
         )
       `)
       .eq("meme_id", memeId)
-      .order('vote_count', { ascending: false }); // Primary sort by votes
+      .order('vote_count', { ascending: false }); 
     
     if (commentsError) {
       console.error("Comments fetch error:", commentsError);
@@ -50,7 +53,7 @@ export function useGameLogic(session) {
 
     let formattedComments = comments || [];
 
-    // Sort replies by date (oldest first, like IG)
+    // Sort replies by date (oldest first)
     formattedComments.forEach(comment => {
        if (comment.replies) {
          comment.replies.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
@@ -76,7 +79,8 @@ export function useGameLogic(session) {
 
   const fetchData = useCallback(async () => {
     try {
-      setLoading(true);
+      // Note: We do NOT set loading(true) here blindly, 
+      // because we might already have the meme from SSR.
       
       if (session?.user) {
         const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
@@ -86,9 +90,24 @@ export function useGameLogic(session) {
         setUserProfile(null);
       }
 
-      let { data: active } = await supabase.from("memes").select("*").eq("status", "active").single();
-      setActiveMeme(prev => (prev?.id === active?.id ? prev : active));
-      
+      // 1. Handle Active Meme
+      // If we didn't get it from SSR, fetch it now.
+      let currentActive = activeMeme;
+      if (!currentActive) {
+        let { data: active } = await supabase.from("memes").select("*").eq("status", "active").single();
+        if (active) {
+            currentActive = active;
+            setActiveMeme(active);
+        }
+      }
+
+      // 2. Fetch Comments (Always fetch on client for latest votes)
+      if (currentActive) {
+        const comments = await fetchMemeComments(currentActive.id);
+        setCaptions(comments);
+      }
+
+      // 3. Fetch Archives
       let { data: archives } = await supabase
         .from("memes")
         .select(`*, comments (content, vote_count)`)
@@ -104,35 +123,35 @@ export function useGameLogic(session) {
         return archive;
       });
       setArchivedMemes(processedArchives);
-
-      if (active) {
-        const comments = await fetchMemeComments(active.id);
-        setCaptions(comments);
-      }
       
-      const { data: topUsers } = await supabase
-        .from("profiles")
-        .select("username, monthly_points")
-        .order("monthly_points", { ascending: false })
-        .limit(5);
-        
-      setLeaderboard(topUsers || []);
+      // 4. Update Leaderboard (if not passed, or to refresh)
+      // Only overwrite if we don't have it or want fresh data
+      if (leaderboard.length === 0) {
+        const { data: topUsers } = await supabase
+          .from("profiles")
+          .select("username, monthly_points")
+          .order("monthly_points", { ascending: false })
+          .limit(5);
+          
+        setLeaderboard(topUsers || []);
+      }
 
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
       setLoading(false);
     }
-  }, [session, fetchMemeComments]);
+  }, [session, fetchMemeComments, activeMeme, leaderboard.length]);
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user?.id]); // Only re-run when user changes, not on every prop change
 
   const handleArchiveSelect = async (meme) => {
     setSelectedMeme(meme);
     setViewMode('archive-detail');
-    setLoading(true);
+    setLoading(true); // Loading is okay here as we are switching views
     const comments = await fetchMemeComments(meme.id);
     setCaptions(comments);
     setLoading(false);
@@ -142,10 +161,9 @@ export function useGameLogic(session) {
     setSelectedMeme(null);
     setViewMode('active');
     if (activeMeme) {
-      setLoading(true);
+      // Optional: Refresh comments when going back to arena
       const comments = await fetchMemeComments(activeMeme.id);
       setCaptions(comments);
-      setLoading(false);
     }
   };
 
@@ -170,7 +188,9 @@ export function useGameLogic(session) {
       if (cleanText !== text) addToast("Caption polished & submitted! 🧼", "success");
       else addToast("Caption submitted!", "success");
       
-      fetchData();
+      // Refresh comments
+      const comments = await fetchMemeComments(activeMeme.id);
+      setCaptions(comments);
       return true;
     } catch (err) {
       console.error(err);
@@ -179,7 +199,7 @@ export function useGameLogic(session) {
     }
   };
 
-const submitReply = async (commentId, text) => {
+  const submitReply = async (commentId, text) => {
     if (!session?.user) return false;
 
     const cleanText = filterProfanity(text);
@@ -208,20 +228,6 @@ const submitReply = async (commentId, text) => {
     }
   };
 
-  // [!code warning] OLD CODE:
-  /*
-  const castVote = async (commentId) => {
-    if (!session?.user) { ... }
-    const targetComment = captions.find(c => c.id === commentId);
-    ...
-    try {
-      const { error } = await supabase.rpc('toggle_vote', { ... });
-      if (error) throw error;
-    } catch (err) { ... }
-  };
-  */
-
-  // [!code success] NEW CODE (Updated for Feature #1):
   const castVote = async (commentId) => {
     if (!session?.user) {
         addToast("Please login to vote!", "error");
@@ -245,7 +251,6 @@ const submitReply = async (commentId, text) => {
     );
 
     try {
-      // 2. Call API instead of RPC directly
       const res = await fetch('/api/vote', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -260,7 +265,7 @@ const submitReply = async (commentId, text) => {
     } catch (err) {
       console.error("Vote failed:", err);
       addToast("Failed to update vote", "error");
-      // Revert optimistic update on error
+      // Revert optimistic update
       setCaptions((current) => 
         current.map((c) => 
           c.id === commentId ? { ...c, vote_count: (c.vote_count || 0) + (isRemoving ? 1 : -1), hasVoted: isRemoving } : c
