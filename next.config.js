@@ -9,7 +9,7 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
   images: {
-    domains: ['你的supabase-project-id.supabase.co', 'images.unsplash.com', 'media.giphy.com'],
+    domains: ['https://cspocpzxekndwdquzedo.supabase.co', 'images.unsplash.com', 'media.giphy.com'],
   },
 };
 
