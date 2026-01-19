@@ -2,9 +2,22 @@
 
 console.log("[SW] Custom Service Worker Loaded");
 
+const CACHE_NAME = 'webwits-assets-v1';
+const ASSETS_TO_CACHE = [
+  '/badge-tray.png',
+  '/icon.png'
+];
+
 self.addEventListener('install', (event) => {
   console.log("[SW] Install Event");
   self.skipWaiting(); // Force activation
+  
+  // Pre-cache the icons so they are available offline/instantly
+  event.waitUntil(
+    caches.open(CACHE_NAME).then((cache) => {
+      return cache.addAll(ASSETS_TO_CACHE);
+    })
+  );
 });
 
 self.addEventListener('activate', (event) => {
@@ -12,11 +25,16 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim()); // Grab control immediately
 });
 
-// [!code focus:4] Required for PWA Standalone Mode
+// Required for PWA Standalone Mode
 self.addEventListener('fetch', (event) => {
-  // Simple pass-through. The presence of this listener tells the browser
-  // that the app is capable of handling offline requests (even if we just pass them through).
-  return; 
+  // If the request is for our icons, try to serve from cache first
+  if (ASSETS_TO_CACHE.includes(new URL(event.request.url).pathname)) {
+    event.respondWith(
+      caches.match(event.request).then((response) => {
+        return response || fetch(event.request);
+      })
+    );
+  }
 });
 
 self.addEventListener('push', function(event) {
@@ -38,7 +56,8 @@ self.addEventListener('push', function(event) {
   const options = {
     body: data.body || "New update!",
     icon: '/icon.png',
-    badge: '/badge-tray.png',
+    badge: '/badge-tray.png', // Now served from Cache!
+    vibrate: [100, 50, 100], // Optional: adds a standard vibration pattern
     data: {
       url: data.url || '/'
     }
