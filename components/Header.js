@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { LogOut, User, ChevronDown, BookOpen, Megaphone } from "lucide-react";
+// Added 'Info' to imports
+import { LogOut, User, ChevronDown, BookOpen, Megaphone, Info } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
 import InstallPrompt from "./InstallPrompt";
 
@@ -29,19 +30,14 @@ export default function Header({ session, profile }) {
   }, []);
 
   return (
-    // Removed 'relative' as we don't need absolute positioning anymore
     <nav className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-gray-200 px-4 py-3 flex justify-between items-center transition-all">
       
-      {/* Left: Brand & Logo - Added flex-shrink-0 to prevent squishing */}
       <div className="flex-shrink-0 flex items-center group cursor-pointer" onClick={() => window.location.href = '/'}>
-        {/* MOBILE: App Icon */}
         <img 
           src="/icon.png" 
           alt="WebWits" 
           className="h-10 w-10 md:hidden rounded-xl object-cover shadow-sm transition-transform duration-300 group-hover:scale-105" 
         />
-
-        {/* DESKTOP: Full Logo */}
         <img 
           src="/logo.png" 
           alt="WebWits" 
@@ -49,15 +45,10 @@ export default function Header({ session, profile }) {
         />
       </div>
 
-      {/* CENTER: Install Button (Mobile Only) - FLEXBOX APPROACH
-          flex-1: Takes up all remaining space between Left and Right
-          justify-center: Centers the link inside that space
-      */}
       <div className="flex-1 flex justify-center md:hidden min-w-0 px-2">
          <InstallPrompt />
       </div>
 
-      {/* Right: User Profile OR Sign In - Added flex-shrink-0 */}
       <div className="flex-shrink-0 flex items-center gap-2 sm:gap-4">
         
         {session ? (
@@ -117,8 +108,19 @@ export default function Header({ session, profile }) {
                     </div>
                     How to Play
                   </Link>
+
+                  {/* --- NEW ICON GUIDE BUTTON --- */}
+                  <Link 
+                    href="/icon-guide"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                  >
+                    <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
+                      <Info size={16} />
+                    </div>
+                    Icon Guide
+                  </Link>
                   
-                  {/* Advertising Link */}
                   <a 
                     href="mailto:hello@itswebwits.com?subject=Advertising%20Inquiry&body=Hi%20WebWits%20Team%2C%0A%0AMy%20company%20is%20interested%20in%20advertising%20with%20you.%20Please%20let%20us%20know%20how%20we%20can%20proceed.%0A%0ABest%20regards%2C"
                     onClick={() => setIsMenuOpen(false)}
