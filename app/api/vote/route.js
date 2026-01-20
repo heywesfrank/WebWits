@@ -30,18 +30,29 @@ export async function POST(req) {
 
     if (fetchError) throw fetchError;
 
-    // 3. Check for Milestones (5, 10, 25, 50)
+    // 3. Check for Milestones (1, 5, 10, 25, 50)
     // Note: To strictly prevent duplicate alerts (e.g. going 5->4->5), 
     // you would ideally add a 'last_milestone' column to your comments table.
     // This implementation simply checks the current count.
-    const milestones = [5, 10, 25, 50];
+    const milestones = [1, 5, 10, 25, 50]; // [!code change]
     
     if (milestones.includes(comment.vote_count)) {
       // Don't notify if the voter is the author (self-vote)
       if (comment.user_id !== userId) {
+        
+        // [!code block: Determines message based on count]
+        let title = "🔥 You're on fire!";
+        let body = `Your caption just hit ${comment.vote_count} votes! "${comment.content.substring(0, 20)}..."`;
+
+        if (comment.vote_count === 1) {
+            title = "🚀 First Vote!";
+            body = `You just got your first vote! The battle has begun. "${comment.content.substring(0, 20)}..."`;
+        }
+        // [!code block end]
+
         await sendNotificationToUser(comment.user_id, {
-          title: "🔥 You're on fire!",
-          body: `Your caption just hit ${comment.vote_count} votes! "${comment.content.substring(0, 20)}..."`,
+          title: title, // [!code change]
+          body: body,   // [!code change]
           url: "https://itswebwits.com"
         });
       }
