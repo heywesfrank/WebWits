@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen } from "lucide-react";
+import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X } from "lucide-react";
 
 // Components
 import Header from "./Header";
@@ -53,9 +53,18 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
+  
+  // New state for confirmation popup
+  const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
+    if (!newCaption.trim()) return;
+    setShowConfirm(true);
+  };
+
+  const handleConfirmPost = async () => {
+    setShowConfirm(false);
     setSubmitting(true);
     const success = await submitCaption(newCaption);
     if (success) setNewCaption("");
@@ -117,6 +126,49 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         isOpen={showNotifModal} 
         onClose={() => setShowNotifModal(false)} 
       />
+
+      {/* CONFIRMATION POPUP */}
+      {showConfirm && (
+        <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
+          <div className="w-full max-w-sm bg-white border border-gray-200 shadow-2xl rounded-2xl p-6 relative animate-in zoom-in-95 duration-200">
+            <button 
+              onClick={() => setShowConfirm(false)}
+              className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors"
+            >
+              <X size={20} />
+            </button>
+
+            <div className="text-center space-y-4 pt-2">
+              <div className="w-16 h-16 bg-yellow-100 rounded-full flex items-center justify-center mx-auto">
+                <AlertTriangle size={32} className="text-yellow-600" />
+              </div>
+              
+              <h2 className="text-xl font-black text-gray-900 font-display">
+                Are you sure?
+              </h2>
+              
+              <p className="text-gray-500 text-sm leading-relaxed">
+                There is no <strong>edit button</strong> in the arena. Once this drops, it's eternal. Is this your funniest work?
+              </p>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setShowConfirm(false)}
+                  className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
+                >
+                  Wait, I can do better
+                </button>
+                <button 
+                  onClick={handleConfirmPost}
+                  className="flex-1 px-4 py-3 bg-yellow-400 text-black font-bold rounded-xl hover:bg-yellow-300 transition shadow-sm"
+                >
+                  Post It! 🚀
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       
       <ToastContainer toasts={toasts} removeToast={(id) => setToasts(prev => prev.filter(t => t.id !== id))} />
       <UserProfileModal user={session?.user} profile={userProfile} isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
