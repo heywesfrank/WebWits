@@ -2,7 +2,6 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-// Added 'Facebook' and 'Instagram' to imports
 import { LogOut, User, ChevronDown, BookOpen, Megaphone, Info, Facebook, Instagram } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
 import InstallPrompt from "./InstallPrompt";
@@ -109,7 +108,6 @@ export default function Header({ session, profile }) {
                     How to Play
                   </Link>
 
-                  {/* --- NEW ICON GUIDE BUTTON --- */}
                   <Link 
                     href="/icon-guide"
                     onClick={() => setIsMenuOpen(false)}
@@ -123,7 +121,7 @@ export default function Header({ session, profile }) {
 
                   {/* --- SOCIAL MEDIA LINKS --- */}
                   <a 
-                    href="https://www.facebook.com/itswebwits"
+                    href="https://www.facebook.com/share/1a2MLgdpj5/"
                     target="_blank" 
                     rel="noopener noreferrer"
                     onClick={() => setIsMenuOpen(false)}
