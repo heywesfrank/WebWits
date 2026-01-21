@@ -2,8 +2,8 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-// Added 'Info' to imports
-import { LogOut, User, ChevronDown, BookOpen, Megaphone, Info } from "lucide-react";
+// Added 'Facebook' and 'Instagram' to imports
+import { LogOut, User, ChevronDown, BookOpen, Megaphone, Info, Facebook, Instagram } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
 import InstallPrompt from "./InstallPrompt";
 
@@ -120,6 +120,33 @@ export default function Header({ session, profile }) {
                     </div>
                     Icon Guide
                   </Link>
+
+                  {/* --- SOCIAL MEDIA LINKS --- */}
+                  <a 
+                    href="https://www.facebook.com/itswebwits"
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                  >
+                    <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
+                      <Facebook size={16} />
+                    </div>
+                    Facebook
+                  </a>
+
+                  <a 
+                    href="https://www.instagram.com/itswebwits"
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                  >
+                    <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
+                      <Instagram size={16} />
+                    </div>
+                    Instagram
+                  </a>
                   
                   <a 
                     href="mailto:hello@itswebwits.com?subject=Advertising%20Inquiry&body=Hi%20WebWits%20Team%2C%0A%0AMy%20company%20is%20interested%20in%20advertising%20with%20you.%20Please%20let%20us%20know%20how%20we%20can%20proceed.%0A%0ABest%20regards%2C"
