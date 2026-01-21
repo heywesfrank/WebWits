@@ -151,6 +151,13 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                 There is no <strong>edit button</strong> in the arena. Once this drops, it's eternal. Is this your funniest work?
               </p>
 
+              {/* CAPTION PREVIEW */}
+              <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl text-gray-800 font-medium italic text-sm break-words relative">
+                <span className="text-gray-300 font-serif text-4xl absolute -top-2 left-2">“</span>
+                {newCaption}
+                <span className="text-gray-300 font-serif text-4xl absolute -bottom-4 right-2">”</span>
+              </div>
+
               <div className="flex gap-3 pt-2">
                 <button 
                   onClick={() => setShowConfirm(false)}
