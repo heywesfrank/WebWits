@@ -1,5 +1,3 @@
-// public/custom-sw.js
-
 console.log("[SW] Custom Service Worker Loaded");
 
 const CACHE_NAME = 'webwits-assets-v1';
@@ -70,7 +68,31 @@ self.addEventListener('push', function(event) {
 
 self.addEventListener('notificationclick', function(event) {
   event.notification.close();
+
+  // 1. Get the URL from the notification data, defaulting to root
+  const urlToOpen = event.notification.data.url || '/';
+
   event.waitUntil(
-    clients.openWindow(event.notification.data.url)
+    clients.matchAll({
+      type: 'window',
+      includeUncontrolled: true // Look for clients even if not currently controlled by this SW
+    }).then(function(clientList) {
+      // 2. Look for an existing window to focus
+      for (let i = 0; i < clientList.length; i++) {
+        const client = clientList[i];
+        
+        // Check if the client matches your app's scope and can be focused
+        if (client.url.startsWith(self.registration.scope) && 'focus' in client) {
+          // If you want to force navigation to the specific URL, uncomment the line below:
+          // client.navigate(urlToOpen); 
+          return client.focus();
+        }
+      }
+      
+      // 3. If no existing window is found, open a new one (PWA behavior)
+      if (clients.openWindow) {
+        return clients.openWindow(urlToOpen);
+      }
+    })
   );
 });
