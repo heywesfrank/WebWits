@@ -2,7 +2,7 @@
   "crons": [
     {
       "path": "/api/daily-meme",
-      "schedule": "0 5 * * *"
+      "schedule": "0 11 * * *"
     },
     {
       "path": "/api/reminder",
