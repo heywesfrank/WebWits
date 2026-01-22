@@ -17,9 +17,9 @@ export const metadata = {
     siteName: 'WebWits',
     images: [
       {
-        url: '/logo.png', // [!code change] Updated to point to your existing logo
-        width: 1200,
-        height: 630,
+        url: '/icon.png', // [!code change] Updated to point to your existing logo
+        width: 512,
+        height: 512,
         alt: 'WebWits',
       },
     ],
@@ -30,7 +30,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: "WebWits - Daily Meme Battle",
     description: "One meme. 24 hours. Who is the funniest? Join the battle now.",
-    images: ['/logo.png'], // [!code change] Uncommented and updated
+    images: ['/icon.png'], // [!code change] Uncommented and updated
   },
 };
 
