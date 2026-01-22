@@ -7,7 +7,7 @@ export async function POST(req) {
     
     // Send Notification to everyone EXCEPT the sender (userId)
     await sendNotificationToAll({
-      title: "New Caption! 🗳️",
+      title: "New Caption - Agree or Roast? ♨️",
       body: `"${content.substring(0, 50)}${content.length > 50 ? '...' : ''}"`,
       url: "https://itswebwits.com"
     }, userId);
