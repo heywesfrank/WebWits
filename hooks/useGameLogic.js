@@ -79,9 +79,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
 
   const fetchData = useCallback(async () => {
     try {
-      // Note: We do NOT set loading(true) here blindly, 
-      // because we might already have the meme from SSR.
-      
       if (session?.user) {
         const { data: profile } = await supabase.from("profiles").select("*").eq("id", session.user.id).single();
         setUserProfile(profile);
@@ -91,7 +88,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       }
 
       // 1. Handle Active Meme
-      // If we didn't get it from SSR, fetch it now.
       let currentActive = activeMeme;
       if (!currentActive) {
         let { data: active } = await supabase.from("memes").select("*").eq("status", "active").single();
@@ -101,7 +97,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         }
       }
 
-      // 2. Fetch Comments (Always fetch on client for latest votes)
+      // 2. Fetch Comments
       if (currentActive) {
         const comments = await fetchMemeComments(currentActive.id);
         setCaptions(comments);
@@ -124,8 +120,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       });
       setArchivedMemes(processedArchives);
       
-      // 4. Update Leaderboard (if not passed, or to refresh)
-      // Only overwrite if we don't have it or want fresh data
+      // 4. Update Leaderboard
       if (leaderboard.length === 0) {
         const { data: topUsers } = await supabase
           .from("profiles")
@@ -146,12 +141,12 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
   useEffect(() => {
     fetchData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session?.user?.id]); // Only re-run when user changes, not on every prop change
+  }, [session?.user?.id]);
 
   const handleArchiveSelect = async (meme) => {
     setSelectedMeme(meme);
     setViewMode('archive-detail');
-    setLoading(true); // Loading is okay here as we are switching views
+    setLoading(true);
     const comments = await fetchMemeComments(meme.id);
     setCaptions(comments);
     setLoading(false);
@@ -161,7 +156,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     setSelectedMeme(null);
     setViewMode('active');
     if (activeMeme) {
-      // Optional: Refresh comments when going back to arena
       const comments = await fetchMemeComments(activeMeme.id);
       setCaptions(comments);
     }
@@ -178,6 +172,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     const cleanText = filterProfanity(text);
 
     try {
+      // 1. Insert directly to Supabase (Existing System)
       const { error } = await supabase.from('comments').insert({
         meme_id: activeMeme.id,
         user_id: session.user.id,
@@ -185,6 +180,17 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       });
       if (error) throw error;
       
+      // 2. Trigger Notification (New Feature)
+      // We don't await this because we don't want to block the UI
+      fetch('/api/notify-comment', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            userId: session.user.id, 
+            content: cleanText 
+        })
+      }).catch(err => console.error("Notification trigger failed", err));
+
       if (cleanText !== text) addToast("Caption polished & submitted! 🧼", "success");
       else addToast("Caption submitted!", "success");
       
@@ -237,7 +243,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     const targetComment = captions.find(c => c.id === commentId);
     const isRemoving = targetComment?.hasVoted;
 
-    // 1. Optimistic Update
+    // Optimistic Update
     setCaptions((current) => 
       current.map((c) => 
         c.id === commentId 
