@@ -17,9 +17,10 @@ export const metadata = {
     siteName: 'WebWits',
     images: [
       {
-        url: 'https://itswebwits.com/og-image.png', // You should create/host a generic OG image
+        url: '/logo.png', // [!code change] Updated to point to your existing logo
         width: 1200,
         height: 630,
+        alt: 'WebWits',
       },
     ],
     locale: 'en_US',
@@ -29,7 +30,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: "WebWits - Daily Meme Battle",
     description: "One meme. 24 hours. Who is the funniest? Join the battle now.",
-    // images: ['https://itswebwits.com/og-image.png'], // Add your image URL here
+    images: ['/logo.png'], // [!code change] Uncommented and updated
   },
 };
 
