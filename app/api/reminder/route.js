@@ -1,3 +1,4 @@
+// app/api/reminder/route.js
 import { NextResponse } from 'next/server';
 import { sendNotificationToAll } from '@/lib/sendPush';
 
@@ -6,10 +7,10 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(request) {
   try {
-    // Feature #3: The "Last Call"
+    // Feature #3: The "Last Call" (Now at 9 PM EST)
     await sendNotificationToAll({
-      title: "⏳ 1 Hour Left!",
-      body: "The daily battle ends soon. Vote or submit your caption now!",
+      title: "⏰ The Arena is Closing...",
+      body: "The contest is almost done. Hop in to battle before the clock strikes midnight!",
       url: "https://itswebwits.com"
     });
 
