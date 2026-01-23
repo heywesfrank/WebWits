@@ -30,39 +30,94 @@ export async function GET(request) {
       });
     }
 
-    // --- STEP 1: Fetch a Unique GIF (No Repeats) ---
+    // --- STEP 1: Fetch Content (Trending -> Random Fallback -> Force) ---
     let contentUrl = null;
     let posterUrl = null;
-    let isUnique = false;
-    let attempts = 0;
+    let selectedGif = null;
+    let trendingPool = [];
 
-    while (!isUnique && attempts < 5) {
-      attempts++;
-      const giphyRes = await fetch(
-        `https://api.giphy.com/v1/gifs/random?api_key=${GIPHY_API_KEY}&tag=funny&rating=pg-13`,
-        { cache: 'no-store' }
-      );
-      const giphyData = await giphyRes.json();
-      const gif = giphyData.data;
-
-      if (!gif) throw new Error("No GIF found from Giphy");
-
-      const tempContentUrl = gif.images.original.mp4;
-      
-      const { data: existing } = await supabase
-        .from('memes')
-        .select('id')
-        .eq('content_url', tempContentUrl)
-        .maybeSingle();
-
-      if (!existing) {
-        contentUrl = tempContentUrl;
-        posterUrl = gif.images.original.webp;
-        isUnique = true;
-      }
+    // Strategy A: Trending (Primary)
+    // Fetch top 50 trending, shuffle them, find first unique one.
+    try {
+        const trendingRes = await fetch(
+            `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=50&rating=pg-13`,
+            { cache: 'no-store' }
+        );
+        const trendingData = await trendingRes.json();
+        
+        if (trendingData.data && trendingData.data.length > 0) {
+            trendingPool = trendingData.data;
+            // Shuffle the pool so we don't always pick the #1 trending gif
+            const shuffled = [...trendingPool].sort(() => Math.random() - 0.5);
+            
+            for (const gif of shuffled) {
+                const tempUrl = gif.images.original.mp4;
+                
+                // Check uniqueness
+                const { data: existing } = await supabase
+                    .from('memes')
+                    .select('id')
+                    .eq('content_url', tempUrl)
+                    .maybeSingle();
+                
+                if (!existing) {
+                    selectedGif = gif;
+                    console.log("Selected unique trending meme.");
+                    break; 
+                }
+            }
+        }
+    } catch (e) {
+        console.error("Trending fetch failed:", e);
     }
 
-    if (!isUnique) throw new Error("Failed to find a unique GIF after 5 attempts");
+    // Strategy B: Random Fallback 
+    // If no unique trending GIF was found, fall back to the old "random funny" logic.
+    if (!selectedGif) {
+        console.log("No unique trending meme found. Falling back to Random search.");
+        let attempts = 0;
+        while (!selectedGif && attempts < 5) {
+            attempts++;
+            try {
+                const randomRes = await fetch(
+                    `https://api.giphy.com/v1/gifs/random?api_key=${GIPHY_API_KEY}&tag=funny&rating=pg-13`,
+                    { cache: 'no-store' }
+                );
+                const randomData = await randomRes.json();
+                const gif = randomData.data;
+                
+                if (gif) {
+                    const tempUrl = gif.images.original.mp4;
+                    const { data: existing } = await supabase
+                        .from('memes')
+                        .select('id')
+                        .eq('content_url', tempUrl)
+                        .maybeSingle();
+                    
+                    if (!existing) {
+                        selectedGif = gif;
+                    }
+                }
+            } catch (e) {
+                console.error("Random fetch attempt failed:", e);
+            }
+        }
+    }
+
+    // Strategy C: Emergency Force
+    // If both strategies failed, we MUST pick something. Use a duplicate if we have to.
+    if (!selectedGif && trendingPool.length > 0) {
+         console.warn("EMERGENCY: Could not find unique meme. Forcing a selection from Trending pool.");
+         selectedGif = trendingPool[Math.floor(Math.random() * trendingPool.length)];
+    }
+
+    // If we simply cannot find anything (API Down / No Data), throw error.
+    if (!selectedGif) {
+        throw new Error("Critical Failure: Giphy API unreachable or no content returned.");
+    }
+
+    contentUrl = selectedGif.images.original.mp4;
+    posterUrl = selectedGif.images.original.webp;
 
     // --- STEP 2: Archive & SCORE active memes ---
     const { data: activeMemes } = await supabase
@@ -156,7 +211,7 @@ export async function GET(request) {
         type: 'video',
         content_url: contentUrl,
         image_url: posterUrl,
-        source: 'Giphy Auto-Fetch',
+        source: 'Giphy Trending',
         publish_date: today 
       })
       .select();
