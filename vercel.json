@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/daily-meme",
-      "schedule": "0 11 * * *"
+      "schedule": "0 5 * * *" 
     },
     {
       "path": "/api/reminder",
-      "schedule": "0 4 * * *"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/weekly-leaderboard",
