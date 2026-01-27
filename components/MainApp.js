@@ -148,6 +148,23 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-24 md:pb-0">
       <Header session={session} profile={userProfile} onOpenProfile={() => setShowProfileModal(true)} />
+
+  <DailySpin 
+      session={session} 
+      userProfile={userProfile} 
+      onSpinComplete={(newCredits) => {
+         // Optimistically update the local user profile state with new credits
+         if (userProfile) {
+            // We need to mutate the local state provided by useGameLogic
+            // Since userProfile is managed inside the hook, we can just force a reload 
+            // or pass a setProfile function down if we had one. 
+            // For now, a toast is good feedback.
+            addToast(`You won ${newCredits - userProfile.credits} credits!`, "success");
+            // Optionally: window.location.reload(); to sync perfectly, 
+            // or rely on next fetch.
+         }
+      }} 
+    />
       
       {showOnboarding && (
         <Onboarding 
