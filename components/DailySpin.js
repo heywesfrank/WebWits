@@ -1,6 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
-import { X, Sparkles, Trophy } from "lucide-react";
+import { X, Sparkles, Trophy, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function DailySpin({ session, userProfile, onSpinComplete }) {
@@ -85,7 +85,7 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
     { id: 2, val: 15, label: '15', color: '#026CA2', text: 'white' },  
     { id: 3, val: 20, label: '20', color: '#014E74', text: 'white' },
     { id: 4, val: 25, label: '25', color: '#012F47', text: 'white' },  
-    { id: 5, val: 50, label: '50', color: '#FFD700', text: 'white' }    
+    { id: 5, val: 50, label: '50', color: '#FFFFFF', text: 'blue' }    
   ];
 
   return (
@@ -107,7 +107,7 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
                 Daily Spin
               </h2>
               <p className="text-gray-500 font-medium text-sm">
-                Test your luck, win <strong className="text-amber-500">free</strong> credits.
+                Test your luck, win <strong className="text-[#0284c7]">free</strong> credits.
               </p>
             </div>
 
@@ -136,7 +136,7 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
                        #026CA2 120deg 180deg, 
                        #014E74 180deg 240deg, 
                        #012F47 240deg 300deg, 
-                       #FFD700 300deg 360deg  
+                       #FFFFFF 300deg 360deg  
                      )`
                    }}
                  />
@@ -146,7 +146,7 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
                     {wheelSegments.map((seg) => (
                       <span
                         key={seg.id}
-                        className={`absolute top-1/2 left-1/2 font-display font-black text-2xl ${seg.text === 'white' ? 'text-white drop-shadow-sm' : 'text-gray-900'}`}
+                        className={`absolute top-1/2 left-1/2 font-display font-black text-2xl ${seg.text === 'white' ? 'text-white drop-shadow-sm' : 'text-[#0284c7]'}`}
                         style={{
                           // Center origin, Rotate to angle, Translate Outwards
                           // 30 is the offset to center in the 60deg slice
@@ -154,14 +154,21 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
                           transform: `translate(-50%, -50%) rotate(${seg.id * 60 + 30}deg) translateY(-85px)`
                         }}
                       >
-                        {seg.label}
+                         {seg.val === 50 ? (
+                            <div className="flex flex-col items-center justify-center -space-y-1">
+                                <Star size={16} className="fill-[#FFD700] text-[#FFD700] mb-0.5" />
+                                <span>{seg.label}</span>
+                            </div>
+                        ) : (
+                            seg.label
+                        )}
                       </span>
                     ))}
                  </div>
 
                  {/* Inner Center Circle */}
                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full shadow-inner flex items-center justify-center border border-gray-100 z-10">
-                    <Trophy size={24} className="text-amber-400" />
+                    <Trophy size={24} className="text-[#0284c7]" />
                  </div>
               </div>
             </div>
@@ -185,7 +192,7 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
                 <button 
                   onClick={handleSpin}
                   disabled={isSpinning}
-                  className="w-full bg-[#D4AF37] hover:bg-[#C5A028] text-white font-black text-lg py-4 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
+                  className="w-full bg-[#0284c7] hover:bg-[#0369a1] text-white font-black text-lg py-4 rounded-2xl shadow-lg hover:scale-[1.02] active:scale-[0.98] transition-all disabled:opacity-50 disabled:scale-100 disabled:shadow-none"
                 >
                   {isSpinning ? "SPINNING..." : "SPIN TO WIN"}
                 </button>
