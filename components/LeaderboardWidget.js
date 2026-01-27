@@ -11,56 +11,65 @@ const DEFAULT_LEADERS = [];
 // ------------------------------------------------------------------
 function LeaderboardList({ leaderboard, scoreKey }) {
   return (
-    <div className="space-y-4">
-      {leaderboard.map((user, index) => (
-        <div 
-          key={index} 
-          className={`relative flex items-center justify-between p-3 rounded-xl border-2 transition-all hover:scale-[1.02] 
-            ${index === 0 ? 'bg-white border-[#D4AF37]' : // Gold
-              index === 1 ? 'bg-white border-[#C0C0C0]' : // Silver
-              index === 2 ? 'bg-white border-[#CD7F32]' : // Bronze
-              'bg-white border-[#0284c7] hover:bg-gray-50' // Rest: App Blue
-            }`}
-        >
-          <div className="flex items-center gap-2 min-w-0">
-            {/* Rank Badge */}
-            <div className={`
-              w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-md font-black text-xs shadow-sm
-              ${index === 0 ? 'bg-[#D4AF37] text-white' : 
-                index === 1 ? 'bg-[#C0C0C0] text-white' : 
-                index === 2 ? 'bg-[#CD7F32] text-white' : 
-                'bg-[#0284c7] text-white'} 
-            `}>
-              {index + 1}
+    <div className="space-y-3">
+      {leaderboard.map((user, index) => {
+        // Calculate Rank: Finds the first index with this score. 
+        // If tied, this ensures they share the same rank number (e.g. 1, 1, 3, 4).
+        const rank = leaderboard.findIndex(u => u[scoreKey] === user[scoreKey]) + 1;
+
+        // Determine Styles based on RANK (not index)
+        let containerStyle = 'bg-white border-[#0284c7] hover:bg-gray-50'; // Default Blue
+        let badgeStyle = 'bg-[#0284c7] text-white';
+        let textStyle = 'text-[#0284c7]';
+        let rankLabel = null;
+
+        if (rank === 1) {
+          containerStyle = 'bg-white border-[#D4AF37]'; // Gold
+          badgeStyle = 'bg-[#D4AF37] text-white';
+          textStyle = 'text-[#D4AF37]';
+          rankLabel = <span className="text-[9px] text-[#D4AF37]/80 font-mono uppercase tracking-wider">Top Gun</span>;
+        } else if (rank === 2) {
+          containerStyle = 'bg-white border-[#C0C0C0]'; // Silver
+          badgeStyle = 'bg-[#C0C0C0] text-white';
+          textStyle = 'text-[#757575]';
+        } else if (rank === 3) {
+          containerStyle = 'bg-white border-[#CD7F32]'; // Bronze
+          badgeStyle = 'bg-[#CD7F32] text-white';
+          textStyle = 'text-[#CD7F32]';
+        }
+
+        return (
+          <div 
+            key={index} 
+            className={`relative flex items-center justify-between p-3 rounded-xl border-2 transition-all hover:scale-[1.02] ${containerStyle}`}
+          >
+            <div className="flex items-center gap-2 min-w-0">
+              {/* Rank Badge */}
+              <div className={`
+                w-6 h-6 flex-shrink-0 flex items-center justify-center rounded-md font-black text-xs shadow-sm
+                ${badgeStyle}
+              `}>
+                {rank}
+              </div>
+              
+              {/* User Details */}
+              <div className="flex flex-col min-w-0">
+                <span className={`font-bold text-xs truncate ${textStyle}`}>
+                  {user.username}
+                </span>
+                {rankLabel}
+              </div>
             </div>
             
-            {/* User Details */}
-            <div className="flex flex-col min-w-0">
-              <span className={`font-bold text-xs truncate ${
-                index === 0 ? 'text-[#D4AF37]' : 
-                index === 1 ? 'text-[#757575]' : 
-                index === 2 ? 'text-[#CD7F32]' : 
-                'text-[#0284c7]'
-              }`}>
-                {user.username}
+            <div className="text-right pl-2 flex-shrink-0">
+              <span className={`block font-mono font-bold text-xs ${textStyle}`}>
+                {user[scoreKey] !== undefined ? user[scoreKey] : 0}
               </span>
-              {index === 0 && <span className="text-[9px] text-[#D4AF37]/80 font-mono uppercase tracking-wider">Top Gun</span>}
+              <span className="text-[9px] text-gray-400 uppercase">pts</span>
             </div>
           </div>
-          
-          <div className="text-right pl-2 flex-shrink-0">
-            <span className={`block font-mono font-bold text-xs ${
-               index === 0 ? 'text-[#D4AF37]' : 
-               index === 1 ? 'text-[#757575]' : 
-               index === 2 ? 'text-[#CD7F32]' : 
-               'text-gray-500'
-            }`}>
-              {user[scoreKey] !== undefined ? user[scoreKey] : 0}
-            </span>
-            <span className="text-[9px] text-gray-400 uppercase">pts</span>
-          </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }
@@ -79,12 +88,15 @@ export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) 
   ];
 
   useEffect(() => {
-    // Optimization: If on default tab and initial props are valid, use them.
-    // This prevents fetching if the parent already provided the data.
-    if (activeTab === "monthly" && initialLeaders.length > 0) {
+    // Optimization: Use initial props only if they provide enough data (>= 50).
+    // Otherwise, fetch the full list to support scrolling.
+    if (activeTab === "monthly" && initialLeaders.length >= 50) {
       setLeaders(initialLeaders);
       return;
     }
+    
+    // If initialLeaders is small (e.g. 5 from SSR), we render them first (via useState default)
+    // then immediately fetch the larger list below.
 
     const fetchLeaders = async () => {
       setLoading(true);
@@ -96,7 +108,7 @@ export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) 
           .from("profiles")
           .select(`username, ${sortColumn}`)
           .order(sortColumn, { ascending: false })
-          .limit(10);
+          .limit(50); // [!code change] Increased limit to 50 for scrolling
 
         if (error) {
            console.error("Error fetching leaders:", error);
@@ -122,14 +134,14 @@ export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) 
   };
 
   return (
-    <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm transition-all">
-      <div className="flex items-center gap-2 mb-4 text-yellow-500 pb-2 border-b border-gray-100">
+    <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm transition-all flex flex-col max-h-[600px]"> {/* Added max-h */}
+      <div className="flex items-center gap-2 mb-4 text-yellow-500 pb-2 border-b border-gray-100 flex-shrink-0">
         <Icon size={20} className="animate-in zoom-in duration-300" key={activeTab} />
         <h2 className="font-bold text-lg font-display">{activeTabInfo?.title}</h2>
       </div>
 
       {/* Tabs */}
-      <div className="flex p-1 bg-gray-50 rounded-lg mb-4 border border-gray-100">
+      <div className="flex p-1 bg-gray-50 rounded-lg mb-4 border border-gray-100 flex-shrink-0">
         {tabs.map((tab) => (
           <button
             key={tab.id}
@@ -145,8 +157,9 @@ export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) 
         ))}
       </div>
 
-      <div className="min-h-[200px]">
-        {loading ? (
+      {/* Scrollable Container */}
+      <div className="flex-1 overflow-y-auto min-h-[200px] pr-2">
+        {loading && leaders.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 space-y-2 opacity-50">
             <Loader2 className="animate-spin text-yellow-500" size={24} />
             <span className="text-xs text-gray-400 font-medium">Calculating ranks...</span>
