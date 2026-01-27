@@ -131,11 +131,11 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
                    className="w-full h-full absolute inset-0"
                    style={{
                      background: `conic-gradient(
-                       #CD7F32 0deg 60deg,   
-                       #C0C0C0 60deg 120deg,  
-                       #CD7F32 120deg 180deg, 
-                       #C0C0C0 180deg 240deg, 
-                       #D4AF37 240deg 300deg, 
+                       #03A9FC 0deg 60deg,   
+                       #028BCF 60deg 120deg,  
+                       #026CA2 120deg 180deg, 
+                       #014E74 180deg 240deg, 
+                       #012F47 240deg 300deg, 
                        #FFD700 300deg 360deg  
                      )`
                    }}
