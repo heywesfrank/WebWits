@@ -2,8 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import DailySpin from "./DailySpin";
-import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X, Users, Copy } from "lucide-react"; // [!code ++] Added Users, Copy
+import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X, Users, Copy } from "lucide-react";
 
 // Components
 import Header from "./Header";
@@ -17,6 +16,7 @@ import LeaderboardWidget, { LeaderboardModal } from "./LeaderboardWidget";
 import MemeStage from "./MemeStage";
 import CaptionFeed from "./CaptionFeed";
 import NotificationModal from "./NotificationModal"; 
+import DailySpin from "./DailySpin"; // [!code ++]
 
 // Hooks
 import { useGameLogic } from "@/hooks/useGameLogic";
@@ -41,7 +41,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   const {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, setViewMode, toasts, setToasts, submitReply,
-    showOnboarding, setShowOnboarding, hasCommented,
+    showOnboarding, setShowOnboarding, hasCommented, fetchData, // [!code ++] Added fetchData
     handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption
   } = useGameLogic(session, initialMeme, initialLeaderboard);
 
@@ -53,7 +53,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   
   // Confirmation & Invite Popups
   const [showConfirm, setShowConfirm] = useState(false);
-  const [showInvitePopup, setShowInvitePopup] = useState(false); // [!code ++] New state
+  const [showInvitePopup, setShowInvitePopup] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -71,23 +71,19 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
     if (success) {
       setNewCaption("");
 
-      // [!code ++] Start: Check for First-Time Invite Popup
-      // If user exists and hasn't seen the popup yet...
+      // Start: Check for First-Time Invite Popup
       if (userProfile && !userProfile.has_seen_invite_popup) {
          setShowInvitePopup(true);
          
-         // Mark as seen in DB immediately so it never shows again
          if (session?.user?.id) {
            await supabase
              .from('profiles')
              .update({ has_seen_invite_popup: true })
              .eq('id', session.user.id);
              
-           // Optimistically update local object to prevent re-trigger logic
            userProfile.has_seen_invite_popup = true;
          }
       }
-      // [!code ++] End
     }
     
     setSubmitting(false);
@@ -148,23 +144,17 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-24 md:pb-0">
       <Header session={session} profile={userProfile} onOpenProfile={() => setShowProfileModal(true)} />
-
-  <DailySpin 
-      session={session} 
-      userProfile={userProfile} 
-      onSpinComplete={(newCredits) => {
-         // Optimistically update the local user profile state with new credits
-         if (userProfile) {
-            // We need to mutate the local state provided by useGameLogic
-            // Since userProfile is managed inside the hook, we can just force a reload 
-            // or pass a setProfile function down if we had one. 
-            // For now, a toast is good feedback.
-            addToast(`You won ${newCredits - userProfile.credits} credits!`, "success");
-            // Optionally: window.location.reload(); to sync perfectly, 
-            // or rely on next fetch.
-         }
-      }} 
-    />
+      
+      {/* [!code ++] DAILY SPIN COMPONENT */}
+      <DailySpin 
+        session={session} 
+        userProfile={userProfile} 
+        onSpinComplete={(newTotal) => {
+           setToasts(prev => [...prev, { id: Date.now(), msg: `Credits updated! Total: ${newTotal}`, type: "success" }]);
+           // Refresh profile data to update header credits
+           fetchData();
+        }}
+      />
       
       {showOnboarding && (
         <Onboarding 
@@ -182,7 +172,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         onClose={() => setShowNotifModal(false)} 
       />
 
-      {/* [!code ++] NEW INVITE MODAL */}
       {showInvitePopup && (
         <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
           <div className="w-full max-w-sm bg-white border border-gray-200 shadow-2xl rounded-2xl p-6 relative animate-in zoom-in-95 duration-300 text-center">
@@ -218,7 +207,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         </div>
       )}
 
-      {/* CONFIRMATION POPUP */}
       {showConfirm && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-sm bg-white border border-gray-200 shadow-2xl rounded-2xl p-6 relative animate-in zoom-in-95 duration-200">
@@ -242,7 +230,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                 There is no <strong>edit button</strong> in the arena. Once this drops, it's eternal. Is this your funniest work?
               </p>
 
-              {/* CAPTION PREVIEW */}
               <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl text-gray-800 font-medium italic text-sm break-words relative">
                 <span className="text-gray-300 font-serif text-4xl absolute -top-2 left-2">“</span>
                 {newCaption}
@@ -274,7 +261,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
       <LeaderboardModal leaderboard={leaderboard} isOpen={showLeaderboardModal} onClose={() => setShowLeaderboardModal(false)} />
 
       <div className="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Main Column */}
         <div className="md:col-span-2 space-y-6">
           <div className="hidden md:flex bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
             <button onClick={handleBackToArena} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition ${viewMode === 'active' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>
