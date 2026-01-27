@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { LogOut, User, ChevronDown, BookOpen, Megaphone, Info, Facebook, Instagram, Smile } from "lucide-react"; // [!code change] Added Smile
+import { LogOut, User, ChevronDown, BookOpen, Megaphone, Info, Facebook, Instagram, Smile, Wallet } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 import InstallPrompt from "./InstallPrompt";
 
@@ -79,25 +79,28 @@ export default function Header({ session, profile }) {
                 <span className="text-sm font-bold text-gray-900 leading-none">
                   {username}
                 </span>
-                <div className="flex flex-col items-start text-left">
-  <span className="text-sm font-bold text-gray-900 leading-none">
-    {username}
-  </span>
-  <div className="flex items-center gap-1 text-[10px] text-yellow-600 font-bold bg-yellow-50 px-1.5 py-0.5 rounded mt-0.5 border border-yellow-200">
-     <span className="text-xs">🪙</span> {profile?.credits || 0} Credits
-  </div>
-</div>
+                <span className="text-[10px] text-gray-500 font-medium">Contestant</span>
               </div>
               <ChevronDown size={14} className={`text-gray-400 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
             </button>
 
             {isMenuOpen && (
-              <div className="absolute right-0 top-full mt-2 w-56 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="p-2 space-y-1">
+                  
+                  {/* CREDITS BADGE - MOVED HERE */}
+                  <div className="mx-2 mb-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200 flex items-center justify-between">
+                     <div className="flex items-center gap-2">
+                        <Wallet size={16} className="text-yellow-600" />
+                        <span className="text-xs font-bold text-yellow-900 uppercase tracking-wider">Credits</span>
+                     </div>
+                     <span className="font-display font-black text-lg text-yellow-600">{profile?.credits || 0}</span>
+                  </div>
+
                   <Link 
                     href="/profile"
                     onClick={() => setIsMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left"
                   >
                     <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
                       <User size={16} />
@@ -107,7 +110,7 @@ export default function Header({ session, profile }) {
                   <Link 
                     href="/how-it-works"
                     onClick={() => setIsMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left"
                   >
                     <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
                       <BookOpen size={16} />
@@ -118,7 +121,7 @@ export default function Header({ session, profile }) {
                   <Link 
                     href="/icon-guide"
                     onClick={() => setIsMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left"
                   >
                     <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
                       <Info size={16} />
@@ -132,7 +135,7 @@ export default function Header({ session, profile }) {
                     target="_blank" 
                     rel="noopener noreferrer"
                     onClick={() => setIsMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left"
                   >
                     <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
                       <Facebook size={16} />
@@ -145,7 +148,7 @@ export default function Header({ session, profile }) {
                     target="_blank" 
                     rel="noopener noreferrer"
                     onClick={() => setIsMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left"
                   >
                     <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
                       <Instagram size={16} />
@@ -153,11 +156,10 @@ export default function Header({ session, profile }) {
                     Instagram
                   </a>
 
-                  {/* [!code ++] New Comedy Disclaimer Link */}
                   <Link 
                     href="/comedy-disclaimer"
                     onClick={() => setIsMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left"
                   >
                     <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
                       <Smile size={16} />
@@ -168,7 +170,7 @@ export default function Header({ session, profile }) {
                   <a 
                     href="mailto:hello@itswebwits.com?subject=Advertising%20Inquiry&body=Hi%20WebWits%20Team%2C%0A%0AMy%20company%20is%20interested%20in%20advertising%20with%20you.%20Please%20let%20us%20know%20how%20we%20can%20proceed.%0A%0ABest%20regards%2C"
                     onClick={() => setIsMenuOpen(false)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:text-gray-900 transition-colors text-left"
                   >
                     <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
                       <Megaphone size={16} />
