@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X } from "lucide-react";
+import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X, Users, Copy } from "lucide-react"; // [!code ++] Added Users, Copy
 
 // Components
 import Header from "./Header";
@@ -21,26 +21,22 @@ import NotificationModal from "./NotificationModal";
 import { useGameLogic } from "@/hooks/useGameLogic";
 
 export default function MainApp({ initialMeme, initialLeaderboard }) {
-  // 1. Handle Session State locally (since app/page.js is now a Server Component)
+  // 1. Handle Session State locally
   const [session, setSession] = useState(null);
 
   useEffect(() => {
-    // Get initial session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
     });
 
-    // Listen for auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  // 2. Pass initial data to the hook to hydrate state immediately
+  // 2. Pass initial data
   const {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, setViewMode, toasts, setToasts, submitReply,
@@ -54,8 +50,9 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
   
-  // New state for confirmation popup
+  // Confirmation & Invite Popups
   const [showConfirm, setShowConfirm] = useState(false);
+  const [showInvitePopup, setShowInvitePopup] = useState(false); // [!code ++] New state
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -66,9 +63,49 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   const handleConfirmPost = async () => {
     setShowConfirm(false);
     setSubmitting(true);
+    
+    // Attempt submission
     const success = await submitCaption(newCaption);
-    if (success) setNewCaption("");
+    
+    if (success) {
+      setNewCaption("");
+
+      // [!code ++] Start: Check for First-Time Invite Popup
+      // If user exists and hasn't seen the popup yet...
+      if (userProfile && !userProfile.has_seen_invite_popup) {
+         setShowInvitePopup(true);
+         
+         // Mark as seen in DB immediately so it never shows again
+         if (session?.user?.id) {
+           await supabase
+             .from('profiles')
+             .update({ has_seen_invite_popup: true })
+             .eq('id', session.user.id);
+             
+           // Optimistically update local object to prevent re-trigger logic
+           userProfile.has_seen_invite_popup = true;
+         }
+      }
+      // [!code ++] End
+    }
+    
     setSubmitting(false);
+  };
+
+  const handleInviteFriends = async () => {
+    const shareData = {
+        title: 'WebWits',
+        text: "I just dropped a caption on WebWits. Come beat me if you can.",
+        url: 'https://itswebwits.com'
+    };
+
+    if (navigator.share) {
+        try { await navigator.share(shareData); } catch (err) {}
+    } else {
+        navigator.clipboard.writeText('https://itswebwits.com');
+        setToasts(prev => [...prev, { id: Date.now(), msg: "Link copied! Send it.", type: "success" }]);
+    }
+    setShowInvitePopup(false);
   };
 
   // Notification Check Logic
@@ -127,6 +164,42 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         onClose={() => setShowNotifModal(false)} 
       />
 
+      {/* [!code ++] NEW INVITE MODAL */}
+      {showInvitePopup && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-300">
+          <div className="w-full max-w-sm bg-white border border-gray-200 shadow-2xl rounded-2xl p-6 relative animate-in zoom-in-95 duration-300 text-center">
+             
+            <div className="w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mx-auto mb-4">
+               <Users size={32} className="text-blue-600" />
+            </div>
+
+            <h2 className="text-2xl font-black text-gray-900 font-display mb-2">
+               You're funny. <br/> Are your friends?
+            </h2>
+            
+            <p className="text-gray-500 text-sm leading-relaxed mb-6">
+               If your caption is this good, your circle must be witty too. Don't hoard the laughter—invite them to the arena.
+            </p>
+
+            <div className="space-y-3">
+               <button 
+                 onClick={handleInviteFriends}
+                 className="w-full py-3.5 bg-yellow-400 text-black font-bold rounded-xl hover:bg-yellow-300 transition shadow-sm flex items-center justify-center gap-2"
+               >
+                 <span>Invite the Crew</span> <Users size={18} />
+               </button>
+               
+               <button 
+                 onClick={() => setShowInvitePopup(false)}
+                 className="text-gray-400 text-xs font-bold hover:text-gray-600 transition"
+               >
+                 I prefer to ride solo (Skip)
+               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* CONFIRMATION POPUP */}
       {showConfirm && (
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
@@ -163,7 +236,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                   onClick={() => setShowConfirm(false)}
                   className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
                 >
-                  Wait, I can do better
+                  Wait
                 </button>
                 <button 
                   onClick={handleConfirmPost}
@@ -208,7 +281,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                 <MemeStage 
                   meme={currentMeme} 
                   isActive={viewMode === 'active'} 
-                  // Fix: Don't show skeleton if we have the meme (SSR), even if "loading" logic is running for comments
                   loading={loading && !currentMeme} 
                 />
                 
