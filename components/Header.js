@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { LogOut, User, ChevronDown, BookOpen, Megaphone, Info, Facebook, Instagram } from "lucide-react";
+import { LogOut, User, ChevronDown, BookOpen, Megaphone, Info, Facebook, Instagram, Smile } from "lucide-react"; // [!code change] Added Smile
 import { COUNTRY_CODES } from "@/lib/countries";
 import InstallPrompt from "./InstallPrompt";
 
@@ -145,6 +145,18 @@ export default function Header({ session, profile }) {
                     </div>
                     Instagram
                   </a>
+
+                  {/* [!code ++] New Comedy Disclaimer Link */}
+                  <Link 
+                    href="/comedy-disclaimer"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-gray-700 hover:bg-yellow-50 hover:text-yellow-700 transition-colors text-left"
+                  >
+                    <div className="p-1.5 bg-gray-100 rounded-md text-gray-500">
+                      <Smile size={16} />
+                    </div>
+                    Comedy Disclaimer
+                  </Link>
                   
                   <a 
                     href="mailto:hello@itswebwits.com?subject=Advertising%20Inquiry&body=Hi%20WebWits%20Team%2C%0A%0AMy%20company%20is%20interested%20in%20advertising%20with%20you.%20Please%20let%20us%20know%20how%20we%20can%20proceed.%0A%0ABest%20regards%2C"
