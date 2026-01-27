@@ -181,10 +181,10 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
                   animate={{ scale: 1.1, opacity: 1 }}
                   className="space-y-2"
                 >
-                  <div className="text-4xl font-black text-amber-500 flex items-center justify-center gap-2 font-display">
-                    <Sparkles className="fill-amber-500" /> +{prize}
+                  <div className="text-4xl font-black text-[#0284c7] flex items-center justify-center gap-2 font-display">
+                    <Sparkles className="fill-[#0284c7]" /> +{prize}
                   </div>
-                  <button onClick={close} className="text-xs font-bold text-gray-400 hover:text-gray-600 uppercase tracking-wider">
+                  <button onClick={close} className="text-xs font-bold text-black hover:text-gray-800 uppercase tracking-wider">
                     Claim & Close
                   </button>
                 </motion.div>
