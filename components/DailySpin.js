@@ -80,12 +80,12 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
 
   // Segments for rendering labels
   const wheelSegments = [
-    { id: 0, val: 5, label: '5', color: '#CD7F32', text: 'white' },   // Bronze
-    { id: 1, val: 10, label: '10', color: '#C0C0C0', text: 'gray-900' }, // Silver
-    { id: 2, val: 15, label: '15', color: '#CD7F32', text: 'white' },   // Bronze
-    { id: 3, val: 20, label: '20', color: '#C0C0C0', text: 'gray-900' }, // Silver
-    { id: 4, val: 25, label: '25', color: '#D4AF37', text: 'white' },   // Gold
-    { id: 5, val: 50, label: '50', color: '#FFD700', text: 'white' }    // Bright Gold
+    { id: 0, val: 5, label: '5', color: '#03A9FC', text: 'white' },   
+    { id: 1, val: 10, label: '10', color: '#028BCF', text: 'white' }, 
+    { id: 2, val: 15, label: '15', color: '#026CA2', text: 'white' },  
+    { id: 3, val: 20, label: '20', color: '#014E74', text: 'white' },
+    { id: 4, val: 25, label: '25', color: '#012F47', text: 'white' },  
+    { id: 5, val: 50, label: '50', color: '#FFD700', text: 'white' }    
   ];
 
   return (
