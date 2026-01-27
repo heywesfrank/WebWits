@@ -1,16 +1,54 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Camera, User, Loader2, ArrowRight, Check, Globe } from "lucide-react";
+import { Camera, User, Loader2, ArrowRight, Check, Globe, Download } from "lucide-react";
 import { COUNTRIES } from "@/lib/countries";
 
 export default function Onboarding({ session, onComplete }) {
-  const [step, setStep] = useState(1); // 1: Avatar, 2: Username, 3: Country
+  const [step, setStep] = useState(1); // 1: Avatar, 2: Username, 3: Country, 4: Install
   const [uploading, setUploading] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState(null);
   const [username, setUsername] = useState("");
   const [country, setCountry] = useState("");
   const [saving, setSaving] = useState(false);
+
+  // --- PWA State ---
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
+
+  useEffect(() => {
+    // Check if already in standalone mode
+    const inStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
+    setIsStandalone(inStandalone);
+
+    // Check for iOS
+    const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+    setIsIOS(iOS);
+
+    // Listen for PWA install event
+    const handler = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener("beforeinstallprompt", handler);
+    return () => window.removeEventListener("beforeinstallprompt", handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') {
+        setDeferredPrompt(null);
+      }
+    } else if (isIOS) {
+      alert("📲 To install on iOS:\n\n1. Tap the 'Share' icon (square with arrow)\n2. Scroll down and tap 'Add to Home Screen'");
+    } else {
+       alert("To install, look for 'Add to Home Screen' or 'Install App' in your browser menu.");
+    }
+  };
 
   // Handle Image Upload
   const handleImageUpload = async (event) => {
@@ -38,7 +76,7 @@ export default function Onboarding({ session, onComplete }) {
     }
   };
 
-  // Handle Final Submission
+  // Handle Profile Save (Moves to Step 4)
   const handleSubmit = async () => {
     if (!username.trim() || !avatarUrl || !country) return;
     setSaving(true);
@@ -56,7 +94,7 @@ export default function Onboarding({ session, onComplete }) {
         });
 
       if (error) throw error;
-      onComplete(); // Notify parent to close onboarding
+      setStep(4); // Move to Install Step
     } catch (error) {
       alert('Error saving profile: ' + error.message);
     } finally {
@@ -70,6 +108,7 @@ export default function Onboarding({ session, onComplete }) {
       case 1: return "We've seen worse. Pick a pic.";
       case 2: return "What should we call you?";
       case 3: return "Where are you roasting from?";
+      case 4: return "Commit to the bit.";
       default: return "";
     }
   };
@@ -79,6 +118,7 @@ export default function Onboarding({ session, onComplete }) {
       case 1: return "Upload an image to represent you in the arena.";
       case 2: return "This name is permanent - choose wisely.";
       case 3: return "Your country (so that we can send the prize). No stalking.";
+      case 4: return "Browsers suppress notifications like a jealous ex. Install the app to know when you win.";
       default: return "";
     }
   };
@@ -92,12 +132,13 @@ export default function Onboarding({ session, onComplete }) {
           <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 1 ? 'bg-yellow-400' : 'bg-gray-100'}`} />
           <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 2 ? 'bg-yellow-400' : 'bg-gray-100'}`} />
           <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 3 ? 'bg-yellow-400' : 'bg-gray-100'}`} />
+          <div className={`h-2 flex-1 rounded-full transition-colors ${step >= 4 ? 'bg-yellow-400' : 'bg-gray-100'}`} />
         </div>
 
         <h2 className="text-2xl font-black text-gray-900 mb-2 font-display">
           {getHeading()}
         </h2>
-        <p className="text-gray-500 mb-6 text-sm">
+        <p className="text-gray-500 mb-6 text-sm leading-relaxed">
           {getSubHeading()}
         </p>
 
@@ -189,7 +230,6 @@ export default function Onboarding({ session, onComplete }) {
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
-                {/* Custom arrow if desired, though native select arrows vary by browser */}
                 <div className="absolute inset-y-0 right-0 flex items-center pr-4 pointer-events-none">
                   <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
                 </div>
@@ -209,10 +249,39 @@ export default function Onboarding({ session, onComplete }) {
                 className="flex-[2] px-4 py-3 bg-yellow-400 text-black font-bold rounded-xl hover:bg-yellow-300 transition flex items-center justify-center gap-2"
               >
                 {saving ? <Loader2 className="animate-spin" size={18} /> : (
-                   <>Finish <Check size={18} /></>
+                   <>Next <ArrowRight size={18} /></>
                 )}
               </button>
             </div>
+          </div>
+        )}
+
+        {/* STEP 4: APP INSTALL */}
+        {step === 4 && (
+          <div className="space-y-4 animate-in fade-in slide-in-from-right duration-300">
+             {!isStandalone && (
+                <button 
+                  onClick={handleInstall}
+                  className="w-full bg-yellow-400 hover:bg-yellow-300 text-black font-bold py-4 rounded-xl shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all active:scale-95 flex items-center justify-center gap-2"
+                >
+                  <Download size={24} />
+                  <span className="text-lg">Install WebWits</span>
+                </button>
+             )}
+
+             {isStandalone && (
+                <div className="bg-green-50 border border-green-200 text-green-700 p-4 rounded-xl flex items-center gap-3">
+                   <Check size={20} />
+                   <span className="font-bold">App installed. You're ready.</span>
+                </div>
+             )}
+
+             <button 
+               onClick={onComplete}
+               className={`w-full font-bold py-3 rounded-xl transition-colors ${isStandalone ? 'bg-black text-white hover:bg-gray-800' : 'bg-transparent text-gray-400 hover:text-gray-600'}`}
+             >
+               {isStandalone ? "Enter Arena" : "I'll risk missing out (Skip)"}
+             </button>
           </div>
         )}
 
