@@ -28,12 +28,19 @@ export async function POST(req) {
     }
 
     // 3. Calculate Prize (Weighted Randomness)
-    // 5 credits: 60%, 10 credits: 30%, 25 credits: 9%, 50 credits: 1%
+    // 5 credits: 45% (Bronze)
+    // 10 credits: 25% (Silver)
+    // 15 credits: 15% (Bronze)
+    // 20 credits: 10% (Silver)
+    // 25 credits: 4% (Gold)
+    // 50 credits: 1% (Gold)
     const rand = Math.random() * 100;
     let prizeAmount = 0;
 
-    if (rand < 60) prizeAmount = 5;
-    else if (rand < 90) prizeAmount = 10;
+    if (rand < 45) prizeAmount = 5;
+    else if (rand < 70) prizeAmount = 10;
+    else if (rand < 85) prizeAmount = 15;
+    else if (rand < 95) prizeAmount = 20;
     else if (rand < 99) prizeAmount = 25;
     else prizeAmount = 50;
 
