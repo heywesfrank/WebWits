@@ -18,6 +18,8 @@ export async function POST(req) {
       .eq('id', userId)
       .single();
 
+    if (!profile) return NextResponse.json({ error: "User not found" }, { status: 404 });
+
     const today = new Date().toISOString().split('T')[0];
 
     // 2. Check if already spun today
