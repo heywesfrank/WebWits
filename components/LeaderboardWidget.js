@@ -13,11 +13,10 @@ function LeaderboardList({ leaderboard, scoreKey }) {
   return (
     <div className="space-y-3">
       {leaderboard.map((user, index) => {
-        // Calculate Rank: Finds the first index with this score. 
-        // If tied, this ensures they share the same rank number (e.g. 1, 1, 3, 4).
+        // Calculate Rank: Finds the first index with this score.
         const rank = leaderboard.findIndex(u => u[scoreKey] === user[scoreKey]) + 1;
 
-        // Determine Styles based on RANK (not index)
+        // Determine Styles based on RANK
         let containerStyle = 'bg-white border-[#0284c7] hover:bg-gray-50'; // Default Blue
         let badgeStyle = 'bg-[#0284c7] text-white';
         let textStyle = 'text-[#0284c7]';
@@ -75,7 +74,7 @@ function LeaderboardList({ leaderboard, scoreKey }) {
 }
 
 // ------------------------------------------------------------------
-// 2. MAIN WIDGET COMPONENT
+// 2. MAIN WIDGET COMPONENT (Desktop)
 // ------------------------------------------------------------------
 export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) {
   const [activeTab, setActiveTab] = useState("monthly");
@@ -88,15 +87,11 @@ export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) 
   ];
 
   useEffect(() => {
-    // Optimization: Use initial props only if they provide enough data (>= 50).
-    // Otherwise, fetch the full list to support scrolling.
+    // If we have less than 50 items (e.g. initial server load of 5), fetch more.
     if (activeTab === "monthly" && initialLeaders.length >= 50) {
       setLeaders(initialLeaders);
       return;
     }
-    
-    // If initialLeaders is small (e.g. 5 from SSR), we render them first (via useState default)
-    // then immediately fetch the larger list below.
 
     const fetchLeaders = async () => {
       setLoading(true);
@@ -108,7 +103,7 @@ export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) 
           .from("profiles")
           .select(`username, ${sortColumn}`)
           .order(sortColumn, { ascending: false })
-          .limit(50); // [!code change] Increased limit to 50 for scrolling
+          .limit(50);
 
         if (error) {
            console.error("Error fetching leaders:", error);
@@ -134,13 +129,12 @@ export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) 
   };
 
   return (
-    <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm transition-all flex flex-col max-h-[600px]"> {/* Added max-h */}
+    <div className="bg-white border border-gray-200 p-5 rounded-xl shadow-sm transition-all flex flex-col max-h-[600px]">
       <div className="flex items-center gap-2 mb-4 text-yellow-500 pb-2 border-b border-gray-100 flex-shrink-0">
         <Icon size={20} className="animate-in zoom-in duration-300" key={activeTab} />
         <h2 className="font-bold text-lg font-display">{activeTabInfo?.title}</h2>
       </div>
 
-      {/* Tabs */}
       <div className="flex p-1 bg-gray-50 rounded-lg mb-4 border border-gray-100 flex-shrink-0">
         {tabs.map((tab) => (
           <button
@@ -157,8 +151,8 @@ export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) 
         ))}
       </div>
 
-      {/* Scrollable Container */}
-      <div className="flex-1 overflow-y-auto min-h-[200px] pr-2">
+      {/* Scrollable Container with Hidden Scrollbar */}
+      <div className="flex-1 overflow-y-auto min-h-[200px] pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
         {loading && leaders.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-40 space-y-2 opacity-50">
             <Loader2 className="animate-spin text-yellow-500" size={24} />
@@ -181,7 +175,42 @@ export default function LeaderboardWidget({ initialLeaders = DEFAULT_LEADERS }) 
 // ------------------------------------------------------------------
 // 3. MODAL COMPONENT (Mobile)
 // ------------------------------------------------------------------
-export function LeaderboardModal({ leaderboard, isOpen, onClose }) {
+export function LeaderboardModal({ leaderboard: initialMobileLeaders, isOpen, onClose }) {
+  const [mobileLeaders, setMobileLeaders] = useState(initialMobileLeaders || []);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch more leaders on mount so the list is scrollable on mobile
+  useEffect(() => {
+    if (!isOpen) return;
+
+    const fetchMobileLeaders = async () => {
+      // If we already have a long list passed in, use it.
+      if (initialMobileLeaders && initialMobileLeaders.length >= 50) {
+        setMobileLeaders(initialMobileLeaders);
+        return;
+      }
+      
+      setLoading(true);
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("username, monthly_points")
+          .order("monthly_points", { ascending: false })
+          .limit(50);
+          
+        if (!error && data) {
+          setMobileLeaders(data);
+        }
+      } catch (e) {
+        console.error("Mobile leaderboard fetch error", e);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMobileLeaders();
+  }, [isOpen, initialMobileLeaders]);
+
   if (!isOpen) return null;
   
   return (
@@ -191,7 +220,7 @@ export function LeaderboardModal({ leaderboard, isOpen, onClose }) {
          animate={{ y: 0, opacity: 1 }}
          className="bg-gray-900 border border-gray-700 w-full max-w-md rounded-2xl p-6 relative shadow-2xl h-[80vh] flex flex-col"
       >
-        <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4">
+        <div className="flex justify-between items-center mb-6 border-b border-gray-800 pb-4 flex-shrink-0">
           <h2 className="text-xl font-bold text-yellow-400 flex items-center gap-2">
             <Star size={20} /> Monthly Leaders
           </h2>
@@ -199,9 +228,17 @@ export function LeaderboardModal({ leaderboard, isOpen, onClose }) {
             <X size={24} />
           </button>
         </div>
-        <div className="overflow-y-auto flex-1">
-           <div className="bg-white/5 rounded-xl p-2">
-              <LeaderboardList leaderboard={leaderboard} scoreKey="monthly_points" />
+        
+        {/* Mobile Scrollable Area with Hidden Scrollbar */}
+        <div className="overflow-y-auto flex-1 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+           <div className="bg-white/5 rounded-xl p-2 min-h-full">
+              {loading && mobileLeaders.length < 5 ? (
+                 <div className="flex justify-center py-10">
+                    <Loader2 className="animate-spin text-yellow-400" />
+                 </div>
+              ) : (
+                 <LeaderboardList leaderboard={mobileLeaders} scoreKey="monthly_points" />
+              )}
            </div>
         </div>
       </motion.div>
