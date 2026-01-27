@@ -1,6 +1,7 @@
 "use client";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link"; // [!code ++]
 import { supabase } from "@/lib/supabase";
 import { AlertCircle, Mail, Sparkles, KeyRound, ArrowRight } from "lucide-react";
 import HowToPlayButton from "./HowToPlayButton";
@@ -53,7 +54,6 @@ export default function Login() {
       setLoading(false);
     } else {
       setInfoMsg("Success! Entering the arena...");
-      // Subscription logic is now handled in MainApp via the NotificationModal
       router.push("/");
       router.refresh();
     }
@@ -162,6 +162,13 @@ export default function Login() {
         <div className="mt-8 pt-6 border-t border-gray-100">
           <HowToPlayButton />
           <PrizesButton />
+          
+          {/* [!code ++] New Footer Links */}
+          <div className="mt-6 text-center text-xs text-gray-400 flex justify-center gap-4">
+            <Link href="/terms" className="hover:text-gray-600 hover:underline">Terms of Use</Link>
+            <span>•</span>
+            <Link href="/privacy" className="hover:text-gray-600 hover:underline">Privacy Policy</Link>
+          </div>
         </div>
 
       </div>
