@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
+import DailySpin from "./DailySpin";
 import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X, Users, Copy } from "lucide-react"; // [!code ++] Added Users, Copy
 
 // Components
