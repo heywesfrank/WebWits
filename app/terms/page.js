@@ -91,6 +91,10 @@ export default function TermsPage() {
                 These terms are governed by the laws of the jurisdiction in which WebWits operates.
             </Section>
 
+              <Section title="13. Comedy Disclaimer">
+                Users acknowledge that WebWits hosts user-generated comedic content which may include satire, parody, irony, exaggeration, or dark humor. Users agree not to hold WebWits liable for emotional distress, offense taken, or interpretations of comedic content.
+            </Section>
+
         </div>
       </div>
     </div>
