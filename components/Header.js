@@ -79,7 +79,14 @@ export default function Header({ session, profile }) {
                 <span className="text-sm font-bold text-gray-900 leading-none">
                   {username}
                 </span>
-                <span className="text-[10px] text-gray-500 font-medium">Contestant</span>
+                <div className="flex flex-col items-start text-left">
+  <span className="text-sm font-bold text-gray-900 leading-none">
+    {username}
+  </span>
+  <div className="flex items-center gap-1 text-[10px] text-yellow-600 font-bold bg-yellow-50 px-1.5 py-0.5 rounded mt-0.5 border border-yellow-200">
+     <span className="text-xs">🪙</span> {profile?.credits || 0} Credits
+  </div>
+</div>
               </div>
               <ChevronDown size={14} className={`text-gray-400 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
             </button>
