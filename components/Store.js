@@ -8,9 +8,9 @@ import { useRouter } from "next/navigation";
 const ITEMS = [
     {
         id: "effect_fire",
-        type: "meme_bound", // Changed type to reflect logic
+        type: "meme_bound", 
         name: "Ring of Fire",
-        description: "Ignite your active caption. Burns until the battle ends.", // [!code change]
+        description: "Ignite your active caption. Burns until the battle ends.",
         cost: 100,
         icon: <Flame size={24} className="text-orange-500 fill-orange-500" />,
         color: "orange"
@@ -59,6 +59,7 @@ export default function Store() {
     const [purchasing, setPurchasing] = useState(null);
     const [message, setMessage] = useState(null);
     const [hasCommented, setHasCommented] = useState(false);
+    const [activeMemeId, setActiveMemeId] = useState(null);
     const router = useRouter();
 
     useEffect(() => {
@@ -87,6 +88,7 @@ export default function Store() {
             .maybeSingle();
 
         if (activeMeme) {
+            setActiveMemeId(activeMeme.id);
             const { data: comment } = await supabase
                 .from('comments')
                 .select('id')
@@ -101,6 +103,23 @@ export default function Store() {
     };
 
     const handlePurchase = async (item) => {
+        // Validation for The Mulligan
+        if (item.id === "consumable_edit") {
+            if (!hasCommented) {
+                 setMessage({ type: 'error', text: "You must post a caption first to edit it!" });
+                 return;
+            }
+            
+            // Check if other power-ups are active which might prevent editing (game design choice)
+            const hasFire = profile.cosmetics?.effect_fire_meme_id === activeMemeId;
+            const hasPin = profile.cosmetics?.effect_pin_expires && new Date(profile.cosmetics.effect_pin_expires) > new Date();
+
+            if (hasFire || hasPin) {
+                 setMessage({ type: 'error', text: "Cannot edit a powered-up caption!" });
+                 return;
+            }
+        }
+
         if (item.id === "effect_fire" && !hasCommented) {
             setMessage({ type: 'error', text: "You must post a caption first to ignite it!" });
             return;
@@ -205,12 +224,9 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory }) {
     // Check Status based on Type
     let isActive = false;
     
-    // Logic for Meme Bound items (Ring of Fire)
-    // NOTE: This check is simplified for the store UI. 
-    // True verification happens on the Feed item.
-    if (item.type === 'meme_bound') {
-         // If the user has ANY active meme ID stored, we consider it "owned/active" for the store UI
-         // so they don't buy it twice for the same day.
+    // Logic for Meme Bound items (Ring of Fire) OR The Mulligan
+    if (item.type === 'meme_bound' || item.id === 'consumable_edit') {
+         // If the user has a meme ID stored for this item, it is active/available
          isActive = !!inventory[`${item.id}_meme_id`];
     } else if (item.type === 'duration') {
          const expiryKey = `${item.id}_expires`;
@@ -233,10 +249,10 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory }) {
             
             {isActive && (
                 <div className="absolute top-3 right-3 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">
-                    ACTIVE
+                    {item.id === 'consumable_edit' ? 'READY' : 'ACTIVE'}
                 </div>
             )}
-             {count > 0 && item.type === 'consumable' && (
+             {count > 0 && item.type === 'consumable' && item.id !== 'consumable_edit' && (
                 <div className="absolute top-3 right-3 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-full">
                     x{count} OWNED
                 </div>
@@ -262,7 +278,7 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory }) {
                     }`}
                 >
                     {loading ? <Loader2 className="animate-spin" size={20} /> : (
-                        isActive ? "Already Active" : (
+                        isActive ? (item.id === 'consumable_edit' ? "Ready to Use" : "Already Active") : (
                             <>
                                 <span>{item.cost}</span>
                                 <Wallet size={16} className={canAfford ? "text-yellow-400" : "text-gray-300"} />
