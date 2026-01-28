@@ -104,7 +104,7 @@ export default function Store() {
     };
 
     const handlePurchase = async (item) => {
-        // [!code block: Validation for Pin]
+        // Validation for Pin
         if (item.id === "effect_pin") {
             if (!hasCommented) {
                  setMessage({ type: 'error', text: "You must post a caption first to pin it!" });
@@ -116,7 +116,6 @@ export default function Store() {
                  return;
             }
         }
-        // [!code block end]
 
         if (item.id === "effect_fire") {
             if (!hasCommented) {
@@ -184,13 +183,12 @@ export default function Store() {
             const data = await res.json();
 
             if (data.success) {
-                // [!code block: Witty Prize Message Logic]
+                // Witty Prize Message Logic
                 if (item.type === 'prize') {
                     setMessage({ type: 'success', text: "Bag secured! 💰 We've alerted the admins. Watch your email for the goods." });
                 } else {
                     setMessage({ type: 'success', text: `Purchased: ${item.name}!` });
                 }
-                // [!code block end]
                 fetchProfile();
             } else {
                 setMessage({ type: 'error', text: data.error || "Transaction failed." });
