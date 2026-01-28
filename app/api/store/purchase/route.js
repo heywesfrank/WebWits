@@ -1,11 +1,13 @@
+// app/api/store/purchase/route.js
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
 // Define server items
 const SERVER_ITEMS = {
-    "effect_fire": { cost: 100, name: "Ring of Fire", type: "meme_bound" }, // Changed Type
+    "effect_fire": { cost: 100, name: "Ring of Fire", type: "meme_bound" },
     "badge_verified": { cost: 500, name: "Verified Badge", type: "cosmetic" },
     "border_gold": { cost: 1000, name: "Golden Aura", type: "cosmetic" },
+    "consumable_edit": { cost: 150, name: "The Mulligan", type: "consumable" }, // [!code ++]
     "prize_amazon_5": { cost: 2500, name: "$5 Amazon Card", type: "prize" },
     "prize_amazon_10": { cost: 5000, name: "$10 Amazon Card", type: "prize" }
 };
@@ -44,9 +46,7 @@ export async function POST(req) {
     let updateData = { credits: newCredits };
     const currentCosmetics = profile.cosmetics || {};
 
-    // [!code block: Logic for meme_bound items]
     if (item.type === 'meme_bound') {
-        // Fetch the ACTIVE meme to bind this purchase to
         const { data: activeMeme } = await supabase
             .from('memes')
             .select('id')
@@ -55,13 +55,34 @@ export async function POST(req) {
             
         if (!activeMeme) return NextResponse.json({ error: "No active battle to ignite." }, { status: 400 });
 
-        // Save the meme ID in the cosmetics. 
-        // Logic: "User has fire effect active for Meme ID X"
         updateData.cosmetics = { 
             ...currentCosmetics, 
             [`${itemId}_meme_id`]: activeMeme.id 
         };
     } 
+    // [!code block: Logic for Consumables (Mulligan)]
+    else if (item.type === 'consumable') {
+        if (itemId === 'consumable_edit') {
+             const { data: activeMeme } = await supabase
+                .from('memes')
+                .select('id')
+                .eq('status', 'active')
+                .single();
+                
+             if (!activeMeme) return NextResponse.json({ error: "No active battle." }, { status: 400 });
+             
+             // Check if they already have an unused mulligan for this meme
+             if (currentCosmetics[`${itemId}_meme_id`] === activeMeme.id) {
+                return NextResponse.json({ error: "You already have a pending edit." }, { status: 400 });
+             }
+
+             // Grant permission for this specific meme
+             updateData.cosmetics = { 
+                ...currentCosmetics, 
+                [`${itemId}_meme_id`]: activeMeme.id 
+             };
+        }
+    }
     // [!code block end]
     else if (item.type === 'cosmetic') {
         if (currentCosmetics[itemId]) return NextResponse.json({ error: "Item already owned" }, { status: 400 });
