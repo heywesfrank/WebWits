@@ -1,6 +1,11 @@
 // app/api/store/purchase/route.js
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { Resend } from 'resend';
+
+// Initialize Resend with your API Key
+// Ensure RESEND_API_KEY is set in your .env
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // Define server items
 const SERVER_ITEMS = {
@@ -11,7 +16,10 @@ const SERVER_ITEMS = {
     "consumable_edit": { cost: 150, name: "The Mulligan", type: "consumable" }, 
     "consumable_double": { cost: 250, name: "Double Barrel", type: "consumable" },
     "prize_amazon_5": { cost: 2500, name: "$5 Amazon Card", type: "prize" },
-    "prize_amazon_10": { cost: 5000, name: "$10 Amazon Card", type: "prize" }
+    "prize_amazon_10": { cost: 5000, name: "$10 Amazon Card", type: "prize" },
+    // [!code block: Added Prize Item]
+    "prize_amazon_25": { cost: 2000, name: "The Payday", type: "prize" } 
+    // [!code block end]
 };
 
 export async function POST(req) {
@@ -32,6 +40,7 @@ export async function POST(req) {
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(authHeader.split(' ')[1]);
     if (authError || !authUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const userId = authUser.id;
+    const userEmail = authUser.email; // Capture user email
 
     // Fetch Profile
     const { data: profile } = await supabase
@@ -132,6 +141,32 @@ export async function POST(req) {
         cost: item.cost,
         status: 'completed'
     });
+
+    // [!code block: Email Notification]
+    if (item.type === 'prize') {
+        try {
+            await resend.emails.send({
+                from: 'WebWits Bot <noreply@itswebwits.com>',
+                to: 'hello@itswebwits.com',
+                subject: `💰 PRIZE CLAIMED: ${item.name}`,
+                html: `
+                    <h1>Prize Claimed!</h1>
+                    <p>A user has purchased a prize in the store.</p>
+                    <ul>
+                        <li><strong>User Email:</strong> ${userEmail}</li>
+                        <li><strong>User ID:</strong> ${userId}</li>
+                        <li><strong>Item:</strong> ${item.name} (${itemId})</li>
+                        <li><strong>Cost:</strong> ${item.cost} credits</li>
+                    </ul>
+                    <p>Please purchase the gift card and send it to <strong>${userEmail}</strong>.</p>
+                `
+            });
+        } catch (emailError) {
+            console.error("Failed to send prize notification email:", emailError);
+            // We don't block the response here, as the purchase succeeded in DB.
+        }
+    }
+    // [!code block end]
 
     return NextResponse.json({ success: true, newCredits });
 
