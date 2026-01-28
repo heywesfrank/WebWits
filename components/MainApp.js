@@ -16,7 +16,7 @@ import LeaderboardWidget, { LeaderboardModal } from "./LeaderboardWidget";
 import MemeStage from "./MemeStage";
 import CaptionFeed from "./CaptionFeed";
 import NotificationModal from "./NotificationModal"; 
-import DailySpin from "./DailySpin"; // [!code ++]
+import DailySpin from "./DailySpin"; 
 
 // Hooks
 import { useGameLogic } from "@/hooks/useGameLogic";
@@ -41,8 +41,8 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   const {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, setViewMode, toasts, setToasts, submitReply,
-    showOnboarding, setShowOnboarding, hasCommented, fetchData, // [!code ++] Added fetchData
-    handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption
+    showOnboarding, setShowOnboarding, hasCommented, fetchData,
+    handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption, editCaption
   } = useGameLogic(session, initialMeme, initialLeaderboard);
 
   const [newCaption, setNewCaption] = useState("");
@@ -145,7 +145,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-24 md:pb-0">
       <Header session={session} profile={userProfile} onOpenProfile={() => setShowProfileModal(true)} />
       
-      {/* [!code ++] DAILY SPIN COMPONENT */}
       <DailySpin 
         session={session} 
         userProfile={userProfile} 
@@ -324,6 +323,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                 onShare={shareCaption}
                 onReport={reportCaption}
                 onReply={submitReply}
+                onEdit={editCaption}
               />
             </>
           )}
