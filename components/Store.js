@@ -27,14 +27,13 @@ const ITEMS = [
     },
     {
         id: "effect_pin",
-        type: "meme_bound", // [!code change] Changed from duration to meme_bound (Full Day)
+        type: "meme_bound", 
         name: "Thumbtack of Glory",
-        description: "Glue your wit to the ceiling. Stays on top for the full battle.", // [!code change]
+        description: "Glue your wit to the ceiling. Stays on top for the full battle.", 
         cost: 200,
         icon: <Pin size={24} className="text-red-500 fill-red-500" />,
         color: "red"
     },
-    // ... rest of items (Double Barrel, Amazon cards) remain same
     {
         id: "consumable_double",
         type: "consumable",
@@ -124,10 +123,10 @@ export default function Store() {
                 setMessage({ type: 'error', text: "You must post a caption first to ignite it!" });
                 return;
             }
-            if (profile.cosmetics?.effect_pin_meme_id === activeMemeId) { // [!code ++]
-                 setMessage({ type: 'error', text: "Cannot ignite: You already used Thumbtack!" }); // [!code ++]
-                 return; // [!code ++]
-            } // [!code ++]
+            if (profile.cosmetics?.effect_pin_meme_id === activeMemeId) {
+                 setMessage({ type: 'error', text: "Cannot ignite: You already used Thumbtack!" });
+                 return;
+            }
         }
 
         if (item.id === "consumable_edit") {
@@ -137,10 +136,22 @@ export default function Store() {
             }
             // Cannot edit if powered up
             const hasFire = profile.cosmetics?.effect_fire_meme_id === activeMemeId;
-            const hasPin = profile.cosmetics?.effect_pin_meme_id === activeMemeId; // [!code change]
+            const hasPin = profile.cosmetics?.effect_pin_meme_id === activeMemeId;
 
             if (hasFire || hasPin) {
                  setMessage({ type: 'error', text: "Cannot edit a powered-up caption!" });
+                 return;
+            }
+        }
+
+        if (item.id === "consumable_double") {
+            if (!hasCommented) {
+                 setMessage({ type: 'error', text: "Fire your first shot before reloading!" });
+                 return;
+            }
+            // Check if already owned/active for this meme
+            if (profile.cosmetics?.consumable_double_meme_id === activeMemeId) {
+                 setMessage({ type: 'error', text: "You're already locked and loaded." });
                  return;
             }
         }
@@ -245,8 +256,8 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory }) {
     // Check Status based on Type
     let isActive = false;
     
-    // Updated Logic for Meme Bound (includes Pin now)
-    if (item.type === 'meme_bound' || item.id === 'consumable_edit') {
+    // Updated Logic for Meme Bound (includes Pin and Double Barrel now)
+    if (item.type === 'meme_bound' || item.id === 'consumable_edit' || item.id === 'consumable_double') {
          isActive = !!inventory[`${item.id}_meme_id`];
     } else if (item.type === 'duration') {
          // Legacy support or for other items
@@ -270,10 +281,10 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory }) {
             
             {isActive && (
                 <div className="absolute top-3 right-3 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">
-                    {item.id === 'consumable_edit' ? 'READY' : 'ACTIVE'}
+                    {item.id === 'consumable_edit' ? 'READY' : (item.id === 'consumable_double' ? 'LOADED' : 'ACTIVE')}
                 </div>
             )}
-             {count > 0 && item.type === 'consumable' && item.id !== 'consumable_edit' && (
+             {count > 0 && item.type === 'consumable' && item.id !== 'consumable_edit' && item.id !== 'consumable_double' && (
                 <div className="absolute top-3 right-3 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-full">
                     x{count} OWNED
                 </div>
