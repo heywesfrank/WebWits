@@ -1,4 +1,3 @@
-// [!code_block: hooks/useGameLogic.js]
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { filterProfanity } from "@/lib/profanity";
@@ -182,7 +181,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       if (error) throw error;
       
       // 2. Trigger Notification (New Feature)
-      // We don't await this because we don't want to block the UI
       fetch('/api/notify-comment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -294,11 +292,42 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     addToast("Reported. Thanks for keeping it clean.", "success");
   };
 
+  // Edit Caption Function for The Mulligan
+  const editCaption = async (commentId, newText) => {
+    if (!session?.user) return false;
+
+    try {
+      const res = await fetch('/api/comment/edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commentId,
+          content: newText,
+          userId: session.user.id
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      addToast("Caption updated! Mulligan consumed. 🎭", "success");
+      
+      // Refresh to show updated text and remove Edit button (since item is consumed)
+      fetchData();
+      return true;
+
+    } catch (err) {
+      console.error("Edit failed:", err);
+      addToast(err.message || "Failed to edit", "error");
+      return false;
+    }
+  };
+
   return {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, toasts, showOnboarding, hasCommented,
-    setViewMode, setToasts, setShowOnboarding,
-    fetchData, handleArchiveSelect, handleBackToArena, 
-    submitCaption, submitReply, castVote, shareCaption, reportCaption
+    setViewMode, setToasts, setShowOnboarding, fetchData,
+    handleArchiveSelect, handleBackToArena, 
+    submitCaption, submitReply, castVote, shareCaption, reportCaption, editCaption
   };
 }
