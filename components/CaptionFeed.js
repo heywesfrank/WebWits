@@ -180,6 +180,28 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
               </>
             )}
 
+            {/* Double Barrel Shotguns */}
+            {hasDoubleBarrel && (
+              <>
+                 {/* Right Shotgun */}
+                 <div className="absolute -top-4 -right-3 bg-white rounded-full p-2 shadow-md border border-gray-100 z-20">
+                    <img 
+                      src="/shotgun.png" 
+                      alt="Double Barrel" 
+                      className="w-8 h-8 object-contain -rotate-12" 
+                    />
+                 </div>
+                 {/* Left Shotgun (Mirrored) */}
+                 <div className="absolute -top-4 -left-3 bg-white rounded-full p-2 shadow-md border border-gray-100 z-20">
+                    <img 
+                      src="/shotgun.png" 
+                      alt="Double Barrel" 
+                      className="w-8 h-8 object-contain rotate-12 scale-x-[-1]" 
+                    />
+                 </div>
+              </>
+            )}
+
             {isWinner && (
               <div className="absolute -top-3 -left-2 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 z-10">
                 <Trophy size={10} /> CHAMPION
@@ -219,11 +241,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`}>@{username}</span>
-                
-                {hasDoubleBarrel && (
-                    <span title="Double Barrel Active" className="text-xs select-none animate-in zoom-in">🔫</span>
-                )}
-
                 {session && caption.user_id === session.user.id && (
                   <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                 )}
