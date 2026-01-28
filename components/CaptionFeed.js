@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X } from "lucide-react"; 
+import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X, Pin } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -36,9 +36,18 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
   // Track which specific caption was just copied
   const [copiedId, setCopiedId] = useState(null);
 
-  const sortedCaptions = [...captions].sort((a, b) => 
-    sortBy === "top" ? b.vote_count - a.vote_count : new Date(b.created_at) - new Date(a.created_at)
-  );
+  const sortedCaptions = [...captions].sort((a, b) => {
+    // 1. Check for Pins (Thumbtack of Glory)
+    const aPin = a.profiles?.cosmetics?.effect_pin_meme_id === meme?.id;
+    const bPin = b.profiles?.cosmetics?.effect_pin_meme_id === meme?.id;
+
+    if (aPin && !bPin) return -1; // a comes first
+    if (!aPin && bPin) return 1;  // b comes first
+
+    // 2. Standard Sorting
+    if (sortBy === "top") return b.vote_count - a.vote_count;
+    return new Date(b.created_at) - new Date(a.created_at);
+  });
 
   const handleShareClick = async (caption, index) => {
     const rank = sortBy === 'top' ? index + 1 : null;
@@ -136,6 +145,10 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         const fireMemeId = caption.profiles?.cosmetics?.effect_fire_meme_id;
         const hasRingOfFire = fireMemeId && meme && fireMemeId === meme.id;
 
+        // Check for Pin
+        const pinMemeId = caption.profiles?.cosmetics?.effect_pin_meme_id;
+        const hasPin = pinMemeId && meme && pinMemeId === meme.id;
+
         // Check for active Mulligan
         const hasMulligan = 
             session?.user?.id === caption.user_id && 
@@ -148,8 +161,20 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                 relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group
                 ${isWinner ? 'bg-yellow-50/30' : ''}
                 ${hasRingOfFire ? 'ring-of-fire' : (isWinner ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-gray-200')}
+                ${hasPin ? 'border-red-200 bg-red-50/10' : ''}
             `}
           >
+            {hasPin && (
+              <>
+                 <div className="absolute -top-3 -right-2 bg-white rounded-full p-1 shadow-md border border-gray-100 z-20">
+                    <Pin size={16} className="text-red-500 fill-red-500 -rotate-45" />
+                 </div>
+                 <div className="absolute -top-3 -left-2 bg-white rounded-full p-1 shadow-md border border-gray-100 z-20">
+                    <Pin size={16} className="text-red-500 fill-red-500 rotate-12" />
+                 </div>
+              </>
+            )}
+
             {isWinner && (
               <div className="absolute -top-3 -left-2 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 z-10">
                 <Trophy size={10} /> CHAMPION
@@ -158,7 +183,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
             <div className="flex-shrink-0 pt-1">
               <div className="relative inline-block">
-                {isTopRanked && (
+                {isTopRanked && !hasPin && (
                   <img 
                     src="/crown.png" 
                     alt="Current Leader"
@@ -235,7 +260,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                       <Flag size={12} /> Report
                     </button>
 
-                    {hasMulligan && !editingId && (
+                    {hasMulligan && !editingId && !hasPin && (
                         <button 
                             onClick={() => {
                                 setEditingId(caption.id);
