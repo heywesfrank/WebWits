@@ -42,7 +42,7 @@ export default function HowItWorks() {
                 icon={<Wallet size={28} />}
                 color="green"
                 title="2. Spin for Credits"
-                desc="Log in daily and spin the wheel. Win free Credits instantly. You'll need these to buy weapons in the Store."
+                desc="Log in daily and spin the wheel. Win free Credits instantly. You'll need these to buy power-ups in the Store."
             />
             <StepCard 
                 icon={<Flame size={28} />}
