@@ -3,10 +3,6 @@ import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
 
-// Initialize Resend with your API Key
-// Ensure RESEND_API_KEY is set in your .env
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 // Define server items
 const SERVER_ITEMS = {
     "effect_fire": { cost: 100, name: "Ring of Fire", type: "meme_bound" },
@@ -17,13 +13,14 @@ const SERVER_ITEMS = {
     "consumable_double": { cost: 250, name: "Double Barrel", type: "consumable" },
     "prize_amazon_5": { cost: 2500, name: "$5 Amazon Card", type: "prize" },
     "prize_amazon_10": { cost: 5000, name: "$10 Amazon Card", type: "prize" },
-    // [!code block: Added Prize Item]
-    "prize_amazon_25": { cost: 2000, name: "The Payday", type: "prize" } 
-    // [!code block end]
+    "prize_amazon_25": { cost: 2000, name: "The Payday", type: "prize" }
 };
 
 export async function POST(req) {
   try {
+    // FIX: Initialize Resend inside the handler to prevent build-time errors
+    const resend = new Resend(process.env.RESEND_API_KEY);
+
     const { itemId } = await req.json();
     const item = SERVER_ITEMS[itemId];
     
@@ -40,7 +37,7 @@ export async function POST(req) {
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(authHeader.split(' ')[1]);
     if (authError || !authUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const userId = authUser.id;
-    const userEmail = authUser.email; // Capture user email
+    const userEmail = authUser.email;
 
     // Fetch Profile
     const { data: profile } = await supabase
@@ -66,15 +63,13 @@ export async function POST(req) {
             
         if (!activeMeme) return NextResponse.json({ error: "No active battle." }, { status: 400 });
 
-        // [!code block: Mutual Exclusivity Check]
-        // You cannot have Fire AND Pin on the same meme
+        // Mutual Exclusivity Check
         if (itemId === 'effect_pin' && currentCosmetics['effect_fire_meme_id'] === activeMeme.id) {
              return NextResponse.json({ error: "Cannot combine Pin with Ring of Fire." }, { status: 400 });
         }
         if (itemId === 'effect_fire' && currentCosmetics['effect_pin_meme_id'] === activeMeme.id) {
              return NextResponse.json({ error: "Cannot combine Fire with Thumbtack." }, { status: 400 });
         }
-        // [!code block end]
 
         updateData.cosmetics = { 
             ...currentCosmetics, 
@@ -142,7 +137,7 @@ export async function POST(req) {
         status: 'completed'
     });
 
-    // [!code block: Email Notification]
+    // --- EMAIL NOTIFICATION FOR PRIZES ---
     if (item.type === 'prize') {
         try {
             await resend.emails.send({
@@ -166,7 +161,6 @@ export async function POST(req) {
             // We don't block the response here, as the purchase succeeded in DB.
         }
     }
-    // [!code block end]
 
     return NextResponse.json({ success: true, newCredits });
 
