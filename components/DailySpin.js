@@ -12,7 +12,11 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
   // Check availability on load
   useEffect(() => {
     if (userProfile && session) {
-      const today = new Date().toISOString().split('T')[0];
+      // FIX: Force EST/New York Timezone for client-side check
+      const today = new Date().toLocaleDateString('en-CA', { 
+        timeZone: 'America/New_York' 
+      });
+
       if (userProfile.last_spin_date !== today) {
         setTimeout(() => setIsOpen(true), 1500);
       }
