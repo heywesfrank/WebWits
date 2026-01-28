@@ -1,3 +1,4 @@
+// hooks/useGameLogic.js
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { filterProfanity } from "@/lib/profanity";
@@ -18,10 +19,16 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [toasts, setToasts] = useState([]);
 
-  // Check if current user has commented on the active meme
-  const hasCommented = session?.user && activeMeme 
-    ? captions.some(c => c.user_id === session.user.id) 
-    : false;
+  // Check if current user has reached their comment limit
+  const userComments = session?.user && activeMeme 
+    ? captions.filter(c => c.user_id === session.user.id) 
+    : [];
+    
+  // Check if they have the Double Barrel item active for this meme
+  const hasDoubleBarrel = userProfile?.cosmetics?.consumable_double_meme_id === activeMeme?.id;
+  const commentLimit = hasDoubleBarrel ? 2 : 1;
+  
+  const hasCommented = userComments.length >= commentLimit;
 
   const addToast = useCallback((msg, type = 'success') => {
     const id = Date.now();
@@ -164,8 +171,9 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
   const submitCaption = async (text) => {
     if (!session?.user || !activeMeme) return false;
     
+    // [!code change] Update to user hasCommented limit check
     if (hasCommented) {
-      addToast("You've already submitted a caption today! 🚫", "error");
+      addToast("You've already hit your caption limit! 🚫", "error");
       return false;
     }
 
