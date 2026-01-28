@@ -166,11 +166,11 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
           >
             {hasPin && (
               <>
-                 <div className="absolute -top-3 -right-2 bg-white rounded-full p-1 shadow-md border border-gray-100 z-20">
-                    <Pin size={16} className="text-red-500 fill-red-500 -rotate-45" />
+                 <div className="absolute -top-4 -right-3 bg-white rounded-full p-2 shadow-md border border-gray-100 z-20">
+                    <Pin size={32} className="text-red-500 fill-red-500 -rotate-45" />
                  </div>
-                 <div className="absolute -top-3 -left-2 bg-white rounded-full p-1 shadow-md border border-gray-100 z-20">
-                    <Pin size={16} className="text-red-500 fill-red-500 rotate-12" />
+                 <div className="absolute -top-4 -left-3 bg-white rounded-full p-2 shadow-md border border-gray-100 z-20">
+                    <Pin size={32} className="text-red-500 fill-red-500 rotate-12" />
                  </div>
               </>
             )}
