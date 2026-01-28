@@ -1,4 +1,3 @@
-// [!code_block: components/CaptionFeed.js]
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame } from "lucide-react"; 
@@ -82,6 +81,20 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
   return (
     <div className="space-y-4">
+       {/* CSS for Ring of Fire Animation */}
+       <style>{`
+        @keyframes burn {
+          0% { box-shadow: 0 0 5px #dc2626, 0 0 10px #ea580c; border-color: #dc2626; }
+          50% { box-shadow: 0 0 20px #dc2626, 0 0 30px #f97316; border-color: #f97316; }
+          100% { box-shadow: 0 0 5px #dc2626, 0 0 10px #ea580c; border-color: #dc2626; }
+        }
+        .ring-of-fire {
+          animation: burn 0.8s infinite alternate;
+          border-width: 2px;
+          z-index: 10;
+        }
+      `}</style>
+
       <div className="flex justify-between items-center px-1">
         <h3 className="font-bold text-gray-800 font-display text-lg">
           {captions.length} {captions.length === 1 ? 'Caption' : 'Captions'}
@@ -116,8 +129,8 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             key={caption.id} 
             className={`
                 relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group
-                ${isWinner ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-200'}
-                ${hasRingOfFire ? 'ring-2 ring-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' : ''} 
+                ${isWinner ? 'bg-yellow-50/30' : ''}
+                ${hasRingOfFire ? 'ring-of-fire' : (isWinner ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-gray-200')}
             `}
           >
             {isWinner && (
@@ -136,11 +149,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                   />
                 )}
 
-                {hasRingOfFire && (
-                   <div className="absolute -top-2 -right-2 z-20 bg-orange-500 text-white rounded-full p-0.5 border-2 border-white animate-pulse">
-                      <Flame size={10} className="fill-white" />
-                   </div>
-                )}
+                {/* Removed the Flame Emoji badge here as requested */}
 
                 <div className="h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm">
                   {avatarUrl ? (
