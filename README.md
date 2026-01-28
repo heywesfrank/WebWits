@@ -47,3 +47,15 @@ create table public.comments (
   constraint comments_meme_id_fkey foreign KEY (meme_id) references memes (id),
   constraint comments_user_id_fkey foreign KEY (user_id) references profiles (id)
 ) TABLESPACE pg_default;
+
+create table public.purchases (
+  id uuid not null default gen_random_uuid (),
+  user_id uuid not null,
+  item_id text not null,
+  item_name text not null,
+  cost integer not null,
+  status text null default 'completed'::text,
+  created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  constraint purchases_pkey primary key (id),
+  constraint purchases_user_id_fkey foreign KEY (user_id) references profiles (id)
+) TABLESPACE pg_default;
