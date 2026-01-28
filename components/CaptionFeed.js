@@ -1,6 +1,7 @@
+// [!code_block: components/CaptionFeed.js]
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle } from "lucide-react"; 
+import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -106,8 +107,19 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         const countryCode = getCountryCode(caption.profiles?.country);
         const isInfluencer = caption.profiles?.influencer;
 
+        // Check for Active Ring of Fire Effect
+        const fireExpiry = caption.profiles?.cosmetics?.effect_fire_expires;
+        const hasRingOfFire = fireExpiry && new Date(fireExpiry) > new Date();
+
         return (
-          <div key={caption.id} className={`relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group ${isWinner ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-200'}`}>
+          <div 
+            key={caption.id} 
+            className={`
+                relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group
+                ${isWinner ? 'border-yellow-400 ring-1 ring-yellow-400 bg-yellow-50/30' : 'border-gray-200'}
+                ${hasRingOfFire ? 'ring-2 ring-orange-500 shadow-[0_0_15px_rgba(249,115,22,0.3)]' : ''} 
+            `}
+          >
             {isWinner && (
               <div className="absolute -top-3 -left-2 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full shadow-sm flex items-center gap-1 z-10">
                 <Trophy size={10} /> CHAMPION
@@ -122,6 +134,12 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                     alt="Current Leader"
                     className="absolute -top-3 -left-2 z-20 w-8 h-auto -rotate-[20deg] filter drop-shadow-sm pointer-events-none"
                   />
+                )}
+
+                {hasRingOfFire && (
+                   <div className="absolute -top-2 -right-2 z-20 bg-orange-500 text-white rounded-full p-0.5 border-2 border-white animate-pulse">
+                      <Flame size={10} className="fill-white" />
+                   </div>
                 )}
 
                 <div className="h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm">
