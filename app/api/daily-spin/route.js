@@ -20,20 +20,17 @@ export async function POST(req) {
 
     if (!profile) return NextResponse.json({ error: "User not found" }, { status: 404 });
 
-    const today = new Date().toISOString().split('T')[0];
+    // FIX: Force EST/New York Timezone. 
+    // 'en-CA' locale ensures YYYY-MM-DD format matches the DB.
+    const today = new Date().toLocaleDateString('en-CA', { 
+      timeZone: 'America/New_York' 
+    });
 
     // 2. Check if already spun today
     if (profile.last_spin_date === today) {
       return NextResponse.json({ success: false, message: "Already spun today" });
     }
 
-    // 3. Calculate Prize (Weighted Randomness)
-    // 5 credits: 60% (Bronze)
-    // 10 credits: 15% (Silver)
-    // 15 credits: 10% (Bronze)
-    // 20 credits: 10% (Silver)
-    // 25 credits: 4% (Gold)
-    // 50 credits: 1% (Gold)
     const rand = Math.random() * 100;
     let prizeAmount = 0;
 
