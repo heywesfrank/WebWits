@@ -184,7 +184,13 @@ export default function Store() {
             const data = await res.json();
 
             if (data.success) {
-                setMessage({ type: 'success', text: `Purchased: ${item.name}!` });
+                // [!code block: Witty Prize Message Logic]
+                if (item.type === 'prize') {
+                    setMessage({ type: 'success', text: "Bag secured! 💰 We've alerted the admins. Watch your email for the goods." });
+                } else {
+                    setMessage({ type: 'success', text: `Purchased: ${item.name}!` });
+                }
+                // [!code block end]
                 fetchProfile();
             } else {
                 setMessage({ type: 'error', text: data.error || "Transaction failed." });
