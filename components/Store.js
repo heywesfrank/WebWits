@@ -1,3 +1,4 @@
+// [!code_block: components/Store.js]
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -5,24 +6,16 @@ import { Wallet, Flame, Pin, Edit3, MessageSquarePlus, Gift, Loader2 } from "luc
 import { useRouter } from "next/navigation";
 
 // Define Store Items Configuration
+// Ordered from lowest cost to highest
 const ITEMS = [
     {
         id: "effect_fire",
         type: "duration",
         name: "Ring of Fire",
         description: "Your comment is hot. Make it look like it. Burns for 1 hour.",
-        cost: 300,
+        cost: 100,
         icon: <Flame size={24} className="text-orange-500 fill-orange-500" />,
         color: "orange"
-    },
-    {
-        id: "effect_pin",
-        type: "duration",
-        name: "Thumbtack of Glory",
-        description: "Glue your wit to the ceiling. Stay on top of the feed for 60 minutes.",
-        cost: 600,
-        icon: <Pin size={24} className="text-red-500 fill-red-500" />,
-        color: "red"
     },
     {
         id: "consumable_edit",
@@ -32,6 +25,15 @@ const ITEMS = [
         cost: 150,
         icon: <Edit3 size={24} className="text-blue-500" />,
         color: "blue"
+    },
+    {
+        id: "effect_pin",
+        type: "duration",
+        name: "Thumbtack of Glory",
+        description: "Glue your wit to the ceiling. Stay on top of the feed for 60 minutes.",
+        cost: 200,
+        icon: <Pin size={24} className="text-red-500 fill-red-500" />,
+        color: "red"
     },
     {
         id: "consumable_double",
@@ -47,7 +49,7 @@ const ITEMS = [
         type: "prize",
         name: "The Payday",
         description: "$25 Amazon Gift Card. Jeff Bezos' money, now yours.",
-        cost: 10000,
+        cost: 2000,
         icon: <Gift size={24} className="text-green-600" />,
         color: "green"
     }
