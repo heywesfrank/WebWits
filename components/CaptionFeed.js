@@ -1,3 +1,4 @@
+// components/CaptionFeed.js
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X, Pin } from "lucide-react"; 
@@ -149,6 +150,10 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         const pinMemeId = caption.profiles?.cosmetics?.effect_pin_meme_id;
         const hasPin = pinMemeId && meme && pinMemeId === meme.id;
 
+        // Check for Double Barrel
+        const doubleMemeId = caption.profiles?.cosmetics?.consumable_double_meme_id;
+        const hasDoubleBarrel = doubleMemeId && meme && doubleMemeId === meme.id;
+
         // Check for active Mulligan
         const hasMulligan = 
             session?.user?.id === caption.user_id && 
@@ -214,6 +219,11 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
                 <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`}>@{username}</span>
+                
+                {hasDoubleBarrel && (
+                    <span title="Double Barrel Active" className="text-xs select-none animate-in zoom-in">🔫</span>
+                )}
+
                 {session && caption.user_id === session.user.id && (
                   <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                 )}
