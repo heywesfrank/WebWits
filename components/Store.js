@@ -1,4 +1,3 @@
-// components/Store.js
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -183,7 +182,6 @@ export default function Store() {
             const data = await res.json();
 
             if (data.success) {
-                // Witty Prize Message Logic
                 if (item.type === 'prize') {
                     setMessage({ type: 'success', text: "Bag secured! 💰 We've alerted the admins. Watch your email for the goods." });
                 } else {
