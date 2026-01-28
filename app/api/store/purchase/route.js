@@ -1,4 +1,3 @@
-// app/api/store/purchase/route.js
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
@@ -18,7 +17,7 @@ const SERVER_ITEMS = {
 
 export async function POST(req) {
   try {
-    // FIX: Initialize Resend inside the handler to prevent build-time errors
+    // Initialize Resend inside the handler to prevent build-time errors
     const resend = new Resend(process.env.RESEND_API_KEY);
 
     const { itemId } = await req.json();
@@ -140,7 +139,10 @@ export async function POST(req) {
     // --- EMAIL NOTIFICATION FOR PRIZES ---
     if (item.type === 'prize') {
         try {
-            await resend.emails.send({
+            console.log(`Sending prize email to admins for user ${userEmail}...`);
+            
+            // Sending FROM your verified domain
+            const { data, error: mailError } = await resend.emails.send({
                 from: 'WebWits Bot <noreply@itswebwits.com>',
                 to: 'hello@itswebwits.com',
                 subject: `💰 PRIZE CLAIMED: ${item.name}`,
@@ -156,9 +158,16 @@ export async function POST(req) {
                     <p>Please purchase the gift card and send it to <strong>${userEmail}</strong>.</p>
                 `
             });
+
+            if (mailError) {
+                console.error("Resend API Error:", mailError);
+            } else {
+                console.log("Email sent successfully:", data);
+            }
+
         } catch (emailError) {
-            console.error("Failed to send prize notification email:", emailError);
-            // We don't block the response here, as the purchase succeeded in DB.
+            // We log but don't fail the request, since the DB purchase succeeded
+            console.error("Failed to execute email logic:", emailError);
         }
     }
 
