@@ -1,4 +1,3 @@
-// [!code_block: components/Store.js]
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -6,7 +5,6 @@ import { Wallet, Flame, Pin, Edit3, MessageSquarePlus, Gift, Loader2 } from "luc
 import { useRouter } from "next/navigation";
 
 // Define Store Items Configuration
-// Ordered from lowest cost to highest
 const ITEMS = [
     {
         id: "effect_fire",
@@ -17,7 +15,6 @@ const ITEMS = [
         icon: <Flame size={24} className="text-orange-500 fill-orange-500" />,
         color: "orange"
     },
-    // ... (other items remain the same)
     {
         id: "consumable_edit",
         type: "consumable",
@@ -61,7 +58,7 @@ export default function Store() {
     const [loading, setLoading] = useState(true);
     const [purchasing, setPurchasing] = useState(null);
     const [message, setMessage] = useState(null);
-    const [hasCommented, setHasCommented] = useState(false); // [!code ++]
+    const [hasCommented, setHasCommented] = useState(false);
     const router = useRouter();
 
     useEffect(() => {
@@ -84,7 +81,7 @@ export default function Store() {
         
         setProfile(profileData);
 
-        // 2. Check if user has commented on the active meme [!code ++]
+        // 2. Check if user has commented on the active meme
         const { data: activeMeme } = await supabase
             .from('memes')
             .select('id')
@@ -106,7 +103,7 @@ export default function Store() {
     };
 
     const handlePurchase = async (item) => {
-        // [!code ++] Special Check for Ring of Fire
+        // Special Check for Ring of Fire
         if (item.id === "effect_fire" && !hasCommented) {
             setMessage({ type: 'error', text: "You must post a caption first to ignite it!" });
             return;
@@ -120,10 +117,21 @@ export default function Store() {
         setPurchasing(item.id);
         setMessage(null);
 
+        // [!code highlight:5] Get session to pass the access token
+        const { data: { session } } = await supabase.auth.getSession();
+        if (!session) {
+            setMessage({ type: 'error', text: "Please log in again." });
+            setPurchasing(null);
+            return;
+        }
+
         try {
             const res = await fetch('/api/store/purchase', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${session.access_token}` // [!code highlight] Fix for 401 Unauthorized
+                },
                 body: JSON.stringify({ itemId: item.id })
             });
 
@@ -136,6 +144,7 @@ export default function Store() {
                 setMessage({ type: 'error', text: data.error || "Transaction failed." });
             }
         } catch (e) {
+            console.error(e);
             setMessage({ type: 'error', text: "Connection failed. Internet machine broke?" });
         } finally {
             setPurchasing(null);
