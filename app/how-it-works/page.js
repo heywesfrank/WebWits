@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { ArrowLeft, Trophy, PenTool, Users, Clock, Zap } from "lucide-react";
+import { ArrowLeft, Trophy, Zap, Clock, Wallet, Flame, Crosshair } from "lucide-react";
 
 export default function HowItWorks() {
   return (
-    // Changed bg to white and text to gray
     <div className="min-h-screen bg-white text-gray-900 p-6 font-sans">
       <div className="max-w-4xl mx-auto">
         
@@ -23,39 +22,75 @@ export default function HowItWorks() {
               className="w-80 h-auto object-contain mx-auto mb-6 filter drop-shadow-md" 
             />
             <h1 className="text-5xl md:text-7xl font-black tracking-tight text-gray-900 leading-tight">
-                How to <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-600">Win</span>
+                Play. Wit. <span className="text-transparent bg-clip-text bg-gradient-to-r from-yellow-500 to-orange-600">Profit.</span>
             </h1>
             <p className="text-xl md:text-2xl text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">
-                Welcome to <strong>WebWits</strong>, the daily arena where humor is the only currency that matters.
+                WebWits isn't just a caption contest. It's a strategy game. <br/>
+                Earn credits, buy power-ups, and crush the competition.
             </p>
         </div>
 
-        {/* Steps Grid */}
+        {/* The Game Loop Grid */}
         <div className="grid gap-6 md:grid-cols-2 mb-16">
             <StepCard 
                 icon={<Clock size={28} />}
                 color="blue"
                 title="1. The Daily Drop"
-                desc="Every day at midnight, a new meme image drops. No context, no captions. Just pure potential waiting for your wit."
+                desc="Every day at midnight, a new meme drops. The arena opens. You have 24 hours to post the funniest caption."
             />
             <StepCard 
-                icon={<PenTool size={28} />}
-                color="purple"
-                title="2. Craft Your Wit"
-                desc="Submit your funniest, wittiest, or most savage caption. You're fighting for votes against the entire internet."
-            />
-            <StepCard 
-                icon={<Users size={28} />}
+                icon={<Wallet size={28} />}
                 color="green"
-                title="3. The People Vote"
-                desc="The community decides. Upvote what makes you laugh. The leaderboard updates in real-time. Democracy, but funny."
+                title="2. Spin for Credits"
+                desc="Log in daily and spin the wheel. Win free Credits instantly. You'll need these to buy weapons in the Store."
+            />
+            <StepCard 
+                icon={<Flame size={28} />}
+                color="orange"
+                title="3. Power Up & Battle"
+                desc="Spend Credits to gain an edge. Buy the 'Ring of Fire' to highlight your caption, 'The Mulligan' to fix typos, or a 'Double Barrel' to post twice."
             />
             <StepCard 
                 icon={<Trophy size={28} />}
                 color="yellow"
-                title="4. Eternal Glory"
-                desc="At the end of 24 hours, the top caption wins. Points are tallied, and the winner is immortalized in the Archive forever."
+                title="4. Win Real Prizes"
+                desc="Credits aren't just for ammo. Save them up to buy real Amazon Gift Cards directly from the shop. Being funny literally pays."
             />
+        </div>
+
+        {/* The Armory Section (Power-ups explanation) */}
+        <div className="bg-gray-900 text-white rounded-3xl p-8 md:p-12 mb-16 shadow-2xl relative overflow-hidden">
+            <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6 text-yellow-400">
+                    <Crosshair size={32} />
+                    <h3 className="text-3xl font-black font-display uppercase tracking-wider">The Armory</h3>
+                </div>
+                <p className="text-gray-300 mb-8 max-w-2xl text-lg">
+                    Wit alone is good. Wit with power-ups is unstoppable. Visit the Store to spend your credits on these game-changers:
+                </p>
+                
+                <div className="grid gap-4 md:grid-cols-2">
+                    <PowerUp 
+                        name="Ring of Fire" 
+                        desc="Ignites your caption with a glowing border. Grabs attention immediately." 
+                    />
+                    <PowerUp 
+                        name="Thumbtack of Glory" 
+                        desc="Pins your caption to the top of the feed. Dominate the view." 
+                    />
+                    <PowerUp 
+                        name="The Mulligan" 
+                        desc="Made a typo? Regret your joke? Buy an edit token and fix it." 
+                    />
+                    <PowerUp 
+                        name="Double Barrel" 
+                        desc="One joke not enough? Unlock a second caption slot for the daily battle." 
+                    />
+                </div>
+            </div>
+            
+            {/* Background Decoration */}
+            <div className="absolute top-0 right-0 -mt-20 -mr-20 w-96 h-96 bg-yellow-500/20 rounded-full blur-3xl pointer-events-none"></div>
         </div>
 
         {/* Rules Section */}
@@ -66,15 +101,15 @@ export default function HowItWorks() {
             <ul className="space-y-4 text-gray-600">
                 <li className="flex gap-3">
                     <span className="text-yellow-500 font-bold">•</span>
-                    <span>Be original. Stolen jokes are for lesser beings.</span>
+                    <span><strong>Vote to win.</strong> The leaderboard is decided by community votes.</span>
                 </li>
                 <li className="flex gap-3">
                     <span className="text-yellow-500 font-bold">•</span>
-                    <span>No hate speech or harassment. Keep it spicy, not toxic.</span>
+                    <span><strong>No hate speech.</strong> We like spicy, not toxic. Keep it fun.</span>
                 </li>
                 <li className="flex gap-3">
                     <span className="text-yellow-500 font-bold">•</span>
-                    <span>One vote per caption. Choose wisely.</span>
+                    <span><strong>Engage often.</strong> The more you play, the more credits you earn.</span>
                 </li>
             </ul>
         </div>
@@ -85,7 +120,7 @@ export default function HowItWorks() {
                 href="/" 
                 className="inline-block bg-yellow-400 text-black font-black text-xl px-10 py-5 rounded-xl hover:bg-yellow-300 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-yellow-200"
             >
-                Enter the Arena
+                Start Earning Credits
             </Link>
         </div>
       </div>
@@ -99,6 +134,7 @@ function StepCard({ icon, title, desc, color }) {
         purple: "bg-purple-50 text-purple-600 border-purple-200",
         green: "bg-green-50 text-green-600 border-green-200",
         yellow: "bg-yellow-50 text-yellow-600 border-yellow-200",
+        orange: "bg-orange-50 text-orange-600 border-orange-200",
     };
 
     return (
@@ -107,7 +143,16 @@ function StepCard({ icon, title, desc, color }) {
                 {icon}
             </div>
             <h3 className="text-2xl font-bold mb-3 text-gray-900">{title}</h3>
-            <p className="text-gray-500 leading-relaxed">{desc}</p>
+            <p className="text-gray-500 leading-relaxed font-medium">{desc}</p>
+        </div>
+    );
+}
+
+function PowerUp({ name, desc }) {
+    return (
+        <div className="bg-gray-800 p-4 rounded-xl border border-gray-700">
+            <h4 className="text-yellow-400 font-bold mb-1">{name}</h4>
+            <p className="text-gray-400 text-sm">{desc}</p>
         </div>
     );
 }
