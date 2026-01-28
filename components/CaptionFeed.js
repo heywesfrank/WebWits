@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame } from "lucide-react"; 
+import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -21,7 +21,7 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport, onReply }) {
+export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport, onReply, onEdit }) {
   const [sortBy, setSortBy] = useState("top");
   
   // Reply State
@@ -29,6 +29,10 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
   
+  // Edit State
+  const [editingId, setEditingId] = useState(null);
+  const [editText, setEditText] = useState("");
+
   // Track which specific caption was just copied
   const [copiedId, setCopiedId] = useState(null);
 
@@ -79,6 +83,15 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
     setSubmittingReply(false);
   };
 
+  const handleSaveEdit = async (commentId) => {
+    if (!editText.trim()) return;
+    const success = await onEdit(commentId, editText);
+    if (success) {
+        setEditingId(null);
+        setEditText("");
+    }
+  };
+
   return (
     <div className="space-y-4">
        {/* CSS for Ring of Fire Animation */}
@@ -120,13 +133,13 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         const countryCode = getCountryCode(caption.profiles?.country);
         const isInfluencer = caption.profiles?.influencer;
 
-        // [!code block: Updated Logic for "Full Day" Binding]
-        // Check if the User's "fire meme ID" matches THIS meme's ID.
-        // If they match, they bought fire for THIS battle.
-        // If tomorrow's meme loads, IDs wont match -> No fire.
         const fireMemeId = caption.profiles?.cosmetics?.effect_fire_meme_id;
         const hasRingOfFire = fireMemeId && meme && fireMemeId === meme.id;
-        // [!code block end]
+
+        // Check for active Mulligan
+        const hasMulligan = 
+            session?.user?.id === caption.user_id && 
+            caption.profiles?.cosmetics?.consumable_edit_meme_id === meme?.id;
 
         return (
           <div 
@@ -181,7 +194,27 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                 )}
                 <span className="text-[10px] text-gray-400">{timeAgo(caption.created_at)}</span>
               </div>
-              <p className="text-base text-gray-800 leading-snug font-medium break-words">{caption.content}</p>
+
+              {editingId === caption.id ? (
+                  <div className="mt-1 animate-in fade-in">
+                      <input 
+                        value={editText}
+                        onChange={(e) => setEditText(e.target.value)}
+                        className="w-full p-2 border border-blue-400 rounded-lg bg-blue-50 text-gray-900 font-medium focus:ring-1 focus:ring-blue-500 outline-none"
+                        autoFocus
+                      />
+                      <div className="flex gap-2 mt-2">
+                          <button onClick={() => handleSaveEdit(caption.id)} className="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-md hover:bg-blue-600 flex items-center gap-1">
+                             <Check size={12} /> Save
+                          </button>
+                          <button onClick={() => setEditingId(null)} className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-bold rounded-md hover:bg-gray-300 flex items-center gap-1">
+                             <X size={12} /> Cancel
+                          </button>
+                      </div>
+                  </div>
+               ) : (
+                  <p className="text-base text-gray-800 leading-snug font-medium break-words">{caption.content}</p>
+               )}
               
               <div className="flex gap-4 mt-3 items-center">
                 <button 
@@ -201,6 +234,18 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                     <button onClick={() => onReport(caption.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition font-bold">
                       <Flag size={12} /> Report
                     </button>
+
+                    {hasMulligan && !editingId && (
+                        <button 
+                            onClick={() => {
+                                setEditingId(caption.id);
+                                setEditText(caption.content);
+                            }} 
+                            className="flex items-center gap-1 text-xs text-blue-500 hover:text-blue-700 transition font-bold bg-blue-50 px-2 py-1 rounded-md"
+                        >
+                            <Edit3 size={12} /> Edit
+                        </button>
+                    )}
                     
                     {session && (
                       <button 
