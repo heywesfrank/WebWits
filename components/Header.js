@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { LogOut, User, ChevronDown, BookOpen, Megaphone, Info, Facebook, Instagram, Smile, Wallet } from "lucide-react"; 
+import { LogOut, User, ChevronDown, BookOpen, Megaphone, Info, Facebook, Instagram, Smile, Wallet, ShoppingBag } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 import InstallPrompt from "./InstallPrompt";
 
@@ -88,14 +88,21 @@ export default function Header({ session, profile }) {
               <div className="absolute right-0 top-full mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="p-2 space-y-1">
                   
-                  {/* CREDITS BADGE - MOVED HERE */}
-                  <div className="mx-2 mb-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200 flex items-center justify-between">
+                  {/* CREDITS BADGE - LINK TO STORE */}
+                  <Link 
+                    href="/store"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="mx-2 mb-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200 flex items-center justify-between group hover:bg-yellow-100 hover:border-yellow-300 transition-all cursor-pointer"
+                  >
                      <div className="flex items-center gap-2">
-                        <Wallet size={16} className="text-yellow-600" />
-                        <span className="text-xs font-bold text-yellow-900 uppercase tracking-wider">Credits</span>
+                        <Wallet size={16} className="text-yellow-600 group-hover:scale-110 transition-transform" />
+                        <span className="text-xs font-bold text-yellow-900 uppercase tracking-wider group-hover:text-yellow-700">Credits</span>
                      </div>
-                     <span className="font-display font-black text-lg text-yellow-600">{profile?.credits || 0}</span>
-                  </div>
+                     <div className="flex items-center gap-2">
+                        <span className="font-display font-black text-lg text-yellow-600">{profile?.credits || 0}</span>
+                        <ShoppingBag size={14} className="text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
+                     </div>
+                  </Link>
 
                   <Link 
                     href="/profile"
