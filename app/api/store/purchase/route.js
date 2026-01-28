@@ -1,10 +1,9 @@
-// [!code_block: app/api/store/purchase/route.js]
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
-// Define the source of truth for items and costs on the server
+// Define server items
 const SERVER_ITEMS = {
-    "effect_fire": { cost: 100, name: "Ring of Fire", type: "duration", durationMinutes: 60 }, // [!code ++]
+    "effect_fire": { cost: 100, name: "Ring of Fire", type: "meme_bound" }, // Changed Type
     "badge_verified": { cost: 500, name: "Verified Badge", type: "cosmetic" },
     "border_gold": { cost: 1000, name: "Golden Aura", type: "cosmetic" },
     "prize_amazon_5": { cost: 2500, name: "$5 Amazon Card", type: "prize" },
@@ -16,24 +15,21 @@ export async function POST(req) {
     const { itemId } = await req.json();
     const item = SERVER_ITEMS[itemId];
     
-    if (!item) {
-        return NextResponse.json({ error: "Invalid Item" }, { status: 400 });
-    }
+    if (!item) return NextResponse.json({ error: "Invalid Item" }, { status: 400 });
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // Authentication (Robust fallback if cookies aren't forwarded)
+    // Auth
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-    
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(authHeader.split(' ')[1]);
     if (authError || !authUser) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     const userId = authUser.id;
 
-    // 2. Fetch Current Credits
+    // Fetch Profile
     const { data: profile } = await supabase
       .from('profiles')
       .select('credits, cosmetics')
@@ -41,42 +37,38 @@ export async function POST(req) {
       .single();
 
     if (!profile) return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+    if ((profile.credits || 0) < item.cost) return NextResponse.json({ error: "Insufficient credits" }, { status: 400 });
 
-    // 3. Validation
-    if ((profile.credits || 0) < item.cost) {
-        return NextResponse.json({ error: "Insufficient credits" }, { status: 400 });
-    }
-
-    // Check ownership for permanent/active items
-    if (item.type === 'cosmetic' && profile.cosmetics?.[itemId]) {
-        return NextResponse.json({ error: "Item already owned" }, { status: 400 });
-    }
-    
-    // Check if duration effect is still active
-    if (item.type === 'duration') {
-       const expiresAt = profile.cosmetics?.[`${itemId}_expires`];
-       if (expiresAt && new Date(expiresAt) > new Date()) {
-           return NextResponse.json({ error: "Effect still active" }, { status: 400 });
-       }
-    }
-
-    // 4. Execute Transaction
+    // Transaction Data
     const newCredits = profile.credits - item.cost;
     let updateData = { credits: newCredits };
     const currentCosmetics = profile.cosmetics || {};
 
-    if (item.type === 'cosmetic') {
-        updateData.cosmetics = { ...currentCosmetics, [itemId]: true };
-    } 
-    // [!code ++] Handle Duration Items
-    else if (item.type === 'duration') {
-        const expiresAt = new Date(Date.now() + (item.durationMinutes * 60 * 1000));
+    // [!code block: Logic for meme_bound items]
+    if (item.type === 'meme_bound') {
+        // Fetch the ACTIVE meme to bind this purchase to
+        const { data: activeMeme } = await supabase
+            .from('memes')
+            .select('id')
+            .eq('status', 'active')
+            .single();
+            
+        if (!activeMeme) return NextResponse.json({ error: "No active battle to ignite." }, { status: 400 });
+
+        // Save the meme ID in the cosmetics. 
+        // Logic: "User has fire effect active for Meme ID X"
         updateData.cosmetics = { 
             ...currentCosmetics, 
-            [`${itemId}_expires`]: expiresAt.toISOString() 
+            [`${itemId}_meme_id`]: activeMeme.id 
         };
+    } 
+    // [!code block end]
+    else if (item.type === 'cosmetic') {
+        if (currentCosmetics[itemId]) return NextResponse.json({ error: "Item already owned" }, { status: 400 });
+        updateData.cosmetics = { ...currentCosmetics, [itemId]: true };
     }
 
+    // Execute Update
     const { error: updateError } = await supabase
         .from('profiles')
         .update(updateData)
@@ -84,13 +76,13 @@ export async function POST(req) {
 
     if (updateError) throw updateError;
 
-    // B. Log Purchase
+    // Log Purchase
     await supabase.from('purchases').insert({
         user_id: userId,
         item_id: itemId,
         item_name: item.name,
         cost: item.cost,
-        status: item.type === 'prize' ? 'pending_fulfillment' : 'completed'
+        status: 'completed'
     });
 
     return NextResponse.json({ success: true, newCredits });
