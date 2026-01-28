@@ -8,9 +8,9 @@ import { useRouter } from "next/navigation";
 const ITEMS = [
     {
         id: "effect_fire",
-        type: "duration",
+        type: "meme_bound", // Changed type to reflect logic
         name: "Ring of Fire",
-        description: "Your comment is hot. Make it look like it. Burns for 1 hour.",
+        description: "Ignite your active caption. Burns until the battle ends.", // [!code change]
         cost: 100,
         icon: <Flame size={24} className="text-orange-500 fill-orange-500" />,
         color: "orange"
@@ -72,7 +72,6 @@ export default function Store() {
             return;
         }
 
-        // 1. Fetch Profile
         const { data: profileData } = await supabase
             .from('profiles')
             .select('credits, cosmetics')
@@ -81,7 +80,6 @@ export default function Store() {
         
         setProfile(profileData);
 
-        // 2. Check if user has commented on the active meme
         const { data: activeMeme } = await supabase
             .from('memes')
             .select('id')
@@ -103,7 +101,6 @@ export default function Store() {
     };
 
     const handlePurchase = async (item) => {
-        // Special Check for Ring of Fire
         if (item.id === "effect_fire" && !hasCommented) {
             setMessage({ type: 'error', text: "You must post a caption first to ignite it!" });
             return;
@@ -117,7 +114,6 @@ export default function Store() {
         setPurchasing(item.id);
         setMessage(null);
 
-        // [!code highlight:5] Get session to pass the access token
         const { data: { session } } = await supabase.auth.getSession();
         if (!session) {
             setMessage({ type: 'error', text: "Please log in again." });
@@ -130,7 +126,7 @@ export default function Store() {
                 method: 'POST',
                 headers: { 
                     'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${session.access_token}` // [!code highlight] Fix for 401 Unauthorized
+                    'Authorization': `Bearer ${session.access_token}`
                 },
                 body: JSON.stringify({ itemId: item.id })
             });
@@ -139,13 +135,13 @@ export default function Store() {
 
             if (data.success) {
                 setMessage({ type: 'success', text: `Purchased: ${item.name}!` });
-                fetchProfile(); // Refresh balance
+                fetchProfile();
             } else {
                 setMessage({ type: 'error', text: data.error || "Transaction failed." });
             }
         } catch (e) {
             console.error(e);
-            setMessage({ type: 'error', text: "Connection failed. Internet machine broke?" });
+            setMessage({ type: 'error', text: "Connection failed." });
         } finally {
             setPurchasing(null);
         }
@@ -159,7 +155,6 @@ export default function Store() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
-            {/* Header / Balance */}
             <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl border border-gray-700">
                 <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                     <div>
@@ -176,11 +171,9 @@ export default function Store() {
                         </div>
                     </div>
                 </div>
-                {/* Decoration */}
                 <div className="absolute top-0 right-0 -mt-16 -mr-16 w-80 h-80 bg-yellow-500/10 rounded-full blur-3xl pointer-events-none"></div>
             </div>
 
-            {/* Notification */}
             {message && (
                 <div className={`p-4 rounded-xl font-bold text-center animate-in zoom-in-95 duration-200 ${
                     message.type === 'error' ? 'bg-red-50 text-red-600 border border-red-200' : 
@@ -190,7 +183,6 @@ export default function Store() {
                 </div>
             )}
 
-            {/* Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {ITEMS.map(item => (
                     <StoreCard 
@@ -210,15 +202,24 @@ export default function Store() {
 function StoreCard({ item, userCredits, onBuy, loading, inventory }) {
     const canAfford = userCredits >= item.cost;
     
-    // Check active status for duration items
-    const expiryKey = `${item.id}_expires`;
-    const isActive = inventory[expiryKey] && new Date(inventory[expiryKey]) > new Date();
+    // Check Status based on Type
+    let isActive = false;
     
-    // Check count for consumable items
+    // Logic for Meme Bound items (Ring of Fire)
+    // NOTE: This check is simplified for the store UI. 
+    // True verification happens on the Feed item.
+    if (item.type === 'meme_bound') {
+         // If the user has ANY active meme ID stored, we consider it "owned/active" for the store UI
+         // so they don't buy it twice for the same day.
+         isActive = !!inventory[`${item.id}_meme_id`];
+    } else if (item.type === 'duration') {
+         const expiryKey = `${item.id}_expires`;
+         isActive = inventory[expiryKey] && new Date(inventory[expiryKey]) > new Date();
+    }
+    
     const countKey = `${item.id}_count`;
     const count = inventory[countKey] || 0;
 
-    // Color mapping
     const bgColors = {
         orange: "bg-orange-50 text-orange-600",
         red: "bg-red-50 text-red-600",
@@ -230,13 +231,11 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory }) {
     return (
         <div className={`bg-white border-2 rounded-2xl p-6 flex flex-col transition-all relative overflow-hidden group ${isActive ? 'border-yellow-400 shadow-lg shadow-yellow-100' : 'border-gray-100 hover:border-gray-300 hover:shadow-xl'}`}>
             
-            {/* Active Badge */}
             {isActive && (
                 <div className="absolute top-3 right-3 bg-yellow-400 text-black text-[10px] font-bold px-2 py-1 rounded-full animate-pulse">
                     ACTIVE
                 </div>
             )}
-             {/* Count Badge */}
              {count > 0 && item.type === 'consumable' && (
                 <div className="absolute top-3 right-3 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-full">
                     x{count} OWNED
