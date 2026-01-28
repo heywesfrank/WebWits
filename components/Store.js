@@ -1,3 +1,4 @@
+// components/Store.js
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -26,13 +27,14 @@ const ITEMS = [
     },
     {
         id: "effect_pin",
-        type: "duration",
+        type: "meme_bound", // [!code change] Changed from duration to meme_bound (Full Day)
         name: "Thumbtack of Glory",
-        description: "Glue your wit to the ceiling. Stay on top of the feed for 60 minutes.",
+        description: "Glue your wit to the ceiling. Stays on top for the full battle.", // [!code change]
         cost: 200,
         icon: <Pin size={24} className="text-red-500 fill-red-500" />,
         color: "red"
     },
+    // ... rest of items (Double Barrel, Amazon cards) remain same
     {
         id: "consumable_double",
         type: "consumable",
@@ -103,26 +105,44 @@ export default function Store() {
     };
 
     const handlePurchase = async (item) => {
-        // Validation for The Mulligan
+        // [!code block: Validation for Pin]
+        if (item.id === "effect_pin") {
+            if (!hasCommented) {
+                 setMessage({ type: 'error', text: "You must post a caption first to pin it!" });
+                 return;
+            }
+            // Check conflicts
+            if (profile.cosmetics?.effect_fire_meme_id === activeMemeId) {
+                 setMessage({ type: 'error', text: "Cannot pin: You already used Ring of Fire!" });
+                 return;
+            }
+        }
+        // [!code block end]
+
+        if (item.id === "effect_fire") {
+            if (!hasCommented) {
+                setMessage({ type: 'error', text: "You must post a caption first to ignite it!" });
+                return;
+            }
+            if (profile.cosmetics?.effect_pin_meme_id === activeMemeId) { // [!code ++]
+                 setMessage({ type: 'error', text: "Cannot ignite: You already used Thumbtack!" }); // [!code ++]
+                 return; // [!code ++]
+            } // [!code ++]
+        }
+
         if (item.id === "consumable_edit") {
             if (!hasCommented) {
                  setMessage({ type: 'error', text: "You must post a caption first to edit it!" });
                  return;
             }
-            
-            // Check if other power-ups are active which might prevent editing (game design choice)
+            // Cannot edit if powered up
             const hasFire = profile.cosmetics?.effect_fire_meme_id === activeMemeId;
-            const hasPin = profile.cosmetics?.effect_pin_expires && new Date(profile.cosmetics.effect_pin_expires) > new Date();
+            const hasPin = profile.cosmetics?.effect_pin_meme_id === activeMemeId; // [!code change]
 
             if (hasFire || hasPin) {
                  setMessage({ type: 'error', text: "Cannot edit a powered-up caption!" });
                  return;
             }
-        }
-
-        if (item.id === "effect_fire" && !hasCommented) {
-            setMessage({ type: 'error', text: "You must post a caption first to ignite it!" });
-            return;
         }
 
         if ((profile.credits || 0) < item.cost) {
@@ -174,6 +194,7 @@ export default function Store() {
 
     return (
         <div className="space-y-8 animate-in fade-in duration-500">
+            {/* Header and Credits Display */}
             <div className="bg-gradient-to-br from-gray-900 via-gray-800 to-black rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl border border-gray-700">
                 <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                     <div>
@@ -224,11 +245,11 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory }) {
     // Check Status based on Type
     let isActive = false;
     
-    // Logic for Meme Bound items (Ring of Fire) OR The Mulligan
+    // Updated Logic for Meme Bound (includes Pin now)
     if (item.type === 'meme_bound' || item.id === 'consumable_edit') {
-         // If the user has a meme ID stored for this item, it is active/available
          isActive = !!inventory[`${item.id}_meme_id`];
     } else if (item.type === 'duration') {
+         // Legacy support or for other items
          const expiryKey = `${item.id}_expires`;
          isActive = inventory[expiryKey] && new Date(inventory[expiryKey]) > new Date();
     }
