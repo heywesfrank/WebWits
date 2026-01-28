@@ -1,3 +1,4 @@
+// [!code_block: hooks/useGameLogic.js]
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { filterProfanity } from "@/lib/profanity";
@@ -37,7 +38,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       .from("comments")
       .select(`
         *, 
-        profiles!comments_user_id_fkey(username, avatar_url, country, influencer),
+        profiles!comments_user_id_fkey(username, avatar_url, country, influencer, cosmetics),
         replies(
           id, content, created_at, user_id,
           profiles(username, avatar_url, country) 
