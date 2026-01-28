@@ -17,6 +17,7 @@ const ITEMS = [
         icon: <Flame size={24} className="text-orange-500 fill-orange-500" />,
         color: "orange"
     },
+    // ... (other items remain the same)
     {
         id: "consumable_edit",
         type: "consumable",
@@ -60,6 +61,7 @@ export default function Store() {
     const [loading, setLoading] = useState(true);
     const [purchasing, setPurchasing] = useState(null);
     const [message, setMessage] = useState(null);
+    const [hasCommented, setHasCommented] = useState(false); // [!code ++]
     const router = useRouter();
 
     useEffect(() => {
@@ -73,17 +75,43 @@ export default function Store() {
             return;
         }
 
-        const { data } = await supabase
+        // 1. Fetch Profile
+        const { data: profileData } = await supabase
             .from('profiles')
             .select('credits, cosmetics')
             .eq('id', session.user.id)
             .single();
         
-        setProfile(data);
+        setProfile(profileData);
+
+        // 2. Check if user has commented on the active meme [!code ++]
+        const { data: activeMeme } = await supabase
+            .from('memes')
+            .select('id')
+            .eq('status', 'active')
+            .maybeSingle();
+
+        if (activeMeme) {
+            const { data: comment } = await supabase
+                .from('comments')
+                .select('id')
+                .eq('meme_id', activeMeme.id)
+                .eq('user_id', session.user.id)
+                .maybeSingle();
+            
+            setHasCommented(!!comment);
+        }
+
         setLoading(false);
     };
 
     const handlePurchase = async (item) => {
+        // [!code ++] Special Check for Ring of Fire
+        if (item.id === "effect_fire" && !hasCommented) {
+            setMessage({ type: 'error', text: "You must post a caption first to ignite it!" });
+            return;
+        }
+
         if ((profile.credits || 0) < item.cost) {
             setMessage({ type: 'error', text: "You're broke. Go be funny to earn credits." });
             return;
