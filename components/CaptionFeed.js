@@ -120,9 +120,13 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         const countryCode = getCountryCode(caption.profiles?.country);
         const isInfluencer = caption.profiles?.influencer;
 
-        // Check for Active Ring of Fire Effect
-        const fireExpiry = caption.profiles?.cosmetics?.effect_fire_expires;
-        const hasRingOfFire = fireExpiry && new Date(fireExpiry) > new Date();
+        // [!code block: Updated Logic for "Full Day" Binding]
+        // Check if the User's "fire meme ID" matches THIS meme's ID.
+        // If they match, they bought fire for THIS battle.
+        // If tomorrow's meme loads, IDs wont match -> No fire.
+        const fireMemeId = caption.profiles?.cosmetics?.effect_fire_meme_id;
+        const hasRingOfFire = fireMemeId && meme && fireMemeId === meme.id;
+        // [!code block end]
 
         return (
           <div 
@@ -148,8 +152,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                     className="absolute -top-3 -left-2 z-20 w-8 h-auto -rotate-[20deg] filter drop-shadow-sm pointer-events-none"
                   />
                 )}
-
-                {/* Removed the Flame Emoji badge here as requested */}
 
                 <div className="h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm">
                   {avatarUrl ? (
