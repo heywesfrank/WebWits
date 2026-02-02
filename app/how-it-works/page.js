@@ -26,7 +26,7 @@ export default function HowItWorks() {
             </h1>
             <p className="text-xl md:text-2xl text-gray-500 max-w-2xl mx-auto font-light leading-relaxed">
                 WebWits isn't just a caption contest. It's a strategy game. <br/>
-                Earn credits, buy power-ups, and crush the competition.
+                Earn WitCoins, buy power-ups, and crush the competition.
             </p>
         </div>
 
@@ -41,20 +41,20 @@ export default function HowItWorks() {
             <StepCard 
                 icon={<Wallet size={28} />}
                 color="green"
-                title="2. Spin for Credits"
-                desc="Log in daily and spin the wheel. Win free Credits instantly. You'll need these to buy power-ups in the Store."
+                title="2. Spin for WitCoins"
+                desc="Log in daily and spin the wheel. Win free WitCoins instantly. You'll need these to buy power-ups in the Store."
             />
             <StepCard 
                 icon={<Flame size={28} />}
                 color="orange"
                 title="3. Power Up & Battle"
-                desc="Spend Credits to gain an edge. Buy the 'Ring of Fire' to highlight your caption, 'The Mulligan' to fix typos, or a 'Double Barrel' to post twice."
+                desc="Spend WitCoins to gain an edge. Buy the 'Ring of Fire' to highlight your caption, 'The Mulligan' to fix typos, or a 'Double Barrel' to post twice."
             />
             <StepCard 
                 icon={<Trophy size={28} />}
                 color="yellow"
                 title="4. Win Real Prizes"
-                desc="Credits aren't just for ammo. Save them up to buy real Amazon Gift Cards directly from the shop. Being funny literally pays."
+                desc="WitCoins aren't just for ammo. Save them up to buy real Amazon Gift Cards directly from the shop. Being funny literally pays."
             />
         </div>
 
@@ -66,7 +66,7 @@ export default function HowItWorks() {
                     <h3 className="text-3xl font-black font-display uppercase tracking-wider">The Armory</h3>
                 </div>
                 <p className="text-gray-300 mb-8 max-w-2xl text-lg">
-                    Wit alone is good. Wit with power-ups is unstoppable. Visit the Store to spend your credits on these game-changers:
+                    Wit alone is good. Wit with power-ups is unstoppable. Visit the Store to spend your WitCoins on these game-changers:
                 </p>
                 
                 <div className="grid gap-4 md:grid-cols-2">
@@ -109,7 +109,7 @@ export default function HowItWorks() {
                 </li>
                 <li className="flex gap-3">
                     <span className="text-yellow-500 font-bold">•</span>
-                    <span><strong>Engage often.</strong> The more you play, the more credits you earn.</span>
+                    <span><strong>Engage often.</strong> The more you play, the more WitCoins you earn.</span>
                 </li>
             </ul>
         </div>
@@ -120,7 +120,7 @@ export default function HowItWorks() {
                 href="/" 
                 className="inline-block bg-yellow-400 text-black font-black text-xl px-10 py-5 rounded-xl hover:bg-yellow-300 hover:scale-105 active:scale-95 transition-all shadow-xl shadow-yellow-200"
             >
-                Start Earning Credits
+                Start Earning WitCoins
             </Link>
         </div>
       </div>
