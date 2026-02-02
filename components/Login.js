@@ -169,6 +169,9 @@ export default function Login() {
             <span>•</span>
             <Link href="/privacy" className="hover:text-gray-600 hover:underline">Privacy Policy</Link>
           </div>
+          <div className="mt-4 text-center text-xs text-gray-400">
+            © 2026 WebWits. All rights reserved
+          </div>
         </div>
 
       </div>
