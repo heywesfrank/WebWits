@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowLeft, Flame } from "lucide-react";
+import { ArrowLeft, Flame, Edit3, Pin, MessageSquarePlus } from "lucide-react"; // [!code change]
 
 export default function IconGuide() {
   return (
@@ -75,6 +75,58 @@ export default function IconGuide() {
                     <h3 className="text-xl font-bold mb-2">On Fire</h3>
                     <p className="text-gray-500 text-sm leading-relaxed">
                         This caption is heating up! The more fire emojis you see, the faster the votes are rolling in.
+                    </p>
+                 </div>
+            </div>
+
+            {/* Ring of Fire */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
+                 <div className="w-16 h-16 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-orange-100">
+                    <Flame size={32} className="text-orange-500 fill-orange-500" />
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-bold mb-2">Ring of Fire</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                        Ignite your active caption. Burns until the battle ends. (Purchased from Store)
+                    </p>
+                 </div>
+            </div>
+
+            {/* Thumbtack of Glory */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
+                 <div className="w-16 h-16 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-red-100">
+                    <Pin size={32} className="text-red-500 fill-red-500" />
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-bold mb-2">Thumbtack of Glory</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                        Glue your wit to the ceiling. Stays on top for the full battle.
+                    </p>
+                 </div>
+            </div>
+
+            {/* The Mulligan */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
+                 <div className="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-blue-100">
+                    <Edit3 size={32} className="text-blue-500" />
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-bold mb-2">The Mulligan</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                        We all make mistakes. Fix yours. Grants one caption edit.
+                    </p>
+                 </div>
+            </div>
+
+            {/* Double Barrel */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
+                 <div className="w-16 h-16 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-purple-100">
+                    <MessageSquarePlus size={32} className="text-purple-500" />
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-bold mb-2">Double Barrel</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                        One joke wasn't enough? Reload and fire a second caption today.
                     </p>
                  </div>
             </div>
