@@ -11,7 +11,7 @@ export default function WinnerModal({ rank, onClose, userId }) {
     1: {
       title: "LEGENDARY STATUS",
       msg: "You dropped the mic. Everyone else picked it up and handed it back to you.",
-      reward: 100,
+      reward: 75,
       color: "text-yellow-500",
       bg: "bg-yellow-500",
       border: "border-yellow-400"
@@ -19,7 +19,7 @@ export default function WinnerModal({ rank, onClose, userId }) {
     2: {
       title: "SO CLOSE",
       msg: "Silver looks good on you. But gold would look better. Keep pushing.",
-      reward: 75,
+      reward: 50,
       color: "text-gray-400",
       bg: "bg-gray-400",
       border: "border-gray-300"
@@ -27,7 +27,7 @@ export default function WinnerModal({ rank, onClose, userId }) {
     3: {
       title: "PODIUM FINISH",
       msg: "You're officially funnier than 99% of the internet. Not bad.",
-      reward: 50,
+      reward: 25,
       color: "text-orange-500",
       bg: "bg-orange-500",
       border: "border-orange-400"
