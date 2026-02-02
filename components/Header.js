@@ -2,7 +2,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { LogOut, User, ChevronDown, BookOpen, Info, Facebook, Instagram, Smile, Wallet, ShoppingBag, Star, X, Mail } from "lucide-react"; 
+import { LogOut, User, ChevronDown, BookOpen, Info, Facebook, Instagram, Smile, Wallet, ShoppingBag, Star, X, Mail, Users } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 import InstallPrompt from "./InstallPrompt";
 
@@ -10,7 +10,7 @@ function getCountryCode(countryName) {
   return COUNTRY_CODES[countryName]?.toLowerCase() || null;
 }
 
-export default function Header({ session, profile }) {
+export default function Header({ session, profile, onOpenInvite }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showCollabModal, setShowCollabModal] = useState(false);
   const menuRef = useRef(null);
@@ -175,6 +175,20 @@ export default function Header({ session, profile }) {
                       </div>
                       Comedy Disclaimer
                     </Link>
+
+                    {/* INVITE FRIENDS LINK */}
+                    <button 
+                      onClick={() => {
+                        setIsMenuOpen(false);
+                        if (onOpenInvite) onOpenInvite();
+                      }}
+                      className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-bold text-green-600 hover:bg-green-50 transition-colors text-left"
+                    >
+                      <div className="p-1.5 bg-green-100 rounded-md text-green-600">
+                        <Users size={16} className="fill-green-500 text-green-500" />
+                      </div>
+                      Invite Your Friends
+                    </button>
                     
                     {/* INFLUENCER COLLAB LINK */}
                     <button 
