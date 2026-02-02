@@ -143,7 +143,7 @@ export async function GET(request) {
           // --- NEW: Calculate Credit Rewards (Top 3) ---
           const userCredits = {};
           const userRanks = {}; // Map to store rank for profile update
-          const prizes = [100, 75, 50]; // [!code change] Updated prize amounts
+          const prizes = [75, 50, 25];
 
           comments.slice(0, 3).forEach((comment, index) => {
               const prizeAmount = prizes[index];
