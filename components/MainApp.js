@@ -190,7 +190,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         userProfile={userProfile} 
         canSpin={spinAllowed}
         onSpinComplete={(newTotal) => {
-           setToasts(prev => [...prev, { id: Date.now(), msg: `Credits updated! Total: ${newTotal}`, type: "success" }]);
+           setToasts(prev => [...prev, { id: Date.now(), msg: `WitCoins updated! Total: ${newTotal}`, type: "success" }]);
            fetchData();
         }}
       />
