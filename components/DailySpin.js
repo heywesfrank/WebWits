@@ -111,7 +111,7 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
                 Daily Spin
               </h2>
               <p className="text-gray-500 font-medium text-sm">
-                Test your luck, win <strong className="text-[#0284c7]">free</strong> credits.
+                Test your luck, win <strong className="text-[#0284c7]">free</strong> WitCoins.
               </p>
             </div>
 
