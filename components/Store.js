@@ -155,7 +155,7 @@ export default function Store() {
         }
 
         if ((profile.credits || 0) < item.cost) {
-            setMessage({ type: 'error', text: "You're broke. Go be funny to earn credits." });
+            setMessage({ type: 'error', text: "You're broke. Go be funny to earn WitCoins." });
             return;
         }
 
@@ -219,7 +219,7 @@ export default function Store() {
                     <div className="bg-white/10 backdrop-blur-md border border-white/20 px-6 py-3 rounded-2xl flex items-center gap-3 shadow-inner">
                         <Wallet className="text-yellow-400" />
                         <div>
-                            <div className="text-xs text-gray-300 font-bold uppercase tracking-wider">Credits</div>
+                            <div className="text-xs text-gray-300 font-bold uppercase tracking-wider">WitCoins</div>
                             <div className="text-2xl font-black text-white tracking-tight">{profile?.credits || 0}</div>
                         </div>
                     </div>
