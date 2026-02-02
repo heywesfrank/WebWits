@@ -81,7 +81,7 @@ export default function WinnerModal({ rank, onClose, userId }) {
             </div>
             <div className="text-left">
                 <div className="text-xs text-gray-400 font-bold uppercase tracking-wider">Reward</div>
-                <div className="text-2xl font-black text-gray-900 leading-none">+{details.reward} Credits</div>
+                <div className="text-2xl font-black text-gray-900 leading-none">+{details.reward} WitCoins</div>
             </div>
         </div>
 
