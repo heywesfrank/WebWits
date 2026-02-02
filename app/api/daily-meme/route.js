@@ -113,11 +113,13 @@ export async function GET(request) {
         let winningCaption = null;
 
         // 1. Get all comments and their vote counts
+        // [!code change] Added secondary sort: created_at ascending (Oldest/First comment wins tie)
         const { data: comments } = await supabase
           .from('comments')
-          .select('id, content, vote_count, user_id')
+          .select('id, content, vote_count, user_id, created_at')
           .eq('meme_id', meme.id)
-          .order('vote_count', { ascending: false });
+          .order('vote_count', { ascending: false })
+          .order('created_at', { ascending: true });
 
         if (comments && comments.length > 0) {
           winningCaption = comments[0].content;
@@ -174,7 +176,7 @@ export async function GET(request) {
                 monthly_points: (profile.monthly_points || 0) + pointsEarned,
                 total_points: (profile.total_points || 0) + pointsEarned,
                 credits: (profile.credits || 0) + creditsEarned, 
-                daily_rank: rank, // [!code change] Set the rank for popup
+                daily_rank: rank, 
                 updated_at: new Date()
               };
             });
