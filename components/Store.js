@@ -212,7 +212,7 @@ export default function Store() {
                 <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
                     <div>
                         <h1 className="text-4xl font-black font-display mb-2 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-yellow-500">
-                            The Armory
+                            The WitCoin Store
                         </h1>
                         <p className="text-gray-400 font-medium">Pay to win? No. Pay to shine? Absolutely.</p>
                     </div>
