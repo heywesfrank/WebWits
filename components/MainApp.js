@@ -143,7 +143,12 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-24 md:pb-0">
-      <Header session={session} profile={userProfile} onOpenProfile={() => setShowProfileModal(true)} />
+      <Header 
+        session={session} 
+        profile={userProfile} 
+        onOpenProfile={() => setShowProfileModal(true)} 
+        onOpenInvite={() => setShowInvitePopup(true)} 
+      />
       
       <DailySpin 
         session={session} 
