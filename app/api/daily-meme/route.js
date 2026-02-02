@@ -31,50 +31,35 @@ export async function GET(request) {
     }
 
     // --- STEP 1: Fetch Content (Trending -> Random Fallback -> Force) ---
+    // [Content fetching logic remains unchanged...]
     let contentUrl = null;
     let posterUrl = null;
     let selectedGif = null;
     let trendingPool = [];
 
-    // Strategy A: Trending (Primary)
-    // Fetch top 50 trending, shuffle them, find first unique one.
+    // Strategy A: Trending
     try {
         const trendingRes = await fetch(
             `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=50&rating=pg-13`,
             { cache: 'no-store' }
         );
         const trendingData = await trendingRes.json();
-        
         if (trendingData.data && trendingData.data.length > 0) {
             trendingPool = trendingData.data;
-            // Shuffle the pool so we don't always pick the #1 trending gif
             const shuffled = [...trendingPool].sort(() => Math.random() - 0.5);
-            
             for (const gif of shuffled) {
                 const tempUrl = gif.images.original.mp4;
-                
-                // Check uniqueness
-                const { data: existing } = await supabase
-                    .from('memes')
-                    .select('id')
-                    .eq('content_url', tempUrl)
-                    .maybeSingle();
-                
+                const { data: existing } = await supabase.from('memes').select('id').eq('content_url', tempUrl).maybeSingle();
                 if (!existing) {
                     selectedGif = gif;
-                    console.log("Selected unique trending meme.");
                     break; 
                 }
             }
         }
-    } catch (e) {
-        console.error("Trending fetch failed:", e);
-    }
+    } catch (e) { console.error("Trending fetch failed:", e); }
 
-    // Strategy B: Random Fallback 
-    // If no unique trending GIF was found, fall back to the old "random funny" logic.
+    // Strategy B: Random Fallback
     if (!selectedGif) {
-        console.log("No unique trending meme found. Falling back to Random search.");
         let attempts = 0;
         while (!selectedGif && attempts < 5) {
             attempts++;
@@ -85,36 +70,21 @@ export async function GET(request) {
                 );
                 const randomData = await randomRes.json();
                 const gif = randomData.data;
-                
                 if (gif) {
                     const tempUrl = gif.images.original.mp4;
-                    const { data: existing } = await supabase
-                        .from('memes')
-                        .select('id')
-                        .eq('content_url', tempUrl)
-                        .maybeSingle();
-                    
-                    if (!existing) {
-                        selectedGif = gif;
-                    }
+                    const { data: existing } = await supabase.from('memes').select('id').eq('content_url', tempUrl).maybeSingle();
+                    if (!existing) selectedGif = gif;
                 }
-            } catch (e) {
-                console.error("Random fetch attempt failed:", e);
-            }
+            } catch (e) { console.error("Random fetch attempt failed:", e); }
         }
     }
 
     // Strategy C: Emergency Force
-    // If both strategies failed, we MUST pick something. Use a duplicate if we have to.
     if (!selectedGif && trendingPool.length > 0) {
-         console.warn("EMERGENCY: Could not find unique meme. Forcing a selection from Trending pool.");
          selectedGif = trendingPool[Math.floor(Math.random() * trendingPool.length)];
     }
 
-    // If we simply cannot find anything (API Down / No Data), throw error.
-    if (!selectedGif) {
-        throw new Error("Critical Failure: Giphy API unreachable or no content returned.");
-    }
+    if (!selectedGif) throw new Error("Critical Failure: Giphy API unreachable or no content returned.");
 
     contentUrl = selectedGif.images.original.mp4;
     posterUrl = selectedGif.images.original.webp;
@@ -147,18 +117,17 @@ export async function GET(request) {
         if (comments && comments.length > 0) {
           winningCaption = comments[0].content;
 
-          // --- NEW: NOTIFY DAILY WINNER (Feature #2) ---
+          // --- NOTIFY DAILY WINNER ---
           const winnerId = comments[0].user_id;
           if (winnerId) {
              await sendNotificationToUser(winnerId, {
                 title: "🏆 VICTORY!",
-                body: `Your caption won yesterday's battle! "${winningCaption.substring(0, 25)}..."`,
+                body: `Your caption won yesterday's battle! You earned 75 credits. "${winningCaption.substring(0, 25)}..."`,
                 url: "https://itswebwits.com"
              });
           }
-          // ---------------------------------------------
 
-          // 2. Aggregate points per user
+          // 2. Aggregate points (votes) per user
           const userPoints = {};
           comments.forEach(comment => {
             if (comment.vote_count > 0) {
@@ -166,20 +135,35 @@ export async function GET(request) {
             }
           });
 
-          // 3. Update User Profiles
-          const userIds = Object.keys(userPoints);
+          // --- NEW: Calculate Credit Rewards (Top 3) ---
+          const userCredits = {};
+          const prizes = [75, 50, 25]; // 1st: 75, 2nd: 50, 3rd: 25
+
+          comments.slice(0, 3).forEach((comment, index) => {
+              const prizeAmount = prizes[index];
+              userCredits[comment.user_id] = (userCredits[comment.user_id] || 0) + prizeAmount;
+          });
+
+          // 3. Update User Profiles (Points + Credits)
+          // Combine IDs from both points and credits maps to ensure we update everyone
+          const allUserIds = new Set([...Object.keys(userPoints), ...Object.keys(userCredits)]);
+          const userIds = Array.from(allUserIds);
+
           if (userIds.length > 0) {
             const { data: currentProfiles } = await supabase
               .from('profiles')
-              .select('id, monthly_points, total_points')
+              .select('id, monthly_points, total_points, credits') // [!code change] Added 'credits' to selection
               .in('id', userIds);
 
             const updates = currentProfiles.map(profile => {
               const pointsEarned = userPoints[profile.id] || 0;
+              const creditsEarned = userCredits[profile.id] || 0;
+
               return {
                 id: profile.id,
                 monthly_points: (profile.monthly_points || 0) + pointsEarned,
                 total_points: (profile.total_points || 0) + pointsEarned,
+                credits: (profile.credits || 0) + creditsEarned, // [!code change] Add new credits
                 updated_at: new Date()
               };
             });
@@ -188,7 +172,7 @@ export async function GET(request) {
               .from('profiles')
               .upsert(updates);
               
-            if (upsertError) console.error("Error updating points:", upsertError);
+            if (upsertError) console.error("Error updating profiles:", upsertError);
           }
         }
 
@@ -204,6 +188,7 @@ export async function GET(request) {
     }
 
     // --- STEP 3: Insert the New Meme ---
+    // [Insert logic remains unchanged]
     const { data, error: insertError } = await supabase
       .from('memes')
       .insert({
