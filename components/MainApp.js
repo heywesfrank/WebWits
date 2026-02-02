@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X, Users, Copy } from "lucide-react";
+import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X, Users, Copy, ShoppingBag } from "lucide-react";
 
 // Components
 import Header from "./Header";
@@ -356,8 +356,8 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
           <button onClick={() => setViewMode('archive')} className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all ${viewMode === 'archive' || viewMode === 'archive-detail' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
             <History size={20} /> <span>Archive</span>
           </button>
-          <Link href="/how-it-works" className="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-gray-400 active:text-gray-900 transition-all">
-            <BookOpen size={20} /> <span className="whitespace-nowrap">How to Play</span>
+<Link href="/store" className="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-gray-400 active:text-gray-900 transition-all">
+            <ShoppingBag size={20} /> <span className="whitespace-nowrap">WitCoin Store</span>
           </Link>
         </div>
       </div>
