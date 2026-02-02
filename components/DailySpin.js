@@ -1,9 +1,10 @@
+// components/DailySpin.js
 "use client";
 import { useState, useEffect } from "react";
 import { X, Sparkles, Trophy, Star } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-export default function DailySpin({ session, userProfile, onSpinComplete }) {
+export default function DailySpin({ session, userProfile, onSpinComplete, canSpin = true }) {
   const [isOpen, setIsOpen] = useState(false);
   const [isSpinning, setIsSpinning] = useState(false);
   const [prize, setPrize] = useState(null);
@@ -11,7 +12,8 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
 
   // Check availability on load
   useEffect(() => {
-    if (userProfile && session) {
+    // We now check 'canSpin' before showing the modal
+    if (userProfile && session && canSpin) {
       // FIX: Force EST/New York Timezone for client-side check
       const today = new Date().toLocaleDateString('en-CA', { 
         timeZone: 'America/New_York' 
@@ -21,7 +23,7 @@ export default function DailySpin({ session, userProfile, onSpinComplete }) {
         setTimeout(() => setIsOpen(true), 1500);
       }
     }
-  }, [userProfile, session]);
+  }, [userProfile, session, canSpin]);
 
   const handleSpin = async () => {
     if (isSpinning) return;
