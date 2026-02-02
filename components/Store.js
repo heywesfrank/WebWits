@@ -1,8 +1,35 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Wallet, Flame, Pin, Edit3, MessageSquarePlus, Gift, Loader2 } from "lucide-react";
+import { Wallet, Pin, Edit3, Gift, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
+
+// Custom Icon for Ring of Fire
+const RingOfFireIcon = ({ size = 24, className }) => (
+    <svg 
+      xmlns="http://www.w3.org/2000/svg" 
+      width={size} 
+      height={size} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth="2" 
+      strokeLinecap="round" 
+      strokeLinejoin="round" 
+      className={className}
+    >
+      <circle cx="12" cy="12" r="10" />
+      <circle cx="12" cy="12" r="6" />
+      <path d="M12 2v2" />
+      <path d="M12 20v2" />
+      <path d="m4.93 4.93 1.41 1.41" />
+      <path d="m17.66 17.66 1.41 1.41" />
+      <path d="M2 12h2" />
+      <path d="M20 12h2" />
+      <path d="m6.34 17.66-1.41 1.41" />
+      <path d="m19.07 4.93-1.41 1.41" />
+    </svg>
+);
 
 // Define Store Items Configuration
 const ITEMS = [
@@ -12,7 +39,7 @@ const ITEMS = [
         name: "Ring of Fire",
         description: "Ignite your active caption. Burns until the battle ends.",
         cost: 100,
-        icon: <Flame size={24} className="text-orange-500 fill-orange-500" />,
+        icon: <RingOfFireIcon size={24} className="text-orange-500" />,
         color: "orange"
     },
     {
@@ -39,7 +66,7 @@ const ITEMS = [
         name: "Double Barrel",
         description: "One joke wasn't enough? Reload and fire a second caption today.",
         cost: 250,
-        icon: <MessageSquarePlus size={24} className="text-purple-500" />,
+        icon: <img src="/shotgun.png" alt="Double Barrel" className="w-8 h-8 object-contain" />,
         color: "purple"
     },
     {
