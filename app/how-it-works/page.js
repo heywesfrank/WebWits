@@ -105,6 +105,10 @@ export default function HowItWorks() {
                 </li>
                 <li className="flex gap-3">
                     <span className="text-yellow-500 font-bold">•</span>
+                    <span><strong>Speed matters.</strong> Ties go to the early bird. If vote counts are equal, the first to post wins.</span>
+                </li>
+                <li className="flex gap-3">
+                    <span className="text-yellow-500 font-bold">•</span>
                     <span><strong>No hate speech.</strong> We like spicy, not toxic. Keep it fun.</span>
                 </li>
                 <li className="flex gap-3">
