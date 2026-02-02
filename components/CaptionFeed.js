@@ -46,7 +46,16 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
     if (!aPin && bPin) return 1;  // b comes first
 
     // 2. Standard Sorting
-    if (sortBy === "top") return b.vote_count - a.vote_count;
+    if (sortBy === "top") {
+        const voteDiff = b.vote_count - a.vote_count;
+        if (voteDiff !== 0) return voteDiff;
+        
+        // Tie-breaker: Oldest first (Ascending creation date)
+        // If votes are equal, the one created earlier comes first
+        return new Date(a.created_at) - new Date(b.created_at);
+    }
+    
+    // Sort by "New" (Newest first)
     return new Date(b.created_at) - new Date(a.created_at);
   });
 
