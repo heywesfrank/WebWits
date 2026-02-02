@@ -1,3 +1,4 @@
+// app/api/daily-meme/route.js
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { sendNotificationToUser, sendNotificationToAll } from '@/lib/sendPush';
@@ -29,6 +30,10 @@ export async function GET(request) {
         meme: existingToday
       });
     }
+
+    // --- [NEW] STEP 0.5: RESET DAILY RANKS ---
+    // Clear yesterday's winners so people don't get notified twice if they skip a day
+    await supabase.from('profiles').update({ daily_rank: null }).neq('id', '00000000-0000-0000-0000-000000000000');
 
     // --- STEP 1: Fetch Content (Trending -> Random Fallback -> Force) ---
     // [Content fetching logic remains unchanged...]
@@ -117,12 +122,12 @@ export async function GET(request) {
         if (comments && comments.length > 0) {
           winningCaption = comments[0].content;
 
-          // --- NOTIFY DAILY WINNER ---
+          // --- NOTIFY DAILY WINNER (Push Notification) ---
           const winnerId = comments[0].user_id;
           if (winnerId) {
              await sendNotificationToUser(winnerId, {
                 title: "🏆 VICTORY!",
-                body: `Your caption won yesterday's battle! You earned 75 credits. "${winningCaption.substring(0, 25)}..."`,
+                body: `Your caption won yesterday's battle! You earned 100 credits. "${winningCaption.substring(0, 25)}..."`,
                 url: "https://itswebwits.com"
              });
           }
@@ -137,14 +142,18 @@ export async function GET(request) {
 
           // --- NEW: Calculate Credit Rewards (Top 3) ---
           const userCredits = {};
-          const prizes = [75, 50, 25]; // 1st: 75, 2nd: 50, 3rd: 25
+          const userRanks = {}; // Map to store rank for profile update
+          const prizes = [100, 75, 50]; // [!code change] Updated prize amounts
 
           comments.slice(0, 3).forEach((comment, index) => {
               const prizeAmount = prizes[index];
+              const rank = index + 1;
+              
               userCredits[comment.user_id] = (userCredits[comment.user_id] || 0) + prizeAmount;
+              userRanks[comment.user_id] = rank; // Store rank (1, 2, or 3)
           });
 
-          // 3. Update User Profiles (Points + Credits)
+          // 3. Update User Profiles (Points + Credits + Rank)
           // Combine IDs from both points and credits maps to ensure we update everyone
           const allUserIds = new Set([...Object.keys(userPoints), ...Object.keys(userCredits)]);
           const userIds = Array.from(allUserIds);
@@ -152,18 +161,20 @@ export async function GET(request) {
           if (userIds.length > 0) {
             const { data: currentProfiles } = await supabase
               .from('profiles')
-              .select('id, monthly_points, total_points, credits') // [!code change] Added 'credits' to selection
+              .select('id, monthly_points, total_points, credits') 
               .in('id', userIds);
 
             const updates = currentProfiles.map(profile => {
               const pointsEarned = userPoints[profile.id] || 0;
               const creditsEarned = userCredits[profile.id] || 0;
+              const rank = userRanks[profile.id] || null; // Will be 1, 2, 3 or null
 
               return {
                 id: profile.id,
                 monthly_points: (profile.monthly_points || 0) + pointsEarned,
                 total_points: (profile.total_points || 0) + pointsEarned,
-                credits: (profile.credits || 0) + creditsEarned, // [!code change] Add new credits
+                credits: (profile.credits || 0) + creditsEarned, 
+                daily_rank: rank, // [!code change] Set the rank for popup
                 updated_at: new Date()
               };
             });
@@ -188,7 +199,6 @@ export async function GET(request) {
     }
 
     // --- STEP 3: Insert the New Meme ---
-    // [Insert logic remains unchanged]
     const { data, error: insertError } = await supabase
       .from('memes')
       .insert({
