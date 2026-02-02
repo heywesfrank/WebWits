@@ -1,3 +1,4 @@
+// components/MainApp.js
 "use client";
 import { useState, useEffect } from "react";
 import Link from "next/link";
@@ -17,6 +18,7 @@ import MemeStage from "./MemeStage";
 import CaptionFeed from "./CaptionFeed";
 import NotificationModal from "./NotificationModal"; 
 import DailySpin from "./DailySpin"; 
+import WinnerModal from "./WinnerModal"; // [!code ++]
 
 // Hooks
 import { useGameLogic } from "@/hooks/useGameLogic";
@@ -54,6 +56,20 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   // Confirmation & Invite Popups
   const [showConfirm, setShowConfirm] = useState(false);
   const [showInvitePopup, setShowInvitePopup] = useState(false);
+
+  // [!code ++] New State for Winner Modal & Spin Control
+  const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [spinAllowed, setSpinAllowed] = useState(false);
+
+  // [!code ++] Effect to check rank on load and block spin
+  useEffect(() => {
+    if (userProfile?.daily_rank) {
+       setShowWinnerModal(true);
+       setSpinAllowed(false); // Block spin until modal closed
+    } else {
+       setSpinAllowed(true); // Allow spin immediately
+    }
+  }, [userProfile]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -149,10 +165,26 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         onOpenProfile={() => setShowProfileModal(true)} 
         onOpenInvite={() => setShowInvitePopup(true)} 
       />
+
+      {/* [!code ++] Winner Modal displayed if daily_rank exists */}
+      {showWinnerModal && session && (
+        <WinnerModal 
+           rank={userProfile.daily_rank} 
+           userId={session.user.id}
+           onClose={() => {
+              setShowWinnerModal(false);
+              setSpinAllowed(true); // Now allow spin to run
+              // Refresh profile data to ensure local state reflects "rank cleared"
+              fetchData();
+           }} 
+        />
+      )}
       
+      {/* [!code change] Added canSpin prop */}
       <DailySpin 
         session={session} 
         userProfile={userProfile} 
+        canSpin={spinAllowed}
         onSpinComplete={(newTotal) => {
            setToasts(prev => [...prev, { id: Date.now(), msg: `Credits updated! Total: ${newTotal}`, type: "success" }]);
            // Refresh profile data to update header credits
