@@ -12,7 +12,9 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
 
   // Check availability on load
   useEffect(() => {
-    // We now check 'canSpin' before showing the modal
+    let timeoutId;
+
+    // We now check 'canSpin' before scheduling the modal
     if (userProfile && session && canSpin) {
       // FIX: Force EST/New York Timezone for client-side check
       const today = new Date().toLocaleDateString('en-CA', { 
@@ -20,9 +22,17 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
       });
 
       if (userProfile.last_spin_date !== today) {
-        setTimeout(() => setIsOpen(true), 1500);
+        // Schedule the popup
+        timeoutId = setTimeout(() => {
+           setIsOpen(true);
+        }, 1500);
       }
     }
+
+    // CLEANUP: If 'canSpin' changes to false (e.g. WinnerModal triggers), cancel the timer!
+    return () => {
+        if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [userProfile, session, canSpin]);
 
   const handleSpin = async () => {
@@ -49,19 +59,13 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
         const targetSegment = segments.find(s => s.val === data.prize);
         
         // Calculate Angle
-        // Segment center is (id * 60) + 30
         const segmentCenter = (targetSegment.id * 60) + 30;
-        
-        // Random variance +/- 20 deg to feel natural (stay inside the 60deg slice)
         const variance = Math.floor(Math.random() * 40) - 20;
-        
-        // Target rotation: Top is 0/360.
-        // We spin clockwise. We want segmentCenter to end up at 0.
         const finalRotation = 1800 + (360 - segmentCenter) + variance;
         
         setRotation(finalRotation);
 
-        // Wait for animation to finish (4 seconds easing)
+        // Wait for animation
         setTimeout(() => {
           setPrize(data.prize);
           setIsSpinning(false);
@@ -84,7 +88,6 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
     setRotation(0);
   };
 
-  // Segments for rendering labels
   const wheelSegments = [
     { id: 0, val: 5, label: '5', color: '#03A9FC', text: 'white' },   
     { id: 1, val: 10, label: '10', color: '#028BCF', text: 'white' }, 
@@ -117,14 +120,11 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
               </p>
             </div>
 
-            {/* THE WHEEL CONTAINER */}
             <div className="relative w-72 h-72 mx-auto mb-8">
-              {/* Pointer Triangle */}
               <div className="absolute -top-3 left-1/2 -translate-x-1/2 z-20">
                  <div className="w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[24px] border-t-amber-600 filter drop-shadow-md"></div>
               </div>
 
-              {/* Rotating Disc */}
               <div 
                  className="w-full h-full rounded-full border-4 border-white shadow-[0_0_30px_rgba(0,0,0,0.1)] overflow-hidden relative transition-transform"
                  style={{ 
@@ -132,7 +132,6 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
                    transition: isSpinning ? 'transform 4s cubic-bezier(0.2, 0, 0.2, 1)' : 'none'
                  }}
               >
-                 {/* CSS Conic Gradient for 6 Slices */}
                  <div 
                    className="w-full h-full absolute inset-0"
                    style={{
@@ -147,16 +146,12 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
                    }}
                  />
                  
-                 {/* Labels */}
                  <div className="absolute inset-0 select-none pointer-events-none">
                     {wheelSegments.map((seg) => (
                       <span
                         key={seg.id}
                         className={`absolute top-1/2 left-1/2 font-display font-black text-2xl ${seg.text === 'white' ? 'text-white drop-shadow-sm' : 'text-[#0284c7]'}`}
                         style={{
-                          // Center origin, Rotate to angle, Translate Outwards
-                          // 30 is the offset to center in the 60deg slice
-                          // translateY(-85px) pushes the number to the edge of the slice
                           transform: `translate(-50%, -50%) rotate(${seg.id * 60 + 30}deg) translateY(-85px)`
                         }}
                       >
@@ -172,14 +167,12 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
                     ))}
                  </div>
 
-                 {/* Inner Center Circle */}
                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-white rounded-full shadow-inner flex items-center justify-center border border-gray-100 z-10">
                     <Trophy size={24} className="text-[#0284c7]" />
                  </div>
               </div>
             </div>
 
-            {/* RESULTS OR BUTTON */}
             <div className="text-center h-20 flex items-center justify-center">
               {prize ? (
                 <motion.div 
