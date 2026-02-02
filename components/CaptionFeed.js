@@ -48,10 +48,10 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
     // 2. Standard Sorting
     if (sortBy === "top") {
         const voteDiff = b.vote_count - a.vote_count;
+        // [!code change] Tie-breaker Logic
         if (voteDiff !== 0) return voteDiff;
         
-        // Tie-breaker: Oldest first (Ascending creation date)
-        // If votes are equal, the one created earlier comes first
+        // If votes are tied, oldest created_at comes FIRST (ascending)
         return new Date(a.created_at) - new Date(b.created_at);
     }
     
