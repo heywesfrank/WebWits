@@ -95,6 +95,11 @@ export default function TermsPage() {
                 Users acknowledge that WebWits hosts user-generated comedic content which may include satire, parody, irony, exaggeration, or dark humor. Users agree not to hold WebWits liable for emotional distress, offense taken, or interpretations of comedic content.
             </Section>
 
+            <Section title="14. Prohibited Scraping and Automated Access">
+                Users may not scrape, crawl, copy, reproduce, or otherwise extract data, content, code, or user interface elements from WebWits through automated means or bulk access methods. This includes, but is not limited to, bots, scripts, spiders, or data-mining tools. Unauthorized copying of the WebWits UI, source code, or underlying systems is strictly prohibited.
+            </Section>
+
+
         </div>
       </div>
     </div>
