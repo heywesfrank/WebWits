@@ -340,7 +340,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                            
                            <div className="flex-1">
                               <div className="text-sm leading-snug">
-                                 <span className="mr-2 text-gray-800 text-xs">@{reply.profiles?.username}</span>
+                                 <span className="mr-2 font-bold text-xs text-gray-500">@{reply.profiles?.username}</span>
                                  <span className="text-gray-700">{reply.content}</span>
                               </div>
                               <div className="flex gap-3 mt-1">
