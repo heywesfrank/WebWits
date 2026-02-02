@@ -98,7 +98,7 @@ export default function Header({ session, profile, onOpenInvite }) {
                     >
                        <div className="flex items-center gap-2">
                           <Wallet size={16} className="text-yellow-600 group-hover:scale-110 transition-transform" />
-                          <span className="text-xs font-bold text-yellow-900 uppercase tracking-wider group-hover:text-yellow-700">Credits/Store</span>
+                          <span className="text-xs font-bold text-yellow-900 uppercase tracking-wider group-hover:text-yellow-700">WitCoins</span>
                        </div>
                        <div className="flex items-center gap-2">
                           <span className="font-display font-black text-lg text-yellow-600">{profile?.credits || 0}</span>
