@@ -18,7 +18,7 @@ import MemeStage from "./MemeStage";
 import CaptionFeed from "./CaptionFeed";
 import NotificationModal from "./NotificationModal"; 
 import DailySpin from "./DailySpin"; 
-import WinnerModal from "./WinnerModal"; // [!code ++]
+import WinnerModal from "./WinnerModal"; 
 
 // Hooks
 import { useGameLogic } from "@/hooks/useGameLogic";
@@ -57,17 +57,22 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   const [showConfirm, setShowConfirm] = useState(false);
   const [showInvitePopup, setShowInvitePopup] = useState(false);
 
-  // [!code ++] New State for Winner Modal & Spin Control
+  // New State for Winner Modal & Spin Control
   const [showWinnerModal, setShowWinnerModal] = useState(false);
-  const [spinAllowed, setSpinAllowed] = useState(false);
+  const [spinAllowed, setSpinAllowed] = useState(false); // Defaults to false
 
-  // [!code ++] Effect to check rank on load and block spin
+  // Effect to check rank on load and block spin
   useEffect(() => {
-    if (userProfile?.daily_rank) {
-       setShowWinnerModal(true);
-       setSpinAllowed(false); // Block spin until modal closed
-    } else {
-       setSpinAllowed(true); // Allow spin immediately
+    // Only run this logic if userProfile is actually loaded
+    if (userProfile) {
+        // If they have a rank (1, 2, or 3), show Winner Modal and BLOCK spin
+        if (userProfile.daily_rank && userProfile.daily_rank > 0) {
+           setShowWinnerModal(true);
+           setSpinAllowed(false); 
+        } else {
+           // Otherwise, they are safe to spin
+           setSpinAllowed(true); 
+        }
     }
   }, [userProfile]);
 
@@ -166,28 +171,26 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         onOpenInvite={() => setShowInvitePopup(true)} 
       />
 
-      {/* [!code ++] Winner Modal displayed if daily_rank exists */}
+      {/* Winner Modal displayed if daily_rank exists */}
       {showWinnerModal && session && (
         <WinnerModal 
            rank={userProfile.daily_rank} 
            userId={session.user.id}
            onClose={() => {
               setShowWinnerModal(false);
-              setSpinAllowed(true); // Now allow spin to run
-              // Refresh profile data to ensure local state reflects "rank cleared"
-              fetchData();
+              setSpinAllowed(true); // NOW allow spin to run
+              fetchData(); // Refresh to ensure rank is cleared in local state
            }} 
         />
       )}
       
-      {/* [!code change] Added canSpin prop */}
+      {/* Daily Spin controlled by spinAllowed */}
       <DailySpin 
         session={session} 
         userProfile={userProfile} 
         canSpin={spinAllowed}
         onSpinComplete={(newTotal) => {
            setToasts(prev => [...prev, { id: Date.now(), msg: `Credits updated! Total: ${newTotal}`, type: "success" }]);
-           // Refresh profile data to update header credits
            fetchData();
         }}
       />
