@@ -51,8 +51,9 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         )
       `)
       .eq("meme_id", memeId)
+      // [!code change] Primary sort: Votes DESC, Secondary sort: Date ASC (Oldest first)
       .order('vote_count', { ascending: false })
-      .order('created_at', { ascending: true }); // Secondary sort: Oldest first (tie-breaker)
+      .order('created_at', { ascending: true }); 
     
     if (commentsError) {
       console.error("Comments fetch error:", commentsError);
