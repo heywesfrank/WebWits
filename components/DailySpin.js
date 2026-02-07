@@ -49,18 +49,15 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
       const data = await res.json();
 
       if (data.success) {
-
+        // Wheel Configuration (6 Segments - 60 degrees each)
+        // [!code change] Updated id:4 to 400
         const segments = [
             { id: 0, val: 50 }, { id: 1, val: 100 }, { id: 2, val: 200 },
             { id: 3, val: 300 }, { id: 4, val: 400 }, { id: 5, val: 500 }
         ];
 
-        // Find match (Handle the duplicate 300 case randomly to vary visual landing)
-        let targetSegment = segments.find(s => s.val === data.prize);
-        if (data.prize === 300) {
-           const options = segments.filter(s => s.val === 300);
-           targetSegment = options[Math.floor(Math.random() * options.length)];
-        }
+        // Find match
+        const targetSegment = segments.find(s => s.val === data.prize);
         
         // Calculate Angle
         const segmentCenter = (targetSegment.id * 60) + 30;
@@ -92,12 +89,13 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
     setRotation(0);
   };
 
+  // [!code change] Updated id:4 to 400
   const wheelSegments = [
     { id: 0, val: 50, label: '50', color: '#03A9FC', text: 'white' },   
     { id: 1, val: 100, label: '100', color: '#028BCF', text: 'white' }, 
     { id: 2, val: 200, label: '200', color: '#026CA2', text: 'white' },  
     { id: 3, val: 300, label: '300', color: '#014E74', text: 'white' },
-    { id: 4, val: 300, label: '300', color: '#012F47', text: 'white' },  
+    { id: 4, val: 400, label: '400', color: '#012F47', text: 'white' },  
     { id: 5, val: 500, label: '500', color: '#FFFFFF', text: 'blue' }    
   ];
 
