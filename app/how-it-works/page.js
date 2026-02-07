@@ -58,6 +58,41 @@ export default function HowItWorks() {
             />
         </div>
 
+        {/* The Daily Payouts Section */}
+        <div className="mb-16">
+             <div className="text-center mb-8">
+                <h3 className="text-3xl font-black font-display text-gray-900">The Loot Table</h3>
+                <p className="text-gray-500 mt-2">Every battle has its spoils. Here’s what you’re fighting for daily.</p>
+             </div>
+             
+             <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+                <PayoutCard 
+                    rank="1st Place" 
+                    amount="500" 
+                    sub="The Lion's Share" 
+                    color="yellow"
+                />
+                <PayoutCard 
+                    rank="2nd Place" 
+                    amount="300" 
+                    sub="Silver Lining" 
+                    color="gray"
+                />
+                <PayoutCard 
+                    rank="3rd Place" 
+                    amount="150" 
+                    sub="Podium Finish" 
+                    color="orange"
+                />
+                 <PayoutCard 
+                    rank="Participation" 
+                    amount="25" 
+                    sub="Pity Points" 
+                    color="blue"
+                />
+             </div>
+        </div>
+
         {/* The Armory Section (Power-ups explanation) */}
         <div className="bg-gray-900 text-white rounded-3xl p-8 md:p-12 mb-16 shadow-2xl relative overflow-hidden">
             <div className="relative z-10">
@@ -159,4 +194,23 @@ function PowerUp({ name, desc }) {
             <p className="text-gray-400 text-sm">{desc}</p>
         </div>
     );
+}
+
+function PayoutCard({ rank, amount, sub, color }) {
+    const colors = {
+        yellow: "border-yellow-400 bg-yellow-50 text-yellow-900",
+        gray: "border-gray-300 bg-gray-50 text-gray-900",
+        orange: "border-orange-300 bg-orange-50 text-orange-900",
+        blue: "border-blue-200 bg-blue-50 text-blue-900",
+    };
+
+    return (
+        <div className={`p-4 rounded-xl border-2 text-center flex flex-col items-center justify-center ${colors[color]} hover:scale-[1.02] transition-transform`}>
+            <span className="text-[10px] font-bold uppercase tracking-wider opacity-70 mb-1">{rank}</span>
+            <div className="text-3xl font-black mb-1 flex items-center gap-1">
+                {amount}
+            </div>
+            <span className="text-[10px] font-bold uppercase opacity-60">{sub}</span>
+        </div>
+    )
 }
