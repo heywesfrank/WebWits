@@ -51,7 +51,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         )
       `)
       .eq("meme_id", memeId)
-      // [!code change] Primary sort: Votes DESC, Secondary sort: Date ASC (Oldest first)
+      // Primary sort: Votes DESC, Secondary sort: Date ASC (Oldest first)
       .order('vote_count', { ascending: false })
       .order('created_at', { ascending: true }); 
     
@@ -173,7 +173,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
   const submitCaption = async (text) => {
     if (!session?.user || !activeMeme) return false;
     
-    // [!code change] Update to user hasCommented limit check
+    // Update to user hasCommented limit check
     if (hasCommented) {
       addToast("You've already hit your caption limit! 🚫", "error");
       return false;
@@ -275,11 +275,17 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         })
       });
 
-      if (!res.ok) throw new Error("Vote failed");
+      // Parse error response to show specific messages
+      if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || "Vote failed");
+      }
 
     } catch (err) {
       console.error("Vote failed:", err);
-      addToast("Failed to update vote", "error");
+      // Show the actual error message from the server (e.g., "Cannot vote for own caption")
+      addToast(err.message, "error");
+      
       // Revert optimistic update
       setCaptions((current) => 
         current.map((c) => 
@@ -302,7 +308,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     addToast("Reported. Thanks for keeping it clean.", "success");
   };
 
-  // Edit Caption Function for The Mulligan
   const editCaption = async (commentId, newText) => {
     if (!session?.user) return false;
 
