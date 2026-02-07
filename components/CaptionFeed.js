@@ -22,7 +22,7 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] Updated to use 'instagram://' scheme
+// [!code change] Updated Intent Logic to use standard HTTPS path
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     const [finalUrl, setFinalUrl] = useState(socialLink);
 
@@ -33,19 +33,20 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
 
         if (isAndroid && socialLink.includes('instagram.com')) {
              try {
-                // Clean trailing slash to ensure clean parsing
-                const cleanLink = socialLink.replace(/\/$/, '');
-                const urlObj = new URL(cleanLink);
-                
-                // Get username from path (e.g. /jay_brands_it)
+                // 1. Clean the link and extract the username
+                // e.g. https://www.instagram.com/jay_brands_it/ -> jay_brands_it
+                const urlObj = new URL(socialLink);
                 const parts = urlObj.pathname.split('/').filter(p => p);
                 
                 if (parts.length > 0) {
                     const igUser = parts[0]; 
                     
-                    // USE CUSTOM SCHEME: This is the internal deep link format for Android
-                    // It bypasses the web URL handling entirely.
-                    setFinalUrl(`instagram://user?username=${igUser}`);
+                    // 2. Construct an Android Intent using the STANDARD HTTPS URL
+                    // We avoid 'instagram://' and '_u' paths which are flaky.
+                    // This explicitly tells the Instagram App to open 'https://www.instagram.com/user'
+                    const intentUrl = `intent://www.instagram.com/${igUser}/#Intent;package=com.instagram.android;scheme=https;end`;
+                    
+                    setFinalUrl(intentUrl);
                 }
              } catch (e) {
                 console.log("Error parsing IG link:", e);
