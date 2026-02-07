@@ -1,5 +1,5 @@
 // components/CaptionFeed.js
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X, Pin } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
@@ -22,16 +22,47 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] Reverted to Basic Link Method
+// [!code change] Enhanced SocialUsername with Android Deep Link fix
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
+    // Default to the provided link
+    const [finalUrl, setFinalUrl] = useState(socialLink);
+
+    useEffect(() => {
+        if (!isInfluencer || !socialLink) return;
+
+        // DETECT ANDROID:
+        // If we are on Android, standard links often fail to open the specific profile 
+        // in the app (they just open the Home Feed). We use the 'intent://' scheme to fix this.
+        if (typeof window !== 'undefined' && /android/i.test(navigator.userAgent)) {
+             if (socialLink.includes('instagram.com')) {
+                 try {
+                    // Extract username (e.g. from https://instagram.com/jay_brands_it)
+                    const urlObj = new URL(socialLink);
+                    const parts = urlObj.pathname.split('/').filter(p => p);
+                    
+                    if (parts.length > 0) {
+                        const igUser = parts[0]; // Gets 'jay_brands_it'
+                        
+                        // Construct Android Intent URI
+                        // This tells Android: "Open this specific user profile in the Instagram App"
+                        const intentUrl = `intent://instagram.com/_u/${igUser}/#Intent;package=com.instagram.android;scheme=https;end`;
+                        setFinalUrl(intentUrl);
+                    }
+                 } catch (e) {
+                    console.log("Error parsing IG link for deep linking:", e);
+                 }
+             }
+        }
+    }, [isInfluencer, socialLink]);
+
     if (isInfluencer && socialLink) {
         return (
             <a 
-                href={socialLink} 
+                href={finalUrl} 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className={`hover:underline !text-blue-600 hover:!text-blue-800 ${className}`}
-                onClick={(e) => e.stopPropagation()} // Just stop propagation so we don't click the card
+                onClick={(e) => e.stopPropagation()} // Stop propagation so we don't click the card
             >
                 @{username}
             </a>
