@@ -22,64 +22,8 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] 3.0: The "Nuclear" Deep Link Strategy
+// [!code change] Reverted to Basic Link Method
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
-    
-    const handleClick = (e) => {
-        // Only run logic if we actually have a link
-        if (!socialLink) return;
-
-        // Stop the click from bubbling to parent elements
-        e.stopPropagation();
-
-        // Detect Environment
-        const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
-        const isIOS = typeof navigator !== 'undefined' && /iPhone|iPad|iPod/i.test(navigator.userAgent);
-        const isMobile = isAndroid || isIOS;
-
-        // Only intervene for Instagram links on Mobile
-        if (isMobile && socialLink.includes('instagram.com')) {
-            try {
-                // Parse the URL to find the username
-                // Handles: https://instagram.com/user, http://www.instagram.com/user/, etc.
-                const urlObj = new URL(socialLink.startsWith('http') ? socialLink : `https://${socialLink}`);
-                const pathParts = urlObj.pathname.split('/').filter(Boolean);
-                const igUser = pathParts[0]; // e.g. "jay_brands_it"
-
-                // Block non-profile paths to prevent errors
-                const blockedPaths = ['p', 'reel', 'reels', 'stories', 'explore', 'direct'];
-
-                if (igUser && !blockedPaths.includes(igUser)) {
-                    // STOP the browser from just opening the href
-                    e.preventDefault();
-                    
-                    if (isAndroid) {
-                        // ANDROID STRATEGY: Package-Targeted HTTPS Intent
-                        // This forces the OS to open the URL using the Instagram Package.
-                        // S.browser_fallback_url ensures if the app is missing, it goes to the website.
-                        const fallback = encodeURIComponent(socialLink);
-                        window.location.href = `intent://instagram.com/_u/${igUser}/#Intent;package=com.instagram.android;scheme=https;S.browser_fallback_url=${fallback};end`;
-                    } else {
-                        // iOS STRATEGY: Custom Scheme
-                        // Universal links (https) often fail inside PWA iframes/shells. 
-                        // The custom scheme is the only way to "force" the jump.
-                        window.location.href = `instagram://user?username=${igUser}`;
-                        
-                        // Optional fallback for iOS (if app not installed)
-                        // This is a hacky timeout check, often used in deep linking
-                        setTimeout(() => {
-                            window.location.href = socialLink;
-                        }, 2500);
-                    }
-                    return;
-                }
-            } catch (err) {
-                console.error("Deep Link Error:", err);
-                // If error, we do nothing, letting the standard href=socialLink fire naturally
-            }
-        }
-    };
-
     if (isInfluencer && socialLink) {
         return (
             <a 
@@ -87,7 +31,7 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className={`hover:underline !text-blue-600 hover:!text-blue-800 ${className}`}
-                onClick={handleClick}
+                onClick={(e) => e.stopPropagation()} // Just stop propagation so we don't click the card
             >
                 @{username}
             </a>
