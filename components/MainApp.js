@@ -49,6 +49,11 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
 
   const [newCaption, setNewCaption] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  
+  // [NEW] Lifted Editing State for Mulligan Confirmation
+  const [editingId, setEditingId] = useState(null);
+  const [pendingEdit, setPendingEdit] = useState(null); // { id, text }
+
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
   const [showNotifModal, setShowNotifModal] = useState(false);
@@ -82,29 +87,44 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
     setShowConfirm(true);
   };
 
-  const handleConfirmPost = async () => {
+  // [NEW] Wrapper to handle Edit requests from CaptionFeed
+  const handleEditRequest = (id, text) => {
+    setPendingEdit({ id, text });
+    setShowConfirm(true);
+  };
+
+  // [CHANGED] Renamed/Updated to handle both Post and Edit confirmations
+  const handleConfirmAction = async () => {
     setShowConfirm(false);
     setSubmitting(true);
-    
-    // Attempt submission
-    const success = await submitCaption(newCaption);
-    
-    if (success) {
-      setNewCaption("");
 
-      // Start: Check for First-Time Invite Popup
-      if (userProfile && !userProfile.has_seen_invite_popup) {
-         setShowInvitePopup(true);
-         
-         if (session?.user?.id) {
-           await supabase
-             .from('profiles')
-             .update({ has_seen_invite_popup: true })
-             .eq('id', session.user.id);
-             
-           userProfile.has_seen_invite_popup = true;
+    if (pendingEdit) {
+       // --- Handle Edit Confirmation ---
+       const success = await editCaption(pendingEdit.id, pendingEdit.text);
+       if (success) {
+          setPendingEdit(null);
+          setEditingId(null); // Close the edit box in CaptionFeed
+       }
+    } else {
+       // --- Handle New Post Confirmation ---
+       const success = await submitCaption(newCaption);
+       if (success) {
+         setNewCaption("");
+
+         // Start: Check for First-Time Invite Popup
+         if (userProfile && !userProfile.has_seen_invite_popup) {
+            setShowInvitePopup(true);
+            
+            if (session?.user?.id) {
+              await supabase
+                .from('profiles')
+                .update({ has_seen_invite_popup: true })
+                .eq('id', session.user.id);
+                
+              userProfile.has_seen_invite_popup = true;
+            }
          }
-      }
+       }
     }
     
     setSubmitting(false);
@@ -250,7 +270,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         <div className="fixed inset-0 z-[80] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4 animate-in fade-in duration-200">
           <div className="w-full max-w-sm bg-white border border-gray-200 shadow-2xl rounded-2xl p-6 relative animate-in zoom-in-95 duration-200">
             <button 
-              onClick={() => setShowConfirm(false)}
+              onClick={() => { setShowConfirm(false); setPendingEdit(null); }}
               className="absolute top-4 right-4 text-gray-400 hover:text-black transition-colors"
             >
               <X size={20} />
@@ -262,31 +282,34 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
               </div>
               
               <h2 className="text-xl font-black text-gray-900 font-display">
-                Are you sure?
+                {pendingEdit ? "Confirm Edit?" : "Are you sure?"}
               </h2>
               
               <p className="text-gray-500 text-sm leading-relaxed">
-                There is no <strong>edit button</strong> in the arena. Once this drops, it's eternal. Is this your funniest work?
+                {pendingEdit 
+                  ? "This will consume your Mulligan. There are no second chances." 
+                  : "There is no edit button in the arena. Once this drops, it's eternal. Is this your funniest work?"
+                }
               </p>
 
               <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl text-gray-800 font-medium italic text-sm break-words relative">
                 <span className="text-gray-300 font-serif text-4xl absolute -top-2 left-2">“</span>
-                {newCaption}
+                {pendingEdit ? pendingEdit.text : newCaption}
                 <span className="text-gray-300 font-serif text-4xl absolute -bottom-4 right-2">”</span>
               </div>
 
               <div className="flex gap-3 pt-2">
                 <button 
-                  onClick={() => setShowConfirm(false)}
+                  onClick={() => { setShowConfirm(false); setPendingEdit(null); }}
                   className="flex-1 px-4 py-3 bg-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-200 transition"
                 >
                   Wait
                 </button>
                 <button 
-                  onClick={handleConfirmPost}
+                  onClick={handleConfirmAction}
                   className="flex-1 px-4 py-3 bg-yellow-400 text-black font-bold rounded-xl hover:bg-yellow-300 transition shadow-sm"
                 >
-                  Post It! 🚀
+                  {pendingEdit ? "Save Edit" : "Post It! 🚀"}
                 </button>
               </div>
             </div>
@@ -363,7 +386,9 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                 onShare={shareCaption}
                 onReport={reportCaption}
                 onReply={submitReply}
-                onEdit={editCaption}
+                onEdit={handleEditRequest} // Pass wrapper
+                editingId={editingId}      // Pass state
+                setEditingId={setEditingId}// Pass setter
               />
             </>
           )}
