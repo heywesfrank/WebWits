@@ -324,7 +324,8 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                 <div className="mt-4 space-y-3">
                   {caption.replies?.map((reply) => {
                      const replyCountryCode = getCountryCode(reply.profiles?.country);
-                     
+                     const isReplyInfluencer = reply.profiles?.influencer;
+
                      return (
                         <div key={reply.id} className="flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-300">
                            <div className="relative flex-shrink-0 mt-0.5">
@@ -335,6 +336,15 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                                     <div className="w-full h-full flex items-center justify-center text-[8px] font-bold text-gray-400">?</div>
                                   )}
                               </div>
+
+                              {isReplyInfluencer && (
+                                <img 
+                                  src="/badge.png" 
+                                  alt="Influencer" 
+                                  className="absolute -bottom-1 -left-1 w-3 h-3 object-contain z-20 filter drop-shadow-sm" 
+                                />
+                              )}
+
                               {replyCountryCode && (
                                 <img 
                                   src={`https://flagcdn.com/w20/${replyCountryCode}.png`}
