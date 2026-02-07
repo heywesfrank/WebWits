@@ -22,6 +22,24 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
+// Sub-component for username rendering
+const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
+    if (isInfluencer && socialLink) {
+        return (
+            <a 
+                href={socialLink} 
+                target="_blank" 
+                rel="noopener noreferrer" 
+                className={`hover:underline text-blue-500 hover:text-blue-700 ${className}`}
+                onClick={(e) => e.stopPropagation()} // Prevent bubble clicks
+            >
+                @{username}
+            </a>
+        );
+    }
+    return <span className={className}>@{username}</span>;
+};
+
 export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport, onReply, onEdit, editingId, setEditingId }) {
   const [sortBy, setSortBy] = useState("top");
   
@@ -147,6 +165,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         const avatarUrl = caption.profiles?.avatar_url;
         const countryCode = getCountryCode(caption.profiles?.country);
         const isInfluencer = caption.profiles?.influencer;
+        const socialLink = caption.profiles?.social_link;
 
         const fireMemeId = caption.profiles?.cosmetics?.effect_fire_meme_id;
         const hasRingOfFire = fireMemeId && meme && fireMemeId === meme.id;
@@ -245,7 +264,14 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                <span className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`}>@{username}</span>
+                {/* Username with Social Link Logic */}
+                <SocialUsername 
+                    username={username} 
+                    isInfluencer={isInfluencer} 
+                    socialLink={socialLink}
+                    className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`} 
+                />
+
                 {session && caption.user_id === session.user.id && (
                   <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                 )}
@@ -325,6 +351,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                   {caption.replies?.map((reply) => {
                      const replyCountryCode = getCountryCode(reply.profiles?.country);
                      const isReplyInfluencer = reply.profiles?.influencer;
+                     const replySocialLink = reply.profiles?.social_link;
 
                      return (
                         <div key={reply.id} className="flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-300">
@@ -355,7 +382,13 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                            
                            <div className="flex-1">
                               <div className="text-sm leading-snug">
-                                 <span className="mr-2 font-bold text-xs text-gray-500">@{reply.profiles?.username}</span>
+                                 {/* Reply Username with Social Link Logic */}
+                                 <SocialUsername 
+                                    username={reply.profiles?.username} 
+                                    isInfluencer={isReplyInfluencer} 
+                                    socialLink={replySocialLink}
+                                    className="mr-2 font-bold text-xs text-gray-500" 
+                                 />
                                  <span className="text-gray-700">{reply.content}</span>
                               </div>
                               <div className="flex gap-3 mt-1">
