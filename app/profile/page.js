@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Camera, Loader2 } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, Link as LinkIcon, Save } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -15,6 +15,11 @@ export default function ProfilePage() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
+  
+  // Social Link State
+  const [socialLink, setSocialLink] = useState("");
+  const [savingLink, setSavingLink] = useState(false);
+
   const router = useRouter();
   const fileInputRef = useRef(null);
 
@@ -41,6 +46,7 @@ export default function ProfilePage() {
 
         if (error) throw error;
         setProfile(data);
+        if (data.social_link) setSocialLink(data.social_link);
       } catch (error) {
         console.error('Error loading profile:', error);
       } finally {
@@ -91,6 +97,35 @@ export default function ProfilePage() {
       alert('Error updating avatar: ' + error.message);
     } finally {
       setUploading(false);
+    }
+  };
+
+  const handleSaveSocial = async () => {
+    try {
+      setSavingLink(true);
+      
+      let linkToSave = socialLink.trim();
+      // Basic validation to ensure protocol exists if they typed something
+      if (linkToSave && !/^https?:\/\//i.test(linkToSave)) {
+          linkToSave = 'https://' + linkToSave;
+          setSocialLink(linkToSave);
+      }
+
+      const { error } = await supabase
+        .from('profiles')
+        .update({ social_link: linkToSave })
+        .eq('id', session.user.id);
+
+      if (error) throw error;
+      
+      // Update local profile state
+      setProfile(prev => ({ ...prev, social_link: linkToSave }));
+      alert("Social link updated!");
+
+    } catch (error) {
+      alert('Error saving link: ' + error.message);
+    } finally {
+      setSavingLink(false);
     }
   };
 
@@ -168,7 +203,7 @@ export default function ProfilePage() {
              />
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-2 mb-6">
             <h1 className="text-3xl font-black font-display tracking-tight text-gray-900">
               {profile?.username || "Unknown Warrior"}
             </h1>
@@ -176,6 +211,37 @@ export default function ProfilePage() {
               WebWits Contestant
             </p>
           </div>
+
+          {/* Influencer Social Link Section */}
+          {profile?.influencer && (
+            <div className="mt-8 pt-6 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-2">
+              <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 text-left">
+                Your Social Link (Influencer)
+              </label>
+              <div className="flex gap-2">
+                <div className="relative flex-1">
+                  <LinkIcon size={16} className="absolute left-3 top-3 text-gray-400" />
+                  <input 
+                    type="text" 
+                    value={socialLink}
+                    onChange={(e) => setSocialLink(e.target.value)}
+                    placeholder="https://instagram.com/..."
+                    className="w-full pl-9 pr-3 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm font-medium focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all placeholder:text-gray-400"
+                  />
+                </div>
+                <button 
+                  onClick={handleSaveSocial}
+                  disabled={savingLink}
+                  className="bg-blue-600 hover:bg-blue-700 text-white p-2.5 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                >
+                  {savingLink ? <Loader2 size={20} className="animate-spin" /> : <Save size={20} />}
+                </button>
+              </div>
+              <p className="text-[10px] text-gray-400 mt-2 text-left">
+                This link will turn your username blue in the arena. Make it count.
+              </p>
+            </div>
+          )}
 
         </div>
       </div>
