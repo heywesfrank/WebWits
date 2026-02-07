@@ -22,17 +22,46 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// Sub-component for username rendering
+// Sub-component for username rendering with PWA Deep Link Fix
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
+    
+    const handleClick = (e) => {
+        e.stopPropagation(); // Prevent bubbling to the parent card click
+        
+        if (!socialLink) return;
+
+        // 1. Check if user is on Mobile (Simple User Agent check)
+        const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+
+        // 2. Instagram Specific Fix
+        if (isMobile && socialLink.includes('instagram.com')) {
+            try {
+                // Extract username from the URL (e.g. https://instagram.com/jay_brands_it/)
+                const urlObj = new URL(socialLink.startsWith('http') ? socialLink : `https://${socialLink}`);
+                const pathParts = urlObj.pathname.split('/').filter(Boolean);
+                const igUser = pathParts[0]; // Gets 'jay_brands_it'
+
+                if (igUser) {
+                    e.preventDefault();
+                    // 3. Force Deep Link Scheme
+                    window.location.href = `instagram://user?username=${igUser}`;
+                    return;
+                }
+            } catch (err) {
+                console.error("Error parsing social link:", err);
+                // If parsing fails, it will fall back to the standard <a> tag behavior
+            }
+        }
+    };
+
     if (isInfluencer && socialLink) {
         return (
             <a 
                 href={socialLink} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                // [!code change] Added ! (important) to force blue color override
                 className={`hover:underline !text-blue-600 hover:!text-blue-800 ${className}`}
-                onClick={(e) => e.stopPropagation()} // Prevent bubble clicks
+                onClick={handleClick}
             >
                 @{username}
             </a>
