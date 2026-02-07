@@ -49,14 +49,18 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
       const data = await res.json();
 
       if (data.success) {
-        // Wheel Configuration (6 Segments - 60 degrees each)
+
         const segments = [
-            { id: 0, val: 5 }, { id: 1, val: 10 }, { id: 2, val: 15 },
-            { id: 3, val: 20 }, { id: 4, val: 25 }, { id: 5, val: 50 }
+            { id: 0, val: 50 }, { id: 1, val: 100 }, { id: 2, val: 200 },
+            { id: 3, val: 300 }, { id: 4, val: 400 }, { id: 5, val: 500 }
         ];
 
-        // Find match
-        const targetSegment = segments.find(s => s.val === data.prize);
+        // Find match (Handle the duplicate 300 case randomly to vary visual landing)
+        let targetSegment = segments.find(s => s.val === data.prize);
+        if (data.prize === 300) {
+           const options = segments.filter(s => s.val === 300);
+           targetSegment = options[Math.floor(Math.random() * options.length)];
+        }
         
         // Calculate Angle
         const segmentCenter = (targetSegment.id * 60) + 30;
@@ -89,12 +93,12 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
   };
 
   const wheelSegments = [
-    { id: 0, val: 5, label: '5', color: '#03A9FC', text: 'white' },   
-    { id: 1, val: 10, label: '10', color: '#028BCF', text: 'white' }, 
-    { id: 2, val: 15, label: '15', color: '#026CA2', text: 'white' },  
-    { id: 3, val: 20, label: '20', color: '#014E74', text: 'white' },
-    { id: 4, val: 25, label: '25', color: '#012F47', text: 'white' },  
-    { id: 5, val: 50, label: '50', color: '#FFFFFF', text: 'blue' }    
+    { id: 0, val: 50, label: '50', color: '#03A9FC', text: 'white' },   
+    { id: 1, val: 100, label: '100', color: '#028BCF', text: 'white' }, 
+    { id: 2, val: 200, label: '200', color: '#026CA2', text: 'white' },  
+    { id: 3, val: 300, label: '300', color: '#014E74', text: 'white' },
+    { id: 4, val: 300, label: '300', color: '#012F47', text: 'white' },  
+    { id: 5, val: 500, label: '500', color: '#FFFFFF', text: 'blue' }    
   ];
 
   return (
@@ -155,7 +159,7 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
                           transform: `translate(-50%, -50%) rotate(${seg.id * 60 + 30}deg) translateY(-85px)`
                         }}
                       >
-                         {seg.val === 50 ? (
+                         {seg.val === 500 ? (
                             <div className="flex flex-col items-center justify-center -space-y-1">
                                 <Star size={16} className="fill-[#FFD700] text-[#FFD700] mb-0.5" />
                                 <span>{seg.label}</span>
