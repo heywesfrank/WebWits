@@ -22,7 +22,7 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport, onReply, onEdit }) {
+export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport, onReply, onEdit, editingId, setEditingId }) {
   const [sortBy, setSortBy] = useState("top");
   
   // Reply State
@@ -30,8 +30,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
   
-  // Edit State
-  const [editingId, setEditingId] = useState(null);
+  // Edit State (Removed local editingId, using prop 'editingId' instead)
   const [editText, setEditText] = useState("");
 
   // Track which specific caption was just copied
@@ -48,7 +47,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
     // 2. Standard Sorting
     if (sortBy === "top") {
         const voteDiff = b.vote_count - a.vote_count;
-        // [!code change] Tie-breaker Logic
+        // Tie-breaker Logic
         if (voteDiff !== 0) return voteDiff;
         
         // If votes are tied, oldest created_at comes FIRST (ascending)
@@ -104,11 +103,8 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
   const handleSaveEdit = async (commentId) => {
     if (!editText.trim()) return;
-    const success = await onEdit(commentId, editText);
-    if (success) {
-        setEditingId(null);
-        setEditText("");
-    }
+    // We trigger the parent handler (which opens the modal).
+    await onEdit(commentId, editText);
   };
 
   return (
