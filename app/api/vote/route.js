@@ -12,7 +12,57 @@ export async function POST(req) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Perform the Vote (Toggle)
+    // --- NEW CHECKS: VALIDATION ---
+
+    // 1. Fetch the target comment first to check ownership and meme context
+    const { data: targetComment, error: commentError } = await supabase
+      .from('comments')
+      .select('id, user_id, meme_id')
+      .eq('id', commentId)
+      .single();
+
+    if (commentError || !targetComment) {
+       return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+    }
+
+    // 2. CHECK: No Self-Voting
+    if (targetComment.user_id === userId) {
+       return NextResponse.json({ error: "You cannot vote for your own caption." }, { status: 403 });
+    }
+
+    // 3. CHECK: One Like Per Day (Per Meme Battle)
+    // We check if the user has voted on *any* comment associated with this meme.
+    
+    // A. Get all comment IDs belonging to this meme
+    const { data: memeComments } = await supabase
+        .from('comments')
+        .select('id')
+        .eq('meme_id', targetComment.meme_id);
+    
+    if (memeComments && memeComments.length > 0) {
+        const commentIds = memeComments.map(c => c.id);
+
+        // B. Check if the user has a vote record for any of these comments
+        const { data: existingVotes } = await supabase
+            .from('comment_votes')
+            .select('comment_id')
+            .eq('user_id', userId)
+            .in('comment_id', commentIds);
+
+        if (existingVotes && existingVotes.length > 0) {
+            // User has voted on this meme already.
+            const previousVoteId = existingVotes[0].comment_id;
+
+            // If they are voting for a DIFFERENT comment, block it.
+            // (If they are voting for the SAME comment, we allow it because 'toggle_vote' will remove it)
+            if (previousVoteId !== commentId) {
+                return NextResponse.json({ error: "You can only vote once per day." }, { status: 403 });
+            }
+        }
+    }
+    // --- END NEW CHECKS ---
+
+    // 4. Perform the Vote (Toggle)
     // We assume the RPC 'toggle_vote' exists as per your original hook
     const { error: voteError } = await supabase.rpc('toggle_vote', { 
       vote_comment_id: commentId, 
@@ -21,7 +71,7 @@ export async function POST(req) {
 
     if (voteError) throw voteError;
 
-    // 2. Fetch the updated comment to check vote count
+    // 5. Fetch the updated comment to check vote count
     const { data: comment, error: fetchError } = await supabase
       .from('comments')
       .select('id, content, vote_count, user_id')
@@ -30,17 +80,16 @@ export async function POST(req) {
 
     if (fetchError) throw fetchError;
 
-    // 3. Check for Milestones (1, 5, 10, 25, 50)
+    // 6. Check for Milestones (1, 5, 10, 25, 50)
     // Note: To strictly prevent duplicate alerts (e.g. going 5->4->5), 
     // you would ideally add a 'last_milestone' column to your comments table.
     // This implementation simply checks the current count.
-    const milestones = [1, 5, 10, 25, 50]; // [!code change]
+    const milestones = [1, 5, 10, 25, 50]; 
     
     if (milestones.includes(comment.vote_count)) {
-      // Don't notify if the voter is the author (self-vote)
+      // Don't notify if the voter is the author (self-vote) - redundant now due to check #2 but safe to keep
       if (comment.user_id !== userId) {
         
-        // [!code block: Determines message based on count]
         let title = "🔥 You're on fire!";
         let body = `Your caption just hit ${comment.vote_count} votes! "${comment.content.substring(0, 20)}..."`;
 
@@ -48,11 +97,10 @@ export async function POST(req) {
             title = "🚀 First Vote!";
             body = `You just got your first vote! The battle has begun. "${comment.content.substring(0, 20)}..."`;
         }
-        // [!code block end]
 
         await sendNotificationToUser(comment.user_id, {
-          title: title, // [!code change]
-          body: body,   // [!code change]
+          title: title, 
+          body: body,   
           url: "https://itswebwits.com"
         });
       }
