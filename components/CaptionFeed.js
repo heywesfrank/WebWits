@@ -30,7 +30,8 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
                 href={socialLink} 
                 target="_blank" 
                 rel="noopener noreferrer" 
-                className={`hover:underline text-blue-500 hover:text-blue-700 ${className}`}
+                // [!code change] Added ! (important) to force blue color override
+                className={`hover:underline !text-blue-600 hover:!text-blue-800 ${className}`}
                 onClick={(e) => e.stopPropagation()} // Prevent bubble clicks
             >
                 @{username}
