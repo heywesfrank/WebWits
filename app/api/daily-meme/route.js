@@ -129,7 +129,7 @@ export async function GET(request) {
           if (winnerId) {
              await sendNotificationToUser(winnerId, {
                 title: "🏆 VICTORY!",
-                body: `Your caption won yesterday's battle! You earned 100 credits. "${winningCaption.substring(0, 25)}..."`,
+                body: `Your caption won yesterday's battle! You earned 500 credits. "${winningCaption.substring(0, 25)}..."`,
                 url: "https://itswebwits.com"
              });
           }
@@ -142,17 +142,36 @@ export async function GET(request) {
             }
           });
 
-          // --- NEW: Calculate Credit Rewards (Top 3) ---
+          // --- NEW: Calculate Credit Rewards (Top 3 + Participation) ---
           const userCredits = {};
           const userRanks = {}; // Map to store rank for profile update
-          const prizes = [75, 50, 25];
+          
+          comments.forEach((comment, index) => {
+              let prizeAmount = 0;
+              let rank = null;
 
-          comments.slice(0, 3).forEach((comment, index) => {
-              const prizeAmount = prizes[index];
-              const rank = index + 1;
+              if (index === 0) {
+                  prizeAmount = 500;
+                  rank = 1;
+              } else if (index === 1) {
+                  prizeAmount = 300;
+                  rank = 2;
+              } else if (index === 2) {
+                  prizeAmount = 150;
+                  rank = 3;
+              } else {
+                  // Participation Bonus
+                  prizeAmount = 25;
+              }
+
+              if (prizeAmount > 0) {
+                  userCredits[comment.user_id] = (userCredits[comment.user_id] || 0) + prizeAmount;
+              }
               
-              userCredits[comment.user_id] = (userCredits[comment.user_id] || 0) + prizeAmount;
-              userRanks[comment.user_id] = rank; // Store rank (1, 2, or 3)
+              // Only assign rank to top 3 (triggers the WinnerModal)
+              if (rank) {
+                  userRanks[comment.user_id] = rank; 
+              }
           });
 
           // 3. Update User Profiles (Points + Credits + Rank)
