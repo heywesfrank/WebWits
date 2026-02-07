@@ -1,3 +1,4 @@
+// components/Store.js
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
@@ -74,7 +75,7 @@ const ITEMS = [
         type: "prize",
         name: "The Payday",
         description: "$25 Amazon Gift Card. Jeff Bezos' money, now yours.",
-        cost: 2000,
+        cost: 15000, // [!code change]
         icon: <Gift size={24} className="text-green-600" />,
         color: "green"
     }
