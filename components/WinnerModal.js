@@ -11,7 +11,7 @@ export default function WinnerModal({ rank, onClose, userId }) {
     1: {
       title: "LEGENDARY STATUS",
       msg: "You dropped the mic. Everyone else picked it up and handed it back to you.",
-      reward: 500, // [!code change]
+      reward: 500,
       color: "text-yellow-500",
       bg: "bg-yellow-500",
       border: "border-yellow-400"
@@ -19,7 +19,7 @@ export default function WinnerModal({ rank, onClose, userId }) {
     2: {
       title: "SO CLOSE",
       msg: "Silver looks good on you. But gold would look better. Keep pushing.",
-      reward: 300, // [!code change]
+      reward: 300,
       color: "text-gray-400",
       bg: "bg-gray-400",
       border: "border-gray-300"
@@ -27,14 +27,24 @@ export default function WinnerModal({ rank, onClose, userId }) {
     3: {
       title: "PODIUM FINISH",
       msg: "You're officially funnier than 99% of the internet. Not bad.",
-      reward: 150, // [!code change]
+      reward: 150,
       color: "text-orange-500",
       bg: "bg-orange-500",
       border: "border-orange-400"
+    },
+    // [!code ++] ADDED: Participation Award (Rank 4)
+    4: {
+      title: "PARTICIPATION TROPHY",
+      msg: "You showed up. You tried. You didn't make the cut, but hey, 25 WitCoins is 25 WitCoins.",
+      reward: 25,
+      color: "text-blue-500",
+      bg: "bg-blue-500",
+      border: "border-blue-400"
     }
   };
 
-  const details = CONFIG[rank] || CONFIG[3];
+  // Fallback to participation (4) if rank is unknown, or default to 3 if you prefer
+  const details = CONFIG[rank] || CONFIG[4];
 
   const handleClose = async () => {
     setClosing(true);
