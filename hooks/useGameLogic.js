@@ -47,7 +47,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         profiles!comments_user_id_fkey(username, avatar_url, country, influencer, cosmetics),
         replies(
           id, content, created_at, user_id,
-          profiles(username, avatar_url, country) 
+          profiles(username, avatar_url, country, influencer) 
         )
       `)
       .eq("meme_id", memeId)
