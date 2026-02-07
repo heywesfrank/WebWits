@@ -1,3 +1,4 @@
+// app/api/store/purchase/route.js
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { Resend } from 'resend';
@@ -12,7 +13,7 @@ const SERVER_ITEMS = {
     "consumable_double": { cost: 250, name: "Double Barrel", type: "consumable" },
     "prize_amazon_5": { cost: 2500, name: "$5 Amazon Card", type: "prize" },
     "prize_amazon_10": { cost: 5000, name: "$10 Amazon Card", type: "prize" },
-    "prize_amazon_25": { cost: 2000, name: "The Payday", type: "prize" }
+    "prize_amazon_25": { cost: 15000, name: "$25 Amazon Card", type: "prize" } // [!code change]
 };
 
 export async function POST(req) {
