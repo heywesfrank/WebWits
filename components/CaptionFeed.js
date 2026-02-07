@@ -22,34 +22,41 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// Sub-component for username rendering with PWA Deep Link Fix
+// [!code change] Robust Deep Link Strategy
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     
     const handleClick = (e) => {
-        e.stopPropagation(); // Prevent bubbling to the parent card click
+        e.stopPropagation(); 
         
         if (!socialLink) return;
 
-        // 1. Check if user is on Mobile (Simple User Agent check)
         const isMobile = typeof navigator !== 'undefined' && /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+        const isAndroid = typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent);
 
-        // 2. Instagram Specific Fix
         if (isMobile && socialLink.includes('instagram.com')) {
             try {
-                // Extract username from the URL (e.g. https://instagram.com/jay_brands_it/)
+                // Clean extraction of username
                 const urlObj = new URL(socialLink.startsWith('http') ? socialLink : `https://${socialLink}`);
                 const pathParts = urlObj.pathname.split('/').filter(Boolean);
-                const igUser = pathParts[0]; // Gets 'jay_brands_it'
+                const igUser = pathParts[0]; 
 
                 if (igUser) {
                     e.preventDefault();
-                    // 3. Force Deep Link Scheme
-                    window.location.href = `instagram://user?username=${igUser}`;
+                    
+                    if (isAndroid) {
+                        // ANDROID: Use Intent URI. 
+                        // This explicitly targets the Instagram app package with the /_u/ path.
+                        window.location.href = `intent://instagram.com/_u/${igUser}/#Intent;package=com.instagram.android;scheme=https;end`;
+                    } else {
+                        // iOS: Use the /_u/ Universal Link format.
+                        // The older "instagram://user?username=" scheme is flaky on newer iOS versions.
+                        // This format is designed to be intercepted by the app as a "profile link".
+                        window.location.href = `https://www.instagram.com/_u/${igUser}/`;
+                    }
                     return;
                 }
             } catch (err) {
                 console.error("Error parsing social link:", err);
-                // If parsing fails, it will fall back to the standard <a> tag behavior
             }
         }
     };
@@ -78,7 +85,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
   
-  // Edit State (Removed local editingId, using prop 'editingId' instead)
+  // Edit State
   const [editText, setEditText] = useState("");
 
   // Track which specific caption was just copied
