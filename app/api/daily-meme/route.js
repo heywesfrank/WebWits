@@ -36,7 +36,6 @@ export async function GET(request) {
     await supabase.from('profiles').update({ daily_rank: null }).neq('id', '00000000-0000-0000-0000-000000000000');
 
     // --- STEP 1: Fetch Content (Trending -> Random Fallback -> Force) ---
-    // [Content fetching logic remains unchanged...]
     let contentUrl = null;
     let posterUrl = null;
     let selectedGif = null;
@@ -113,7 +112,6 @@ export async function GET(request) {
         let winningCaption = null;
 
         // 1. Get all comments and their vote counts
-        // [!code change] Added secondary sort: created_at ascending (Oldest/First comment wins tie)
         const { data: comments } = await supabase
           .from('comments')
           .select('id, content, vote_count, user_id, created_at')
@@ -144,7 +142,7 @@ export async function GET(request) {
 
           // --- NEW: Calculate Credit Rewards (Top 3 + Participation) ---
           const userCredits = {};
-          const userRanks = {}; // Map to store rank for profile update
+          const userRanks = {}; 
           
           comments.forEach((comment, index) => {
               let prizeAmount = 0;
@@ -162,20 +160,21 @@ export async function GET(request) {
               } else {
                   // Participation Bonus
                   prizeAmount = 25;
+                  // [!code ++] Set rank to 4 so they get the popup!
+                  rank = 4;
               }
 
               if (prizeAmount > 0) {
                   userCredits[comment.user_id] = (userCredits[comment.user_id] || 0) + prizeAmount;
               }
               
-              // Only assign rank to top 3 (triggers the WinnerModal)
+              // Now we assign rank to everyone who got a prize (including participation)
               if (rank) {
                   userRanks[comment.user_id] = rank; 
               }
           });
 
           // 3. Update User Profiles (Points + Credits + Rank)
-          // Combine IDs from both points and credits maps to ensure we update everyone
           const allUserIds = new Set([...Object.keys(userPoints), ...Object.keys(userCredits)]);
           const userIds = Array.from(allUserIds);
 
@@ -188,7 +187,7 @@ export async function GET(request) {
             const updates = currentProfiles.map(profile => {
               const pointsEarned = userPoints[profile.id] || 0;
               const creditsEarned = userCredits[profile.id] || 0;
-              const rank = userRanks[profile.id] || null; // Will be 1, 2, 3 or null
+              const rank = userRanks[profile.id] || null; 
 
               return {
                 id: profile.id,
