@@ -1,3 +1,4 @@
+// app/api/daily-spin/route.js
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 
@@ -34,12 +35,13 @@ export async function POST(req) {
     const rand = Math.random() * 100;
     let prizeAmount = 0;
 
-    if (rand < 65) prizeAmount = 5;
-    else if (rand < 81) prizeAmount = 10;
-    else if (rand < 91) prizeAmount = 15;
-    else if (rand < 96) prizeAmount = 20;
-    else if (rand < 99) prizeAmount = 25;
-    else prizeAmount = 50;
+    // Updated Values: 50, 100, 200, 300, 500
+    if (rand < 65) prizeAmount = 50;        // Was 5
+    else if (rand < 81) prizeAmount = 100;  // Was 10
+    else if (rand < 91) prizeAmount = 200;  // Was 15
+    else if (rand < 96) prizeAmount = 300;  // Was 20
+    else if (rand < 99) prizeAmount = 300;  // Was 25 (Consolidated to 300 or we could make this 400)
+    else prizeAmount = 500;                 // Was 50
 
     // 4. Update Profile
     const newCredits = (profile.credits || 0) + prizeAmount;
