@@ -22,7 +22,7 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] Updated Intent Logic to use standard HTTPS path
+// [!code change] Updated to use 'instagram://' scheme with fallback
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     const [finalUrl, setFinalUrl] = useState(socialLink);
 
@@ -41,10 +41,12 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
                 if (parts.length > 0) {
                     const igUser = parts[0]; 
                     
-                    // 2. Construct an Android Intent using the STANDARD HTTPS URL
-                    // We avoid 'instagram://' and '_u' paths which are flaky.
-                    // This explicitly tells the Instagram App to open 'https://www.instagram.com/user'
-                    const intentUrl = `intent://www.instagram.com/${igUser}/#Intent;package=com.instagram.android;scheme=https;end`;
+                    // 2. Construct an Android Intent using the CUSTOM 'instagram' SCHEME
+                    // This is the most aggressive way to force the app.
+                    // It explicitly tells Android: "Open the 'instagram' app with the 'user' data."
+                    // The 'S.browser_fallback_url' ensures that if the app isn't installed, 
+                    // it redirects back to the web profile instead of crashing.
+                    const intentUrl = `intent://user?username=${igUser}#Intent;package=com.instagram.android;scheme=instagram;S.browser_fallback_url=${encodeURIComponent(socialLink)};end`;
                     
                     setFinalUrl(intentUrl);
                 }
