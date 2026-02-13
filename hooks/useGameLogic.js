@@ -252,6 +252,12 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         return;
     }
 
+    // [!code change] Guard Clause: Check for existing vote
+    if (hasVotedOnAny) {
+        addToast("Votes are permanent! No take-backs. 🔒", "error");
+        return;
+    }
+
     const targetComment = captions.find(c => c.id === commentId);
     const isRemoving = targetComment?.hasVoted;
 
