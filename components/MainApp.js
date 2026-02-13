@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X, Users, Copy, ShoppingBag } from "lucide-react";
+import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X, Users, Copy, ShoppingBag, Gavel } from "lucide-react";
 
 // Components
 import Header from "./Header";
@@ -43,7 +43,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   const {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, setViewMode, toasts, setToasts, submitReply,
-    showOnboarding, setShowOnboarding, hasCommented, fetchData,
+    showOnboarding, setShowOnboarding, hasCommented, hasVotedOnAny, fetchData,
     handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption, editCaption
   } = useGameLogic(session, initialMeme, initialLeaderboard);
 
@@ -181,6 +181,9 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   }, [session, showOnboarding]);
 
   const currentMeme = viewMode === 'active' ? activeMeme : selectedMeme;
+
+  // Gatekeeper Logic: Must vote before commenting (unless you are the first)
+  const needsToVote = viewMode === 'active' && captions.length > 0 && !hasVotedOnAny;
 
   return (
     <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-24 md:pb-0">
@@ -355,6 +358,20 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                     hasCommented ? (
                         <div className="p-4 bg-gray-50 border-t border-gray-200 text-center text-sm font-bold text-gray-500 flex items-center justify-center gap-2">
                             <span>You've fired your shot today! Check back tomorrow.</span>
+                        </div>
+                    ) : needsToVote ? (
+                         // THE "MUST VOTE" TOLL BOOTH
+                        <div className="p-6 bg-gray-50 border-t border-gray-200 flex flex-col items-center text-center animate-in fade-in duration-300">
+                           <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mb-2">
+                              <Gavel size={20} className="text-yellow-600" />
+                           </div>
+                           <h3 className="font-black font-display text-gray-900 uppercase tracking-wide mb-1">
+                              Judge before you get Judged
+                           </h3>
+                           <p className="text-sm text-gray-500 max-w-sm mx-auto">
+                              The arena has a toll fee: <strong>1 Vote</strong>. <br/>
+                              Rate a caption below to unlock the mic.
+                           </p>
                         </div>
                     ) : (
                         <form onSubmit={handleSubmit} className="p-4 flex gap-2 bg-gray-50 border-t border-gray-200">
