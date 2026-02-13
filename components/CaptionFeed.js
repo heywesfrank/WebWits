@@ -22,55 +22,17 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] Updated to detect UA and target the specific browser package
+// [!code change] Reverted to a standard HTML link. 
+// No intents, no window.open hacks. Just a link.
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
-    
-    const handleSocialClick = (e) => {
-        if (!isInfluencer || !socialLink) return;
-
-        // 1. Detect if it's an Instagram link
-        if (socialLink.includes('instagram.com')) {
-            e.preventDefault();
-            e.stopPropagation();
-
-            const isAndroid = /Android/i.test(navigator.userAgent);
-
-            if (isAndroid) {
-                try {
-                    const urlObj = new URL(socialLink);
-                    const cleanPath = urlObj.pathname.replace(/\/$/, ''); 
-                    const host = urlObj.host.startsWith('www.') ? urlObj.host : `www.${urlObj.host}`;
-                    
-                    // 2. Detect Browser Package
-                    // We default to Chrome, but switch to Samsung Internet if detected in UA.
-                    let browserPackage = 'com.android.chrome'; // Default to Chrome
-                    if (/SamsungBrowser/i.test(navigator.userAgent)) {
-                        browserPackage = 'com.sec.android.app.sbrowser'; // Samsung Internet
-                    }
-                    
-                    // 3. Construct Intent with EXPLICIT Package
-                    // By specifying the package, we tell Android: "Do not check for other apps (like Instagram). Give this to the browser."
-                    const intentUrl = `intent://${host}${cleanPath}#Intent;scheme=https;package=${browserPackage};action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(socialLink)};end`;
-                    
-                    window.location.href = intentUrl;
-                } catch (err) {
-                    window.open(socialLink, '_blank', 'noopener,noreferrer');
-                }
-            } else {
-                // iOS / Desktop
-                window.open(socialLink, '_blank', 'noopener,noreferrer');
-            }
-        }
-    };
-
     if (isInfluencer && socialLink) {
         return (
             <a 
                 href={socialLink} 
-                onClick={handleSocialClick}
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className={`hover:underline !text-blue-600 hover:!text-blue-800 ${className}`}
+                onClick={(e) => e.stopPropagation()} // Prevents clicking the row behind it
             >
                 @{username}
             </a>
