@@ -1,5 +1,5 @@
 // components/CaptionFeed.js
-import { useState } from "react"; // [!code change] removed unused useEffect
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
@@ -22,16 +22,32 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] Simplified to always use browser link
+// [!code change] Updated component to Force Browser Open
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
+    
+    const handleSocialClick = (e) => {
+        // Only intervene for Instagram links
+        if (isInfluencer && socialLink && socialLink.includes('instagram.com')) {
+            e.preventDefault();
+            e.stopPropagation();
+
+            // TRICK: "Wash" the URL through a generic redirector (Google).
+            // The Phone OS sees "google.com" and opens the Browser.
+            // The Browser then handles the redirect to Instagram, bypassing the App Intent.
+            const forceBrowserUrl = `https://www.google.com/url?q=${encodeURIComponent(socialLink)}`;
+            
+            window.open(forceBrowserUrl, '_blank');
+        }
+    };
+
     if (isInfluencer && socialLink) {
         return (
             <a 
                 href={socialLink} 
                 target="_blank" 
                 rel="noopener noreferrer" 
+                onClick={handleSocialClick} // [!code ++] Attach the click interceptor
                 className={`hover:underline !text-blue-600 hover:!text-blue-800 ${className}`}
-                onClick={(e) => e.stopPropagation()} 
             >
                 @{username}
             </a>
