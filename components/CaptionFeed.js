@@ -22,21 +22,44 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] Updated component to Force Browser Open
+// [!code change] Updated to use Android Intent for Chrome
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     
     const handleSocialClick = (e) => {
-        // Only intervene for Instagram links
-        if (isInfluencer && socialLink && socialLink.includes('instagram.com')) {
+        if (!isInfluencer || !socialLink) return;
+
+        // 1. Detect if it's an Instagram link
+        if (socialLink.includes('instagram.com')) {
             e.preventDefault();
             e.stopPropagation();
 
-            // TRICK: "Wash" the URL through a generic redirector (Google).
-            // The Phone OS sees "google.com" and opens the Browser.
-            // The Browser then handles the redirect to Instagram, bypassing the App Intent.
-            const forceBrowserUrl = `https://www.google.com/url?q=${encodeURIComponent(socialLink)}`;
-            
-            window.open(forceBrowserUrl, '_blank');
+            const isAndroid = /Android/i.test(navigator.userAgent);
+
+            if (isAndroid) {
+                // 2. FORCE CHROME ON ANDROID
+                // We construct an 'intent' URL that specifically targets the Chrome package (com.android.chrome).
+                // This bypasses the OS's "Open with Instagram?" check.
+                try {
+                    // Strip protocol (https://) to get the clean path for the intent
+                    const urlObj = new URL(socialLink);
+                    const cleanHost = urlObj.host; // e.g. www.instagram.com
+                    const cleanPath = urlObj.pathname + urlObj.search; // e.g. /username/
+
+                    // Construct the Intent
+                    // S.browser_fallback_url ensures that if Chrome isn't installed, it falls back to the normal link.
+                    const intentUrl = `intent://${cleanHost}${cleanPath}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(socialLink)};end`;
+                    
+                    window.location.href = intentUrl;
+                } catch (err) {
+                    // Fallback if URL parsing fails
+                    window.open(socialLink, '_blank', 'noopener,noreferrer');
+                }
+            } else {
+                // 3. iOS / Desktop / Others
+                // 'noopener,noreferrer' helps disassociate the new window from the app, 
+                // increasing the chance it stays in the browser.
+                window.open(socialLink, '_blank', 'noopener,noreferrer');
+            }
         }
     };
 
@@ -44,9 +67,9 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
         return (
             <a 
                 href={socialLink} 
+                onClick={handleSocialClick}
                 target="_blank" 
                 rel="noopener noreferrer" 
-                onClick={handleSocialClick} // [!code ++] Attach the click interceptor
                 className={`hover:underline !text-blue-600 hover:!text-blue-800 ${className}`}
             >
                 @{username}
