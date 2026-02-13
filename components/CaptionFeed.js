@@ -22,7 +22,7 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] Updated SocialUsername for universal Android browser support
+// [!code change] Updated to detect UA and target the specific browser package
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     
     const handleSocialClick = (e) => {
@@ -37,22 +37,23 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
 
             if (isAndroid) {
                 try {
-                    // 2. Clean the URL to prevent "Main Feed" bugs
-                    // We remove query params (?igshid=...) which often break deep links
                     const urlObj = new URL(socialLink);
-                    const cleanPath = urlObj.pathname.replace(/\/$/, ''); // Remove trailing slash
-                    
-                    // Ensure host is standard (www helps deep linking stability)
+                    const cleanPath = urlObj.pathname.replace(/\/$/, ''); 
                     const host = urlObj.host.startsWith('www.') ? urlObj.host : `www.${urlObj.host}`;
                     
-                    // 3. Construct the Intent WITHOUT a specific package
-                    // removing 'package=com.android.chrome' allows Samsung Internet (and others) to work.
-                    // 'scheme=https' means any app that handles https://instagram.com can open it.
-                    const intentUrl = `intent://${host}${cleanPath}#Intent;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(socialLink)};end`;
+                    // 2. Detect Browser Package
+                    // We default to Chrome, but switch to Samsung Internet if detected in UA.
+                    let browserPackage = 'com.android.chrome'; // Default to Chrome
+                    if (/SamsungBrowser/i.test(navigator.userAgent)) {
+                        browserPackage = 'com.sec.android.app.sbrowser'; // Samsung Internet
+                    }
+                    
+                    // 3. Construct Intent with EXPLICIT Package
+                    // By specifying the package, we tell Android: "Do not check for other apps (like Instagram). Give this to the browser."
+                    const intentUrl = `intent://${host}${cleanPath}#Intent;scheme=https;package=${browserPackage};action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(socialLink)};end`;
                     
                     window.location.href = intentUrl;
                 } catch (err) {
-                    // Fallback if URL parsing fails
                     window.open(socialLink, '_blank', 'noopener,noreferrer');
                 }
             } else {
