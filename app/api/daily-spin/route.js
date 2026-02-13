@@ -36,11 +36,11 @@ export async function POST(req) {
     let prizeAmount = 0;
 
     // Updated Values: 50, 100, 200, 300, 400, 500
-    if (rand < 65) prizeAmount = 50;        // 65% chance
-    else if (rand < 81) prizeAmount = 100;  // 16% chance
-    else if (rand < 91) prizeAmount = 200;  // 10% chance
-    else if (rand < 96) prizeAmount = 300;  // 5% chance
-    else if (rand < 99) prizeAmount = 400;  // 3% chance [!code change]
+    if (rand < 40) prizeAmount = 50;        // 40% chance
+    else if (rand < 65) prizeAmount = 100;  // 25% chance
+    else if (rand < 85) prizeAmount = 200;  // 20% chance
+    else if (rand < 96) prizeAmount = 300;  // 11% chance
+    else if (rand < 99) prizeAmount = 400;  // 3% chance
     else prizeAmount = 500;                 // 1% chance
 
     // 4. Update Profile
