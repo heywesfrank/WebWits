@@ -1,7 +1,7 @@
 // components/CaptionFeed.js
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X, Pin } from "lucide-react"; 
+import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -22,7 +22,7 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] Updated to use 'instagram://' scheme with fallback
+// Updated to use 'instagram://' scheme with fallback
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     const [finalUrl, setFinalUrl] = useState(socialLink);
 
@@ -34,7 +34,6 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
         if (isAndroid && socialLink.includes('instagram.com')) {
              try {
                 // 1. Clean the link and extract the username
-                // e.g. https://www.instagram.com/jay_brands_it/ -> jay_brands_it
                 const urlObj = new URL(socialLink);
                 const parts = urlObj.pathname.split('/').filter(p => p);
                 
@@ -42,10 +41,6 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
                     const igUser = parts[0]; 
                     
                     // 2. Construct an Android Intent using the CUSTOM 'instagram' SCHEME
-                    // This is the most aggressive way to force the app.
-                    // It explicitly tells Android: "Open the 'instagram' app with the 'user' data."
-                    // The 'S.browser_fallback_url' ensures that if the app isn't installed, 
-                    // it redirects back to the web profile instead of crashing.
                     const intentUrl = `intent://user?username=${igUser}#Intent;package=com.instagram.android;scheme=instagram;S.browser_fallback_url=${encodeURIComponent(socialLink)};end`;
                     
                     setFinalUrl(intentUrl);
@@ -228,10 +223,18 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             {hasPin && (
               <>
                  <div className="absolute -top-4 -right-3 bg-white rounded-full p-2 shadow-md border border-gray-100 z-20">
-                    <Pin size={32} className="text-red-500 fill-red-500 -rotate-45" />
+                    <img 
+                      src="/pin.png" 
+                      alt="Pin" 
+                      className="w-8 h-8 object-contain" 
+                    />
                  </div>
                  <div className="absolute -top-4 -left-3 bg-white rounded-full p-2 shadow-md border border-gray-100 z-20">
-                    <Pin size={32} className="text-red-500 fill-red-500 rotate-12" />
+                    <img 
+                      src="/pin.png" 
+                      alt="Pin" 
+                      className="w-8 h-8 object-contain scale-x-[-1]" 
+                    />
                  </div>
               </>
             )}
