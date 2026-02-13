@@ -1,5 +1,5 @@
 // components/CaptionFeed.js
-import { useState, useEffect } from "react";
+import { useState } from "react"; // [!code change] removed unused useEffect
 import { motion } from "framer-motion";
 import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
@@ -22,39 +22,12 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// Updated to use 'instagram://' scheme with fallback
+// [!code change] Simplified to always use browser link
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
-    const [finalUrl, setFinalUrl] = useState(socialLink);
-
-    useEffect(() => {
-        if (!isInfluencer || !socialLink) return;
-
-        const isAndroid = typeof window !== 'undefined' && /android/i.test(navigator.userAgent);
-
-        if (isAndroid && socialLink.includes('instagram.com')) {
-             try {
-                // 1. Clean the link and extract the username
-                const urlObj = new URL(socialLink);
-                const parts = urlObj.pathname.split('/').filter(p => p);
-                
-                if (parts.length > 0) {
-                    const igUser = parts[0]; 
-                    
-                    // 2. Construct an Android Intent using the CUSTOM 'instagram' SCHEME
-                    const intentUrl = `intent://user?username=${igUser}#Intent;package=com.instagram.android;scheme=instagram;S.browser_fallback_url=${encodeURIComponent(socialLink)};end`;
-                    
-                    setFinalUrl(intentUrl);
-                }
-             } catch (e) {
-                console.log("Error parsing IG link:", e);
-             }
-        }
-    }, [isInfluencer, socialLink]);
-
     if (isInfluencer && socialLink) {
         return (
             <a 
-                href={finalUrl} 
+                href={socialLink} 
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className={`hover:underline !text-blue-600 hover:!text-blue-800 ${className}`}
@@ -222,7 +195,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
           >
             {hasPin && (
               <>
-                 {/* [!code change] Right Pin - Larger & No Background */}
                  <div className="absolute -top-5 -right-4 z-20">
                     <img 
                       src="/pin.png" 
@@ -230,7 +202,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                       className="w-10 h-10 object-contain drop-shadow-md" 
                     />
                  </div>
-                 {/* [!code change] Left Pin - Larger, Mirrored & No Background */}
                  <div className="absolute -top-5 -left-4 z-20">
                     <img 
                       src="/pin.png" 
@@ -244,7 +215,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             {/* Double Barrel Shotguns */}
             {hasDoubleBarrel && (
               <>
-                 {/* Right Shotgun */}
                  <div className="absolute -top-5 -right-4 z-20">
                     <img 
                       src="/shotgun.png" 
@@ -252,7 +222,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                       className="w-10 h-10 object-contain -rotate-12 drop-shadow-md" 
                     />
                  </div>
-                 {/* Left Shotgun (Mirrored) */}
                  <div className="absolute -top-5 -left-4 z-20">
                     <img 
                       src="/shotgun.png" 
