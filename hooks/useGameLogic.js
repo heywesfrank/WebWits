@@ -30,6 +30,9 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
   
   const hasCommented = userComments.length >= commentLimit;
 
+  // [NEW] Check if user has voted on ANY caption in the feed
+  const hasVotedOnAny = captions.some(c => c.hasVoted);
+
   const addToast = useCallback((msg, type = 'success') => {
     const id = Date.now();
     setToasts(prev => [...prev, { id, msg, type }]);
@@ -340,7 +343,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
 
   return {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
-    loading, viewMode, toasts, showOnboarding, hasCommented,
+    loading, viewMode, toasts, showOnboarding, hasCommented, hasVotedOnAny,
     setViewMode, setToasts, setShowOnboarding, fetchData,
     handleArchiveSelect, handleBackToArena, 
     submitCaption, submitReply, castVote, shareCaption, reportCaption, editCaption
