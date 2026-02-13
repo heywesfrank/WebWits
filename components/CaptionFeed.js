@@ -22,7 +22,7 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] Updated to use Android Intent for Chrome
+// [!code change] Updated SocialUsername for universal Android browser support
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     
     const handleSocialClick = (e) => {
@@ -36,18 +36,19 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
             const isAndroid = /Android/i.test(navigator.userAgent);
 
             if (isAndroid) {
-                // 2. FORCE CHROME ON ANDROID
-                // We construct an 'intent' URL that specifically targets the Chrome package (com.android.chrome).
-                // This bypasses the OS's "Open with Instagram?" check.
                 try {
-                    // Strip protocol (https://) to get the clean path for the intent
+                    // 2. Clean the URL to prevent "Main Feed" bugs
+                    // We remove query params (?igshid=...) which often break deep links
                     const urlObj = new URL(socialLink);
-                    const cleanHost = urlObj.host; // e.g. www.instagram.com
-                    const cleanPath = urlObj.pathname + urlObj.search; // e.g. /username/
-
-                    // Construct the Intent
-                    // S.browser_fallback_url ensures that if Chrome isn't installed, it falls back to the normal link.
-                    const intentUrl = `intent://${cleanHost}${cleanPath}#Intent;scheme=https;package=com.android.chrome;S.browser_fallback_url=${encodeURIComponent(socialLink)};end`;
+                    const cleanPath = urlObj.pathname.replace(/\/$/, ''); // Remove trailing slash
+                    
+                    // Ensure host is standard (www helps deep linking stability)
+                    const host = urlObj.host.startsWith('www.') ? urlObj.host : `www.${urlObj.host}`;
+                    
+                    // 3. Construct the Intent WITHOUT a specific package
+                    // removing 'package=com.android.chrome' allows Samsung Internet (and others) to work.
+                    // 'scheme=https' means any app that handles https://instagram.com can open it.
+                    const intentUrl = `intent://${host}${cleanPath}#Intent;scheme=https;action=android.intent.action.VIEW;S.browser_fallback_url=${encodeURIComponent(socialLink)};end`;
                     
                     window.location.href = intentUrl;
                 } catch (err) {
@@ -55,9 +56,7 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
                     window.open(socialLink, '_blank', 'noopener,noreferrer');
                 }
             } else {
-                // 3. iOS / Desktop / Others
-                // 'noopener,noreferrer' helps disassociate the new window from the app, 
-                // increasing the chance it stays in the browser.
+                // iOS / Desktop
                 window.open(socialLink, '_blank', 'noopener,noreferrer');
             }
         }
