@@ -140,6 +140,11 @@ export default function HowItWorks() {
                 </li>
                 <li className="flex gap-3">
                     <span className="text-yellow-500 font-bold">•</span>
+                    {/* [!code ++] NEW RULE ADDED HERE */}
+                    <span><strong>Pay the toll.</strong> You must vote on at least one caption to unlock the ability to post (unless you are the first to arrive).</span>
+                </li>
+                <li className="flex gap-3">
+                    <span className="text-yellow-500 font-bold">•</span>
                     <span><strong>Speed matters.</strong> Ties go to the early bird. If vote counts are equal, the first to post wins.</span>
                 </li>
                 <li className="flex gap-3">
