@@ -50,14 +50,9 @@ export async function POST(req) {
             .in('comment_id', commentIds);
 
         if (existingVotes && existingVotes.length > 0) {
-            // User has voted on this meme already.
-            const previousVoteId = existingVotes[0].comment_id;
-
-            // If they are voting for a DIFFERENT comment, block it.
-            // (If they are voting for the SAME comment, we allow it because 'toggle_vote' will remove it)
-            if (previousVoteId !== commentId) {
-                return NextResponse.json({ error: "You can only vote once per day." }, { status: 403 });
-            }
+            // STRICT PERMANENCE: If they voted at all, block it.
+            // This prevents unvoting (same ID) and changing votes (different ID).
+            return NextResponse.json({ error: "Votes are permanent. No take-backs." }, { status: 403 });
         }
     }
     // --- END NEW CHECKS ---
