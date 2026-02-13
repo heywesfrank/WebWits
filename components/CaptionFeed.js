@@ -1,4 +1,3 @@
-// components/CaptionFeed.js
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X } from "lucide-react"; 
@@ -222,18 +221,20 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
           >
             {hasPin && (
               <>
-                 <div className="absolute -top-4 -right-3 bg-white rounded-full p-2 shadow-md border border-gray-100 z-20">
+                 {/* [!code change] Right Pin - Larger & No Background */}
+                 <div className="absolute -top-5 -right-4 z-20">
                     <img 
                       src="/pin.png" 
                       alt="Pin" 
-                      className="w-8 h-8 object-contain" 
+                      className="w-10 h-10 object-contain drop-shadow-md" 
                     />
                  </div>
-                 <div className="absolute -top-4 -left-3 bg-white rounded-full p-2 shadow-md border border-gray-100 z-20">
+                 {/* [!code change] Left Pin - Larger, Mirrored & No Background */}
+                 <div className="absolute -top-5 -left-4 z-20">
                     <img 
                       src="/pin.png" 
                       alt="Pin" 
-                      className="w-8 h-8 object-contain scale-x-[-1]" 
+                      className="w-10 h-10 object-contain scale-x-[-1] drop-shadow-md" 
                     />
                  </div>
               </>
