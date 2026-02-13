@@ -1,3 +1,4 @@
+// components/CaptionFeed.js
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X } from "lucide-react"; 
@@ -244,19 +245,19 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             {hasDoubleBarrel && (
               <>
                  {/* Right Shotgun */}
-                 <div className="absolute -top-4 -right-3 bg-white rounded-full p-2 shadow-md border border-gray-100 z-20">
+                 <div className="absolute -top-5 -right-4 z-20">
                     <img 
                       src="/shotgun.png" 
                       alt="Double Barrel" 
-                      className="w-8 h-8 object-contain -rotate-12" 
+                      className="w-10 h-10 object-contain -rotate-12 drop-shadow-md" 
                     />
                  </div>
                  {/* Left Shotgun (Mirrored) */}
-                 <div className="absolute -top-4 -left-3 bg-white rounded-full p-2 shadow-md border border-gray-100 z-20">
+                 <div className="absolute -top-5 -left-4 z-20">
                     <img 
                       src="/shotgun.png" 
                       alt="Double Barrel" 
-                      className="w-8 h-8 object-contain rotate-12 scale-x-[-1]" 
+                      className="w-10 h-10 object-contain rotate-12 scale-x-[-1] drop-shadow-md" 
                     />
                  </div>
               </>
