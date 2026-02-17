@@ -75,7 +75,7 @@ const ITEMS = [
         type: "prize",
         name: "The Payday",
         description: "$25 Amazon Gift Card. Jeff Bezos' money, now yours.",
-        cost: 15000, // [!code change]
+        cost: 15000, 
         icon: <Gift size={24} className="text-green-600" />,
         color: "green"
     }
@@ -273,6 +273,7 @@ export default function Store() {
                         onBuy={handlePurchase}
                         loading={purchasing === item.id}
                         inventory={profile?.cosmetics || {}}
+                        activeMemeId={activeMemeId}
                     />
                 ))}
             </div>
@@ -280,7 +281,7 @@ export default function Store() {
     );
 }
 
-function StoreCard({ item, userCredits, onBuy, loading, inventory }) {
+function StoreCard({ item, userCredits, onBuy, loading, inventory, activeMemeId }) {
     const canAfford = userCredits >= item.cost;
     
     // Check Status based on Type
@@ -288,11 +289,15 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory }) {
     
     // Updated Logic for Meme Bound (includes Pin and Double Barrel now)
     if (item.type === 'meme_bound' || item.id === 'consumable_edit' || item.id === 'consumable_double') {
-         isActive = !!inventory[`${item.id}_meme_id`];
+         // This ensures it only counts as active if it matches the CURRENT meme ID
+         isActive = inventory[`${item.id}_meme_id`] === activeMemeId;
     } else if (item.type === 'duration') {
          // Legacy support or for other items
          const expiryKey = `${item.id}_expires`;
          isActive = inventory[expiryKey] && new Date(inventory[expiryKey]) > new Date();
+    } else if (item.type === 'cosmetic') {
+         // Permanent items are active if key exists
+         isActive = !!inventory[item.id];
     }
     
     const countKey = `${item.id}_count`;
