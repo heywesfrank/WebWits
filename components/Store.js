@@ -287,17 +287,15 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory, activeMemeId 
     // Check Status based on Type
     let isActive = false;
     
-    // Updated Logic for Meme Bound (includes Pin and Double Barrel now)
+    // FIXED LOGIC:
+    // Only mark as active if the saved meme ID matches the CURRENT active meme ID.
+    // If it's a new day (new meme ID), this check fails, and the button unlocks.
     if (item.type === 'meme_bound' || item.id === 'consumable_edit' || item.id === 'consumable_double') {
-         // This ensures it only counts as active if it matches the CURRENT meme ID
          isActive = inventory[`${item.id}_meme_id`] === activeMemeId;
     } else if (item.type === 'duration') {
          // Legacy support or for other items
          const expiryKey = `${item.id}_expires`;
          isActive = inventory[expiryKey] && new Date(inventory[expiryKey]) > new Date();
-    } else if (item.type === 'cosmetic') {
-         // Permanent items are active if key exists
-         isActive = !!inventory[item.id];
     }
     
     const countKey = `${item.id}_count`;
