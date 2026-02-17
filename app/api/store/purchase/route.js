@@ -7,20 +7,17 @@ import { Resend } from 'resend';
 const SERVER_ITEMS = {
     "effect_fire": { cost: 100, name: "Ring of Fire", type: "meme_bound" },
     "effect_pin": { cost: 200, name: "Thumbtack of Glory", type: "meme_bound" }, 
-    "badge_verified": { cost: 500, name: "Verified Badge", type: "cosmetic" },
-    "border_gold": { cost: 1000, name: "Golden Aura", type: "cosmetic" },
+    // Removed badge_verified and border_gold as requested
     "consumable_edit": { cost: 150, name: "The Mulligan", type: "consumable" }, 
     "consumable_double": { cost: 250, name: "Double Barrel", type: "consumable" },
     "prize_amazon_5": { cost: 2500, name: "$5 Amazon Card", type: "prize" },
     "prize_amazon_10": { cost: 5000, name: "$10 Amazon Card", type: "prize" },
-    "prize_amazon_25": { cost: 15000, name: "$25 Amazon Card", type: "prize" } // [!code change]
+    "prize_amazon_25": { cost: 15000, name: "$25 Amazon Card", type: "prize" }
 };
 
 export async function POST(req) {
   try {
-    // Initialize Resend inside the handler to prevent build-time errors
     const resend = new Resend(process.env.RESEND_API_KEY);
-
     const { itemId } = await req.json();
     const item = SERVER_ITEMS[itemId];
     
@@ -54,6 +51,8 @@ export async function POST(req) {
     let updateData = { credits: newCredits };
     const currentCosmetics = profile.cosmetics || {};
 
+    // --- LOGIC CHECKS ---
+
     if (item.type === 'meme_bound') {
         const { data: activeMeme } = await supabase
             .from('memes')
@@ -63,7 +62,12 @@ export async function POST(req) {
             
         if (!activeMeme) return NextResponse.json({ error: "No active battle." }, { status: 400 });
 
-        // Mutual Exclusivity Check
+        // 1. Check if already owned for THIS meme (Prevent wasting credits)
+        if (currentCosmetics[`${itemId}_meme_id`] === activeMeme.id) {
+             return NextResponse.json({ error: `You already have ${item.name} active.` }, { status: 400 });
+        }
+
+        // 2. Mutual Exclusivity Check (Pin vs Fire)
         if (itemId === 'effect_pin' && currentCosmetics['effect_fire_meme_id'] === activeMeme.id) {
              return NextResponse.json({ error: "Cannot combine Pin with Ring of Fire." }, { status: 400 });
         }
@@ -86,6 +90,7 @@ export async function POST(req) {
                 
              if (!activeMeme) return NextResponse.json({ error: "No active battle." }, { status: 400 });
              
+             // Check if already owned
              if (currentCosmetics[`${itemId}_meme_id`] === activeMeme.id) {
                 return NextResponse.json({ error: "You already have a pending edit." }, { status: 400 });
              }
@@ -104,7 +109,7 @@ export async function POST(req) {
                 
              if (!activeMeme) return NextResponse.json({ error: "No active battle." }, { status: 400 });
              
-             // Check if already owned for this meme
+             // Check if already owned
              if (currentCosmetics[`${itemId}_meme_id`] === activeMeme.id) {
                 return NextResponse.json({ error: "You already have a Double Barrel." }, { status: 400 });
              }
@@ -116,6 +121,8 @@ export async function POST(req) {
         }
     }
     else if (item.type === 'cosmetic') {
+        // Since we removed badges/borders, this block is technically unused now,
+        // but safe to keep for future expansion.
         if (currentCosmetics[itemId]) return NextResponse.json({ error: "Item already owned" }, { status: 400 });
         updateData.cosmetics = { ...currentCosmetics, [itemId]: true };
     }
@@ -140,35 +147,21 @@ export async function POST(req) {
     // --- EMAIL NOTIFICATION FOR PRIZES ---
     if (item.type === 'prize') {
         try {
-            console.log(`Sending prize email to admins for user ${userEmail}...`);
-            
-            // Sending FROM your verified domain
-            const { data, error: mailError } = await resend.emails.send({
+            await resend.emails.send({
                 from: 'WebWits Bot <noreply@itswebwits.com>',
                 to: 'hello@itswebwits.com',
                 subject: `💰 PRIZE CLAIMED: ${item.name}`,
                 html: `
                     <h1>Prize Claimed!</h1>
-                    <p>A user has purchased a prize in the store.</p>
                     <ul>
-                        <li><strong>User Email:</strong> ${userEmail}</li>
-                        <li><strong>User ID:</strong> ${userId}</li>
-                        <li><strong>Item:</strong> ${item.name} (${itemId})</li>
-                        <li><strong>Cost:</strong> ${item.cost} credits</li>
+                        <li><strong>User:</strong> ${userEmail} (${userId})</li>
+                        <li><strong>Item:</strong> ${item.name}</li>
+                        <li><strong>Cost:</strong> ${item.cost}</li>
                     </ul>
-                    <p>Please purchase the gift card and send it to <strong>${userEmail}</strong>.</p>
                 `
             });
-
-            if (mailError) {
-                console.error("Resend API Error:", mailError);
-            } else {
-                console.log("Email sent successfully:", data);
-            }
-
         } catch (emailError) {
-            // We log but don't fail the request, since the DB purchase succeeded
-            console.error("Failed to execute email logic:", emailError);
+            console.error("Email logic failed:", emailError);
         }
     }
 
