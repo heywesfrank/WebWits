@@ -33,6 +33,10 @@ create table public.profiles (
   constraint profiles_id_fkey foreign KEY (id) references auth.users (id)
 ) TABLESPACE pg_default;
 
+create index IF not exists idx_profiles_monthly_points on public.profiles using btree (monthly_points desc) TABLESPACE pg_default;
+
+create index IF not exists idx_profiles_total_points on public.profiles using btree (total_points desc) TABLESPACE pg_default;
+
 create table public.purchases (
   id uuid not null default gen_random_uuid (),
   user_id uuid not null,
