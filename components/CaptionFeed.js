@@ -212,8 +212,8 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
             <div className="flex-shrink-0 pt-1">
               <div className="relative inline-block">
-                {/* 👑 The Crown renders for the top caption in the archive view */}
-                {isTopRanked && !hasPin && (
+                {/* 👑 The Crown renders for the top caption in the archive view, regardless of powerups */}
+                {isTopRanked && (
                   <img 
                     src="/crown.png" 
                     alt="Winner"
