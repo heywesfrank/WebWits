@@ -9,6 +9,8 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
   const [isSpinning, setIsSpinning] = useState(false);
   const [prize, setPrize] = useState(null);
   const [rotation, setRotation] = useState(0);
+  const [showCoins, setShowCoins] = useState(false);
+  const [coinDrops, setCoinDrops] = useState([]);
 
   // Check availability on load
   useEffect(() => {
@@ -50,7 +52,6 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
 
       if (data.success) {
         // Wheel Configuration (6 Segments - 60 degrees each)
-        // [!code change] Updated id:4 to 400
         const segments = [
             { id: 0, val: 50 }, { id: 1, val: 100 }, { id: 2, val: 200 },
             { id: 3, val: 300 }, { id: 4, val: 400 }, { id: 5, val: 500 }
@@ -70,6 +71,22 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
         setTimeout(() => {
           setPrize(data.prize);
           setIsSpinning(false);
+          
+          // Generate Random Coins for the animation
+          const newCoins = Array.from({ length: 40 }).map((_, i) => ({
+            id: i,
+            left: Math.random() * 100, // 0 to 100vw
+            delay: Math.random() * 0.4, // Staggered drop
+            duration: 1.5 + Math.random() * 2, // 1.5s to 3.5s fall time
+            scale: 0.5 + Math.random() * 0.7, // Random size
+            rotateStart: Math.random() * 360,
+            rotateEnd: Math.random() * 360 + 360 * (Math.random() > 0.5 ? 1 : -1), // Spin direction
+            rotateYStart: Math.random() > 0.5 ? 180 : 0, // Flipping
+            rotateYEnd: Math.random() > 0.5 ? 360 : -180
+          }));
+          setCoinDrops(newCoins);
+          setShowCoins(true);
+
           if (onSpinComplete) onSpinComplete(data.newTotal);
         }, 4000);
 
@@ -87,9 +104,10 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
     setIsOpen(false);
     setPrize(null);
     setRotation(0);
+    setShowCoins(false);
+    setCoinDrops([]);
   };
 
-  // [!code change] Updated id:4 to 400
   const wheelSegments = [
     { id: 0, val: 50, label: '50', color: '#03A9FC', text: 'white' },   
     { id: 1, val: 100, label: '100', color: '#028BCF', text: 'white' }, 
@@ -103,11 +121,43 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
     <AnimatePresence>
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
+          
+          {/* Falling Coins Animation Layer */}
+          {showCoins && (
+            <div className="fixed inset-0 pointer-events-none z-[110] overflow-hidden">
+              {coinDrops.map((coin) => (
+                <motion.img
+                  key={coin.id}
+                  src="/coin.png"
+                  initial={{ 
+                    top: '-10%', 
+                    left: `${coin.left}vw`, 
+                    scale: coin.scale,
+                    rotate: coin.rotateStart,
+                    rotateY: coin.rotateYStart
+                  }}
+                  animate={{ 
+                    top: '110%',
+                    rotate: coin.rotateEnd,
+                    rotateY: coin.rotateYEnd
+                  }}
+                  transition={{ 
+                    duration: coin.duration, 
+                    delay: coin.delay, 
+                    ease: "linear" 
+                  }}
+                  className="absolute w-12 h-12 md:w-16 md:h-16 object-contain filter drop-shadow-lg"
+                  aria-hidden="true"
+                />
+              ))}
+            </div>
+          )}
+
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
-            className="bg-white w-full max-w-sm rounded-3xl p-6 relative shadow-2xl overflow-hidden border border-gray-200"
+            className="bg-white w-full max-w-sm rounded-3xl p-6 relative shadow-2xl overflow-hidden border border-gray-200 z-[105]"
           >
             <button onClick={close} className="absolute top-4 right-4 text-gray-400 hover:text-black z-20">
               <X size={24} />
