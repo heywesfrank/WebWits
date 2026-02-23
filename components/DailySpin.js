@@ -51,6 +51,12 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
       const data = await res.json();
 
       if (data.success) {
+        // --- DEV OVERRIDE ---
+        // If the user is WesMinister, always force the jackpot (500)
+        if (session?.user?.id === '79e9482e-a286-49b4-bab8-26093911bf80') {
+           data.prize = 500;
+        }
+
         // Wheel Configuration (6 Segments - 60 degrees each)
         const segments = [
             { id: 0, val: 50 }, { id: 1, val: 100 }, { id: 2, val: 200 },
