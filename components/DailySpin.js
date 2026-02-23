@@ -73,10 +73,12 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
           setIsSpinning(false);
           
           // Generate Random Coins for the animation
-          const newCoins = Array.from({ length: 40 }).map((_, i) => ({
+          // Jackpot drops 100 coins, regular drops 40
+          const numCoins = data.prize === 500 ? 100 : 40;
+          const newCoins = Array.from({ length: numCoins }).map((_, i) => ({
             id: i,
             left: Math.random() * 100, // 0 to 100vw
-            delay: Math.random() * 0.4, // Staggered drop
+            delay: Math.random() * (data.prize === 500 ? 0.8 : 0.4), // Staggered drop longer for jackpot
             duration: 1.5 + Math.random() * 2, // 1.5s to 3.5s fall time
             scale: 0.5 + Math.random() * 0.7, // Random size
             rotateStart: Math.random() * 360,
@@ -157,7 +159,11 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.8, opacity: 0 }}
-            className="bg-white w-full max-w-sm rounded-3xl p-6 relative shadow-2xl overflow-hidden border border-gray-200 z-[105]"
+            className={`bg-white w-full max-w-sm rounded-3xl p-6 relative overflow-hidden z-[105] transition-all duration-700 ${
+              prize === 500 
+                ? 'border-4 border-yellow-400 shadow-[0_0_60px_rgba(250,204,21,0.6)]' 
+                : 'border border-gray-200 shadow-2xl'
+            }`}
           >
             <button onClick={close} className="absolute top-4 right-4 text-gray-400 hover:text-black z-20">
               <X size={24} />
@@ -178,10 +184,12 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
               </div>
 
               <div 
-                 className="w-full h-full rounded-full border-4 border-white shadow-[0_0_30px_rgba(0,0,0,0.1)] overflow-hidden relative transition-transform"
+                 className={`w-full h-full rounded-full shadow-[0_0_30px_rgba(0,0,0,0.1)] overflow-hidden relative transition-all duration-[4000ms] ${
+                   prize === 500 ? 'border-4 border-yellow-400' : 'border-4 border-white'
+                 }`}
                  style={{ 
                    transform: `rotate(${rotation}deg)`,
-                   transition: isSpinning ? 'transform 4s cubic-bezier(0.2, 0, 0.2, 1)' : 'none'
+                   transitionTimingFunction: isSpinning ? 'cubic-bezier(0.2, 0, 0.2, 1)' : 'ease-out'
                  }}
               >
                  <div 
@@ -232,9 +240,15 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
                   animate={{ scale: 1.1, opacity: 1 }}
                   className="space-y-2"
                 >
-                  <div className="text-4xl font-black text-[#0284c7] flex items-center justify-center gap-2 font-display">
-                    <Sparkles className="fill-[#0284c7]" /> +{prize}
-                  </div>
+                  {prize === 500 ? (
+                    <div className="text-4xl font-black text-yellow-500 flex items-center justify-center gap-2 font-display animate-pulse drop-shadow-md">
+                      <Star className="fill-yellow-500" /> JACKPOT!
+                    </div>
+                  ) : (
+                    <div className="text-4xl font-black text-[#0284c7] flex items-center justify-center gap-2 font-display">
+                      <Sparkles className="fill-[#0284c7]" /> +{prize}
+                    </div>
+                  )}
                   <button onClick={close} className="text-xs font-bold text-black hover:text-gray-800 uppercase tracking-wider">
                     Claim & Close
                   </button>
