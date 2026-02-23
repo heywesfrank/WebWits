@@ -5,6 +5,10 @@
       "schedule": "0 5 * * *" 
     },
     {
+      "path": "/api/generate-bots",
+      "schedule": "5 5 * * *" 
+    },
+    {
       "path": "/api/reminder",
       "schedule": "0 2 * * *"
     },
