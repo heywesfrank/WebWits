@@ -31,15 +31,27 @@ export async function GET(request) {
       });
     }
 
-    // --- [NEW] STEP 0.5: RESET DAILY RANKS ---
+    // --- STEP 0.5: RESET DAILY RANKS ---
     // Clear yesterday's winners so people don't get notified twice if they skip a day
     await supabase.from('profiles').update({ daily_rank: null }).neq('id', '00000000-0000-0000-0000-000000000000');
 
-    // --- STEP 1: Fetch Content (Trending -> Random Fallback -> Force) ---
+    // --- STEP 1: Fetch Content (Strict Unique Policy -> Emergency Fallback) ---
     let contentUrl = null;
     let posterUrl = null;
     let selectedGif = null;
     let trendingPool = [];
+
+    // Fetch all previously used meme URLs to avoid repeats
+    const { data: existingMemes } = await supabase.from('memes').select('content_url');
+    const usedUrls = existingMemes?.map(m => m.content_url).filter(Boolean) || [];
+
+    const isUsed = (gif) => {
+        const url = gif.images?.original?.mp4;
+        if (!url) return true; // Skip if it doesn't even have an mp4
+        if (usedUrls.includes(url)) return true;
+        // Giphy IDs are in the URL path, e.g., media.giphy.com/media/ID/giphy.mp4
+        return usedUrls.some(u => u.includes(`/${gif.id}/`));
+    };
 
     // Strategy A: Trending
     try {
@@ -49,24 +61,41 @@ export async function GET(request) {
         );
         const trendingData = await trendingRes.json();
         if (trendingData.data && trendingData.data.length > 0) {
-            trendingPool = trendingData.data;
-            const shuffled = [...trendingPool].sort(() => Math.random() - 0.5);
-            for (const gif of shuffled) {
-                const tempUrl = gif.images.original.mp4;
-                const { data: existing } = await supabase.from('memes').select('id').eq('content_url', tempUrl).maybeSingle();
-                if (!existing) {
-                    selectedGif = gif;
-                    break; 
-                }
+            trendingPool = trendingData.data; // Save for emergency fallback
+            const availableTrending = trendingData.data.filter(gif => !isUsed(gif));
+            if (availableTrending.length > 0) {
+                // Pick a random one from the un-used trending pool
+                selectedGif = availableTrending[Math.floor(Math.random() * availableTrending.length)];
             }
         }
     } catch (e) { console.error("Trending fetch failed:", e); }
 
-    // Strategy B: Random Fallback
+    // Strategy B: Search Fallback (Robust against exhaustion)
     if (!selectedGif) {
-        let attempts = 0;
-        while (!selectedGif && attempts < 5) {
-            attempts++;
+        const queries = ["funny", "meme", "reaction", "lol", "crazy", "laugh", "wtf", "fail", "win", "comedy"];
+        for (let attempts = 0; attempts < 5; attempts++) {
+            const q = queries[Math.floor(Math.random() * queries.length)];
+            const offset = Math.floor(Math.random() * 500);
+            try {
+                const searchRes = await fetch(
+                    `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${q}&limit=50&offset=${offset}&rating=pg-13`,
+                    { cache: 'no-store' }
+                );
+                const searchData = await searchRes.json();
+                if (searchData.data && searchData.data.length > 0) {
+                    const availableSearch = searchData.data.filter(gif => !isUsed(gif));
+                    if (availableSearch.length > 0) {
+                        selectedGif = availableSearch[Math.floor(Math.random() * availableSearch.length)];
+                        break;
+                    }
+                }
+            } catch (e) { console.error("Search fetch attempt failed:", e); }
+        }
+    }
+
+    // Strategy C: Random Fallback
+    if (!selectedGif) {
+        for (let attempts = 0; attempts < 5; attempts++) {
             try {
                 const randomRes = await fetch(
                     `https://api.giphy.com/v1/gifs/random?api_key=${GIPHY_API_KEY}&tag=funny&rating=pg-13`,
@@ -74,24 +103,35 @@ export async function GET(request) {
                 );
                 const randomData = await randomRes.json();
                 const gif = randomData.data;
-                if (gif) {
-                    const tempUrl = gif.images.original.mp4;
-                    const { data: existing } = await supabase.from('memes').select('id').eq('content_url', tempUrl).maybeSingle();
-                    if (!existing) selectedGif = gif;
+                if (gif && !isUsed(gif)) {
+                    selectedGif = gif;
+                    break;
                 }
             } catch (e) { console.error("Random fetch attempt failed:", e); }
         }
     }
 
-    // Strategy C: Emergency Force
-    if (!selectedGif && trendingPool.length > 0) {
-         selectedGif = trendingPool[Math.floor(Math.random() * trendingPool.length)];
+    // Strategy D: Emergency Force (Allow Repeats)
+    if (!selectedGif) {
+        console.warn("Could not find unique meme. Forcing a repeat to keep arena active.");
+        if (trendingPool.length > 0) {
+             selectedGif = trendingPool[Math.floor(Math.random() * trendingPool.length)];
+        } else {
+             try {
+                const randomRes = await fetch(
+                    `https://api.giphy.com/v1/gifs/random?api_key=${GIPHY_API_KEY}&tag=funny&rating=pg-13`,
+                    { cache: 'no-store' }
+                );
+                const randomData = await randomRes.json();
+                if (randomData.data) selectedGif = randomData.data;
+             } catch(e) { console.error("Ultimate fallback failed", e); }
+        }
     }
 
     if (!selectedGif) throw new Error("Critical Failure: Giphy API unreachable or no content returned.");
 
     contentUrl = selectedGif.images.original.mp4;
-    posterUrl = selectedGif.images.original.webp;
+    posterUrl = selectedGif.images.original.webp || selectedGif.images.original.url;
 
     // --- STEP 2: Archive & SCORE active memes ---
     const { data: activeMemes } = await supabase
@@ -140,7 +180,7 @@ export async function GET(request) {
             }
           });
 
-          // --- NEW: Calculate Credit Rewards (Top 3 + Participation) ---
+          // --- Calculate Credit Rewards (Top 3 + Participation) ---
           const userCredits = {};
           const userRanks = {}; 
           
@@ -160,7 +200,6 @@ export async function GET(request) {
               } else {
                   // Participation Bonus
                   prizeAmount = 25;
-                  // [!code ++] Set rank to 4 so they get the popup!
                   rank = 4;
               }
 
@@ -168,7 +207,6 @@ export async function GET(request) {
                   userCredits[comment.user_id] = (userCredits[comment.user_id] || 0) + prizeAmount;
               }
               
-              // Now we assign rank to everyone who got a prize (including participation)
               if (rank) {
                   userRanks[comment.user_id] = rank; 
               }
@@ -226,7 +264,7 @@ export async function GET(request) {
         type: 'video',
         content_url: contentUrl,
         image_url: posterUrl,
-        source: 'Giphy Trending',
+        source: 'Giphy WebWits Daily',
         publish_date: today 
       })
       .select();
