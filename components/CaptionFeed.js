@@ -22,8 +22,6 @@ function timeAgo(dateString) {
   return `${diffInDays}d`;
 }
 
-// [!code change] Reverted to a standard HTML link. 
-// No intents, no window.open hacks. Just a link.
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     if (isInfluencer && socialLink) {
         return (
@@ -32,7 +30,7 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
                 target="_blank" 
                 rel="noopener noreferrer" 
                 className={`hover:underline !text-blue-600 hover:!text-blue-800 ${className}`}
-                onClick={(e) => e.stopPropagation()} // Prevents clicking the row behind it
+                onClick={(e) => e.stopPropagation()} 
             >
                 @{username}
             </a>
@@ -122,13 +120,11 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
   const handleSaveEdit = async (commentId) => {
     if (!editText.trim()) return;
-    // We trigger the parent handler (which opens the modal).
     await onEdit(commentId, editText);
   };
 
   return (
     <div className="space-y-4">
-       {/* CSS for Ring of Fire Animation */}
        <style>{`
         @keyframes burn {
           0% { box-shadow: 0 0 5px #dc2626, 0 0 10px #ea580c; border-color: #dc2626; }
@@ -156,7 +152,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
       {sortedCaptions.map((caption, index) => {
         const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
-        const isTopRanked = index === 0 && sortBy === 'top' && viewMode === 'archive-detail';
+        const isTopRanked = index === 0 && sortBy === 'top' && viewMode === 'archive-detail'; // Crown condition
         
         const rank = index + 1;
         const showFire = viewMode === 'active' && sortBy === 'top' && rank <= 3;
@@ -170,19 +166,11 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
         const fireMemeId = caption.profiles?.cosmetics?.effect_fire_meme_id;
         const hasRingOfFire = fireMemeId && meme && fireMemeId === meme.id;
-
-        // Check for Pin
         const pinMemeId = caption.profiles?.cosmetics?.effect_pin_meme_id;
         const hasPin = pinMemeId && meme && pinMemeId === meme.id;
-
-        // Check for Double Barrel
         const doubleMemeId = caption.profiles?.cosmetics?.consumable_double_meme_id;
         const hasDoubleBarrel = doubleMemeId && meme && doubleMemeId === meme.id;
-
-        // Check for active Mulligan
-        const hasMulligan = 
-            session?.user?.id === caption.user_id && 
-            caption.profiles?.cosmetics?.consumable_edit_meme_id === meme?.id;
+        const hasMulligan = session?.user?.id === caption.user_id && caption.profiles?.cosmetics?.consumable_edit_meme_id === meme?.id;
 
         return (
           <div 
@@ -197,38 +185,21 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             {hasPin && (
               <>
                  <div className="absolute -top-5 -right-4 z-20">
-                    <img 
-                      src="/pin.png" 
-                      alt="Pin" 
-                      className="w-10 h-10 object-contain drop-shadow-md" 
-                    />
+                    <img src="/pin.png" alt="Pin" className="w-10 h-10 object-contain drop-shadow-md" />
                  </div>
                  <div className="absolute -top-5 -left-4 z-20">
-                    <img 
-                      src="/pin.png" 
-                      alt="Pin" 
-                      className="w-10 h-10 object-contain scale-x-[-1] drop-shadow-md" 
-                    />
+                    <img src="/pin.png" alt="Pin" className="w-10 h-10 object-contain scale-x-[-1] drop-shadow-md" />
                  </div>
               </>
             )}
 
-            {/* Double Barrel Shotguns */}
             {hasDoubleBarrel && (
               <>
                  <div className="absolute -top-5 -right-4 z-20">
-                    <img 
-                      src="/shotgun.png" 
-                      alt="Double Barrel" 
-                      className="w-10 h-10 object-contain -rotate-12 drop-shadow-md" 
-                    />
+                    <img src="/shotgun.png" alt="Double Barrel" className="w-10 h-10 object-contain -rotate-12 drop-shadow-md" />
                  </div>
                  <div className="absolute -top-5 -left-4 z-20">
-                    <img 
-                      src="/shotgun.png" 
-                      alt="Double Barrel" 
-                      className="w-10 h-10 object-contain rotate-12 scale-x-[-1] drop-shadow-md" 
-                    />
+                    <img src="/shotgun.png" alt="Double Barrel" className="w-10 h-10 object-contain rotate-12 scale-x-[-1] drop-shadow-md" />
                  </div>
               </>
             )}
@@ -241,10 +212,11 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
             <div className="flex-shrink-0 pt-1">
               <div className="relative inline-block">
+                {/* 👑 The Crown renders for the top caption in the archive view */}
                 {isTopRanked && !hasPin && (
                   <img 
                     src="/crown.png" 
-                    alt="Current Leader"
+                    alt="Winner"
                     className="absolute -top-3 -left-2 z-20 w-8 h-auto -rotate-[20deg] filter drop-shadow-sm pointer-events-none"
                   />
                 )}
@@ -271,7 +243,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 mb-1">
-                {/* Username with Social Link Logic */}
                 <SocialUsername 
                     username={username} 
                     isInfluencer={isInfluencer} 
@@ -352,7 +323,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                 )}
               </div>
 
-              {/* ----- REPLIES SECTION ----- */}
+              {/* Replies Section */}
               {(caption.replies?.length > 0 || activeReplyId === caption.id) && (
                 <div className="mt-4 space-y-3">
                   {caption.replies?.map((reply) => {
@@ -372,24 +343,16 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                               </div>
 
                               {isReplyInfluencer && (
-                                <img 
-                                  src="/badge.png" 
-                                  alt="Influencer" 
-                                  className="absolute -bottom-1 -left-1 w-3 h-3 object-contain z-20 filter drop-shadow-sm" 
-                                />
+                                <img src="/badge.png" alt="Influencer" className="absolute -bottom-1 -left-1 w-3 h-3 object-contain z-20 filter drop-shadow-sm" />
                               )}
 
                               {replyCountryCode && (
-                                <img 
-                                  src={`https://flagcdn.com/w20/${replyCountryCode}.png`}
-                                  className="absolute -bottom-0.5 -right-0.5 w-3 h-2 rounded-[1px] shadow-sm border border-white object-cover"
-                                />
+                                <img src={`https://flagcdn.com/w20/${replyCountryCode}.png`} className="absolute -bottom-0.5 -right-0.5 w-3 h-2 rounded-[1px] shadow-sm border border-white object-cover" />
                               )}
                            </div>
                            
                            <div className="flex-1">
                               <div className="text-sm leading-snug">
-                                 {/* Reply Username with Social Link Logic */}
                                  <SocialUsername 
                                     username={reply.profiles?.username} 
                                     isInfluencer={isReplyInfluencer} 
@@ -417,7 +380,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                      );
                   })}
 
-                  {/* REPLY INPUT */}
                   {activeReplyId === caption.id && (
                      <div className="flex gap-2 items-center pt-1 animate-in fade-in slide-in-from-top-1">
                         <input
