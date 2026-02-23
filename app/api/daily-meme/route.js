@@ -49,7 +49,7 @@ export async function GET(request) {
         const url = gif.images?.original?.mp4;
         if (!url) return true; // Skip if it doesn't even have an mp4
         if (usedUrls.includes(url)) return true;
-        // Giphy IDs are in the URL path, e.g., media.giphy.com/media/ID/giphy.mp4
+        // Giphy IDs are in the URL path, e.g., [media.giphy.com/media/ID/giphy.mp4](https://media.giphy.com/media/ID/giphy.mp4)
         return usedUrls.some(u => u.includes(`/${gif.id}/`));
     };
 
@@ -168,7 +168,7 @@ export async function GET(request) {
              await sendNotificationToUser(winnerId, {
                 title: "🏆 VICTORY!",
                 body: `Your caption won yesterday's battle! You earned 500 credits. "${winningCaption.substring(0, 25)}..."`,
-                url: "https://itswebwits.com"
+                url: "[https://itswebwits.com](https://itswebwits.com)"
              });
           }
 
@@ -275,10 +275,10 @@ export async function GET(request) {
     await sendNotificationToAll({
         title: "🔥 New Meme Dropped!",
         body: "The arena is open. Go be funny.",
-        url: "https://itswebwits.com"
+        url: "[https://itswebwits.com](https://itswebwits.com)"
     });
 
-    return NextResponse.json({ success: true, new_meme: data });
+    return NextResponse.json({ success: true, new_meme: data[0] });
 
   } catch (error) {
     console.error("Daily Meme Cron Error:", error);
