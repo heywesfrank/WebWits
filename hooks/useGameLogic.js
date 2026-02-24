@@ -30,7 +30,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
   
   const hasCommented = userComments.length >= commentLimit;
 
-  // [NEW] Check if user has voted on ANY caption in the feed
+  // Check if user has voted on ANY caption in the feed
   const hasVotedOnAny = captions.some(c => c.hasVoted);
 
   const addToast = useCallback((msg, type = 'success') => {
@@ -54,6 +54,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         )
       `)
       .eq("meme_id", memeId)
+      .lte("created_at", new Date().toISOString()) // Hide future scheduled bot comments
       // Primary sort: Votes DESC, Secondary sort: Date ASC (Oldest first)
       .order('vote_count', { ascending: false })
       .order('created_at', { ascending: true }); 
@@ -252,7 +253,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         return;
     }
 
-    // [!code change] Guard Clause: Check for existing vote
+    // Guard Clause: Check for existing vote
     if (hasVotedOnAny) {
         addToast("Votes are permanent! No take-backs. 🔒", "error");
         return;
