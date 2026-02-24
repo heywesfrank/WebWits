@@ -80,12 +80,21 @@ export async function GET(request) {
     const aiCaptions = JSON.parse(rawText);
 
     // 4. Insert into Database
-    const commentsToInsert = aiCaptions.slice(0, 15).map((caption, idx) => ({
-        meme_id: activeMeme.id,
-        user_id: botIds[idx],
-        content: caption,
-        vote_count: Math.floor(Math.random() * 4) // Give bots a randomized head start
-    }));
+    const now = new Date();
+
+    const commentsToInsert = aiCaptions.slice(0, 15).map((caption, idx) => {
+        // Randomly stagger the bots over the next 14 hours (14 * 60 * 60 * 1000 ms)
+        const randomOffsetMs = Math.floor(Math.random() * 14 * 60 * 60 * 1000);
+        const scheduledTime = new Date(now.getTime() + randomOffsetMs);
+
+        return {
+            meme_id: activeMeme.id,
+            user_id: botIds[idx],
+            content: caption,
+            vote_count: Math.floor(Math.random() * 4), // Give bots a randomized head start
+            created_at: scheduledTime.toISOString()
+        };
+    });
 
     // NOTE: We insert directly into Supabase here. 
     // We intentionally DO NOT call `/api/notify-comment` so that real users 
