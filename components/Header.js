@@ -1,3 +1,4 @@
+// components/Header.js
 "use client";
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
@@ -83,7 +84,7 @@ export default function Header({ session, profile, onOpenInvite }) {
                   </span>
                   <span className="text-[10px] text-gray-500 font-medium">Contestant</span>
                 </div>
-                <ChevronDown size={14} className={`text-gray-400 transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
+                <ChevronDown size={20} className={`text-black transition-transform ${isMenuOpen ? 'rotate-180' : ''}`} />
               </button>
 
               {isMenuOpen && (
