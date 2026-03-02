@@ -4,11 +4,8 @@ import { supabase } from "@/lib/supabase";
 import { filterProfanity } from "@/lib/profanity";
 
 export function useGameLogic(session, initialMeme = null, initialLeaderboard = []) {
-  // Initialize state with Server-Side props if available
   const [activeMeme, setActiveMeme] = useState(initialMeme);
   const [leaderboard, setLeaderboard] = useState(initialLeaderboard);
-  
-  // Don't show loading skeleton if we already have the meme from SSR
   const [loading, setLoading] = useState(!initialMeme);
 
   const [selectedMeme, setSelectedMeme] = useState(null);
@@ -19,18 +16,14 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
   const [showOnboarding, setShowOnboarding] = useState(false);
   const [toasts, setToasts] = useState([]);
 
-  // Check if current user has reached their comment limit
   const userComments = session?.user && activeMeme 
     ? captions.filter(c => c.user_id === session.user.id) 
     : [];
     
-  // Check if they have the Double Barrel item active for this meme
   const hasDoubleBarrel = userProfile?.cosmetics?.consumable_double_meme_id === activeMeme?.id;
   const commentLimit = hasDoubleBarrel ? 2 : 1;
-  
   const hasCommented = userComments.length >= commentLimit;
 
-  // Check if user has voted on ANY caption in the feed
   const hasVotedOnAny = captions.some(c => c.hasVoted);
 
   const addToast = useCallback((msg, type = 'success') => {
@@ -39,7 +32,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3000);
   }, []);
 
-  // Helper: Fetch comments AND replies for a specific meme
   const fetchMemeComments = useCallback(async (memeId) => {
     if (!memeId) return [];
 
@@ -48,14 +40,14 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       .select(`
         *, 
         profiles!comments_user_id_fkey(username, avatar_url, country, influencer, cosmetics, social_link),
+        cutter:profiles!comments_mic_cut_by_fkey(username),
         replies(
           id, content, created_at, user_id,
           profiles(username, avatar_url, country, influencer, social_link) 
         )
       `)
       .eq("meme_id", memeId)
-      .lte("created_at", new Date().toISOString()) // Hide future scheduled bot comments
-      // Primary sort: Votes DESC, Secondary sort: Date ASC (Oldest first)
+      .lte("created_at", new Date().toISOString()) 
       .order('vote_count', { ascending: false })
       .order('created_at', { ascending: true }); 
     
@@ -66,7 +58,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
 
     let formattedComments = comments || [];
 
-    // Sort replies by date (oldest first)
     formattedComments.forEach(comment => {
        if (comment.replies) {
          comment.replies.sort((a, b) => new Date(a.created_at) - new Date(b.created_at));
@@ -100,7 +91,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         setUserProfile(null);
       }
 
-      // 1. Handle Active Meme
       let currentActive = activeMeme;
       if (!currentActive) {
         let { data: active } = await supabase.from("memes").select("*").eq("status", "active").single();
@@ -110,13 +100,11 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         }
       }
 
-      // 2. Fetch Comments
       if (currentActive) {
         const comments = await fetchMemeComments(currentActive.id);
         setCaptions(comments);
       }
 
-      // 3. Fetch Archives
       let { data: archives } = await supabase
         .from("memes")
         .select(`*, comments (content, vote_count)`)
@@ -133,7 +121,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       });
       setArchivedMemes(processedArchives);
       
-      // 4. Update Leaderboard
       if (leaderboard.length === 0) {
         const { data: topUsers } = await supabase
           .from("profiles")
@@ -177,7 +164,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
   const submitCaption = async (text) => {
     if (!session?.user || !activeMeme) return false;
     
-    // Update to user hasCommented limit check
     if (hasCommented) {
       addToast("You've already hit your caption limit! 🚫", "error");
       return false;
@@ -186,7 +172,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     const cleanText = filterProfanity(text);
 
     try {
-      // 1. Insert directly to Supabase (Existing System)
       const { error } = await supabase.from('comments').insert({
         meme_id: activeMeme.id,
         user_id: session.user.id,
@@ -194,7 +179,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       });
       if (error) throw error;
       
-      // 2. Trigger Notification (New Feature)
       fetch('/api/notify-comment', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -207,7 +191,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       if (cleanText !== text) addToast("Caption polished & submitted! 🧼", "success");
       else addToast("Caption submitted!", "success");
       
-      // Refresh comments
       const comments = await fetchMemeComments(activeMeme.id);
       setCaptions(comments);
       return true;
@@ -253,7 +236,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         return;
     }
 
-    // Guard Clause: Check for existing vote
     if (hasVotedOnAny) {
         addToast("Votes are permanent! No take-backs. 🔒", "error");
         return;
@@ -262,7 +244,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     const targetComment = captions.find(c => c.id === commentId);
     const isRemoving = targetComment?.hasVoted;
 
-    // Optimistic Update
     setCaptions((current) => 
       current.map((c) => 
         c.id === commentId 
@@ -285,7 +266,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         })
       });
 
-      // Parse error response to show specific messages
       if (!res.ok) {
           const data = await res.json();
           throw new Error(data.error || "Vote failed");
@@ -293,10 +273,8 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
 
     } catch (err) {
       console.error("Vote failed:", err);
-      // Show the actual error message from the server (e.g., "Cannot vote for own caption")
       addToast(err.message, "error");
       
-      // Revert optimistic update
       setCaptions((current) => 
         current.map((c) => 
           c.id === commentId ? { ...c, vote_count: (c.vote_count || 0) + (isRemoving ? 1 : -1), hasVoted: isRemoving } : c
@@ -336,8 +314,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       if (!data.success) throw new Error(data.error);
 
       addToast("Caption updated! Mulligan consumed. 🎭", "success");
-      
-      // Refresh to show updated text and remove Edit button (since item is consumed)
       fetchData();
       return true;
 
@@ -348,11 +324,38 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     }
   };
 
+  const cutMic = async (commentId) => {
+    if (!session?.user) return false;
+
+    try {
+      const res = await fetch('/api/comment/cut-mic', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commentId,
+          userId: session.user.id
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      addToast("Mic successfully cut! 🤫", "success");
+      fetchData();
+      return true;
+
+    } catch (err) {
+      console.error("Cut Mic failed:", err);
+      addToast(err.message || "Failed to cut mic", "error");
+      return false;
+    }
+  };
+
   return {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, toasts, showOnboarding, hasCommented, hasVotedOnAny,
     setViewMode, setToasts, setShowOnboarding, fetchData,
     handleArchiveSelect, handleBackToArena, 
-    submitCaption, submitReply, castVote, shareCaption, reportCaption, editCaption
+    submitCaption, submitReply, castVote, shareCaption, reportCaption, editCaption, cutMic
   };
 }
