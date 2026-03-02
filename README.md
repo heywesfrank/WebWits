@@ -7,9 +7,12 @@ create table public.comments (
   content text not null,
   vote_count integer null default 0,
   created_at timestamp with time zone null default timezone ('utc'::text, now()),
+  mic_cut_until timestamp with time zone null,
+  mic_cut_by uuid null,
   constraint comments_pkey primary key (id),
   constraint comments_meme_id_fkey foreign KEY (meme_id) references memes (id),
-  constraint comments_user_id_fkey foreign KEY (user_id) references profiles (id)
+  constraint comments_mic_cut_by_fkey foreign KEY (mic_cut_by) references profiles (id),
+  constraint comments_user_id_fkey foreign KEY (user_id) references profiles (id) on update CASCADE on delete CASCADE
 ) TABLESPACE pg_default;
 
 create table public.profiles (
