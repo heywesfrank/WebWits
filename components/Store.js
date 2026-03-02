@@ -87,7 +87,7 @@ export default function Store() {
 
         const { data: profileData } = await supabase
             .from('profiles')
-            .select('credits, cosmetics')
+            .select('credits, cosmetics, sound_enabled')
             .eq('id', session.user.id)
             .single();
         
@@ -192,19 +192,23 @@ export default function Store() {
 
             if (data.success) {
                 // Play Sound Effect mapping based on successful item purchase
-                const soundMap = {
-                    "effect_fire": "/sounds/fire.wav",
-                    "consumable_edit": "/sounds/mulligan.wav",
-                    "effect_pin": "/sounds/thumbtack.wav",
-                    "consumable_double": "/sounds/shotgun.wav",
-                    "consumable_cut_mic": "/sounds/cutthemic.wav",
-                    "consumable_squeezal": "/sounds/squeezel.wav"
-                };
+                const playSound = profile?.sound_enabled !== false;
+                
+                if (playSound) {
+                    const soundMap = {
+                        "effect_fire": "/sounds/fire.wav",
+                        "consumable_edit": "/sounds/mulligan.wav",
+                        "effect_pin": "/sounds/thumbtack.wav",
+                        "consumable_double": "/sounds/shotgun.wav",
+                        "consumable_cut_mic": "/sounds/cutthemic.wav",
+                        "consumable_squeezal": "/sounds/squeezel.wav"
+                    };
 
-                if (soundMap[item.id]) {
-                    try {
-                        new Audio(soundMap[item.id]).play().catch(e => console.warn('Audio play error:', e));
-                    } catch(e) {}
+                    if (soundMap[item.id]) {
+                        try {
+                            new Audio(soundMap[item.id]).play().catch(e => console.warn('Audio play error:', e));
+                        } catch(e) {}
+                    }
                 }
 
                 if (item.type === 'prize') {
