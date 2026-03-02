@@ -19,6 +19,7 @@ import CaptionFeed from "./CaptionFeed";
 import NotificationModal from "./NotificationModal"; 
 import DailySpin from "./DailySpin"; 
 import WinnerModal from "./WinnerModal"; 
+import CountdownTimer from "./CountdownTimer";
 
 // Hooks
 import { useGameLogic } from "@/hooks/useGameLogic";
@@ -331,13 +332,29 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
 
       <div className="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
-          <div className="hidden md:flex bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
-            <button onClick={handleBackToArena} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition ${viewMode === 'active' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>
-              <Flame size={16} /> Active Battle
-            </button>
-            <button onClick={() => setViewMode('archive')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition ${viewMode === 'archive' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>
-              <History size={16} /> Archive
-            </button>
+          <div className="flex justify-between items-center w-full">
+            <div className="hidden md:flex bg-gray-100 p-1 rounded-xl border border-gray-200 w-fit">
+              <button onClick={handleBackToArena} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition ${viewMode === 'active' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>
+                <Flame size={16} /> Active Battle
+              </button>
+              <button onClick={() => setViewMode('archive')} className={`px-4 py-2 rounded-lg text-sm font-bold flex items-center gap-2 transition ${viewMode === 'archive' ? 'bg-white text-black shadow-sm' : 'text-gray-500 hover:text-gray-900'}`}>
+                <History size={16} /> Archive
+              </button>
+            </div>
+            
+            {/* Timer / Winner Badge pushed to the right */}
+            {viewMode !== 'archive' && (
+              <div className="flex w-full md:w-auto justify-end md:ml-auto">
+                {viewMode === 'active' ? (
+                  <CountdownTimer />
+                ) : (
+                  <div className="bg-yellow-400 text-black text-xs font-bold py-1 px-3 rounded-full shadow-lg flex items-center gap-2">
+                    <Trophy size={12} className="text-black" /> 
+                    <span>Winner Declared</span>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {viewMode === 'archive' ? (
@@ -437,7 +454,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
           <button onClick={() => setViewMode('archive')} className={`flex flex-col items-center justify-center gap-1 text-[10px] font-bold transition-all ${viewMode === 'archive' || viewMode === 'archive-detail' ? 'text-yellow-500 scale-105' : 'text-gray-400'}`}>
             <History size={20} /> <span>Archive</span>
           </button>
-<Link href="/store" className="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-gray-400 active:text-gray-900 transition-all">
+          <Link href="/store" className="flex flex-col items-center justify-center gap-1 text-[10px] font-bold text-gray-400 active:text-gray-900 transition-all">
             <ShoppingBag size={20} /> <span className="whitespace-nowrap">WitCoin Store</span>
           </Link>
         </div>
