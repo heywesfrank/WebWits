@@ -48,6 +48,14 @@ const ITEMS = [
         image: "/cutthemic.png"
     },
     {
+        id: "consumable_squeezal",
+        type: "consumable_stackable",
+        name: "Squeezal",
+        description: "Make a rival's joke so small they'll need a microscope to read it. Lasts 6 hours.",
+        cost: 2000,
+        image: "/squeezal.png"
+    },
+    {
         id: "prize_amazon_25",
         type: "prize",
         name: "The Payday",
@@ -187,6 +195,8 @@ export default function Store() {
                     setMessage({ type: 'success', text: "Bag secured! 💰 We've alerted the admins. Watch your email for the goods." });
                 } else if (item.id === "consumable_cut_mic") {
                     setMessage({ type: 'success', text: "Mic Cut purchased! ✂️ Find a comment to silence in the arena." });
+                } else if (item.id === "consumable_squeezal") {
+                    setMessage({ type: 'success', text: "Squeezal purchased! 🤏 Find a comment to shrink." });
                 } else {
                     setMessage({ type: 'success', text: `Purchased: ${item.name}!` });
                 }
