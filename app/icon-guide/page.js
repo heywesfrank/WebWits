@@ -140,7 +140,7 @@ export default function IconGuide() {
                  <div>
                     <h3 className="text-xl font-bold mb-2">Cut the Mic</h3>
                     <p className="text-gray-500 text-sm leading-relaxed">
-                        Silence a rival. Prevents their comment from receiving any votes for 6 hours. (Purchased from Store).
+                        Silence a rival. Prevents their comment from receiving any votes for 6 hours.
                     </p>
                  </div>
             </div>
@@ -153,7 +153,7 @@ export default function IconGuide() {
                  <div>
                     <h3 className="text-xl font-bold mb-2">Squeezal</h3>
                     <p className="text-gray-500 text-sm leading-relaxed">
-                        Shrinks a rival's caption so small it requires zooming in to read. Lasts for 6 hours. (Purchased from Store).
+                        Shrinks a rival's caption so small it requires zooming in to read. Lasts for 6 hours.
                     </p>
                  </div>
             </div>
