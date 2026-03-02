@@ -191,6 +191,22 @@ export default function Store() {
             const data = await res.json();
 
             if (data.success) {
+                // Play Sound Effect mapping based on successful item purchase
+                const soundMap = {
+                    "effect_fire": "/sounds/fire.wav",
+                    "consumable_edit": "/sounds/mulligan.wav",
+                    "effect_pin": "/sounds/thumbtack.wav",
+                    "consumable_double": "/sounds/shotgun.wav",
+                    "consumable_cut_mic": "/sounds/cutthemic.wav",
+                    "consumable_squeezal": "/sounds/squeezel.wav"
+                };
+
+                if (soundMap[item.id]) {
+                    try {
+                        new Audio(soundMap[item.id]).play().catch(e => console.warn('Audio play error:', e));
+                    } catch(e) {}
+                }
+
                 if (item.type === 'prize') {
                     setMessage({ type: 'success', text: "Bag secured! 💰 We've alerted the admins. Watch your email for the goods." });
                 } else if (item.id === "consumable_cut_mic") {
