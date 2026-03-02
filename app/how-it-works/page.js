@@ -93,6 +93,35 @@ export default function HowItWorks() {
              </div>
         </div>
 
+        {/* The Monthly Payouts Section */}
+        <div className="mb-16">
+             <div className="text-center mb-8">
+                <h3 className="text-3xl font-black font-display text-gray-900">Monthly Champions</h3>
+                <p className="text-gray-500 mt-2">Top the leaderboard at the end of the month for massive credit drops.</p>
+             </div>
+             
+             <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
+                <PayoutCard 
+                    rank="1st Place" 
+                    amount="1500" 
+                    sub="Monthly Emperor" 
+                    color="yellow"
+                />
+                <PayoutCard 
+                    rank="2nd Place" 
+                    amount="1000" 
+                    sub="Monthly Runner-up" 
+                    color="gray"
+                />
+                <PayoutCard 
+                    rank="3rd Place" 
+                    amount="500" 
+                    sub="Monthly Bronze" 
+                    color="orange"
+                />
+             </div>
+        </div>
+
         {/* The Armory Section (Power-ups explanation) */}
         <div className="bg-gray-900 text-white rounded-3xl p-8 md:p-12 mb-16 shadow-2xl relative overflow-hidden">
             <div className="relative z-10">
