@@ -325,7 +325,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                   </div>
                ) : (
                   // Squeezal shrinks the text, Cut Mic blurs it 
-                  <p className={`leading-snug font-medium break-words transition-all ${isMicCut ? 'text-base text-gray-500 blur-[1px] opacity-70 select-none' : (isSqueezed ? 'text-[8px] leading-[10px] text-gray-600' : 'text-base text-gray-800')}`}>
+                  <p className={`leading-snug font-medium break-words transition-all ${isMicCut ? 'text-base text-gray-500 blur-[1px] opacity-70 select-none' : (isSqueezed ? 'text-[4px] leading-[6px] text-gray-600' : 'text-base text-gray-800')}`}>
                       {caption.content}
                   </p>
                )}
