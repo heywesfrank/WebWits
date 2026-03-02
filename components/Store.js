@@ -201,7 +201,8 @@ export default function Store() {
                         "effect_pin": "/sounds/thumbtack.wav",
                         "consumable_double": "/sounds/shotgun.wav",
                         "consumable_cut_mic": "/sounds/cutthemic.wav",
-                        "consumable_squeezal": "/sounds/squeezel.wav"
+                        "consumable_squeezal": "/sounds/squeezel.wav",
+                        "prize_amazon_25": "/sounds/payday.wav"
                     };
 
                     if (soundMap[item.id]) {
