@@ -1,4 +1,3 @@
-// app/api/generate-bots/route.js
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import OpenAI from 'openai';
@@ -59,7 +58,7 @@ export async function GET(request) {
                 content: [
                     {
                         type: "input_text",
-                        text: "You are playing a witty internet meme caption game. Look at this image and generate 15 hilarious, highly original, and punchy captions for it. Return ONLY a valid JSON array of exactly 15 strings. Do not include markdown formatting like ```json."
+                        text: "You are playing a witty internet meme caption game. Look at this image and generate 15 hilarious, highly original, and punchy captions for it. IMPORTANT: Do NOT use any colons (:), semi-colons (;), or hyphens (-) in your captions. Return ONLY a valid JSON array of exactly 15 strings. Do not include markdown formatting like ```json."
                     },
                     {
                         type: "input_image",
@@ -87,10 +86,13 @@ export async function GET(request) {
         const randomOffsetMs = Math.floor(Math.random() * 14 * 60 * 60 * 1000);
         const scheduledTime = new Date(now.getTime() + randomOffsetMs);
 
+        // Fail-safe: Strip out any colons, semi-colons, and replace hyphens with a space
+        const sanitizedCaption = caption.replace(/[:;]/g, '').replace(/-/g, ' ');
+
         return {
             meme_id: activeMeme.id,
             user_id: botIds[idx],
-            content: caption,
+            content: sanitizedCaption,
             vote_count: Math.floor(Math.random() * 4), // Give bots a randomized head start
             created_at: scheduledTime.toISOString()
         };
