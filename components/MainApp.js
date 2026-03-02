@@ -19,6 +19,7 @@ import CaptionFeed from "./CaptionFeed";
 import NotificationModal from "./NotificationModal"; 
 import DailySpin from "./DailySpin"; 
 import WinnerModal from "./WinnerModal"; 
+import MonthlyWinnerModal from "./MonthlyWinnerModal"; 
 import CountdownTimer from "./CountdownTimer";
 
 // Hooks
@@ -65,18 +66,20 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
 
   // New State for Winner Modal & Spin Control
   const [showWinnerModal, setShowWinnerModal] = useState(false);
+  const [showMonthlyModal, setShowMonthlyModal] = useState(false);
   const [spinAllowed, setSpinAllowed] = useState(false); // Defaults to false
 
   // Effect to check rank on load and block spin
   useEffect(() => {
-    // Only run this logic if userProfile is actually loaded
     if (userProfile) {
-        // If they have a rank (1, 2, or 3), show Winner Modal and BLOCK spin
+        // Daily Rank takes priority over Monthly Rank if they happen to both be triggered
         if (userProfile.daily_rank && userProfile.daily_rank > 0) {
            setShowWinnerModal(true);
            setSpinAllowed(false); 
+        } else if (userProfile.cosmetics?.monthly_rank) {
+           setShowMonthlyModal(true);
+           setSpinAllowed(false);
         } else {
-           // Otherwise, they are safe to spin
            setSpinAllowed(true); 
         }
     }
@@ -88,13 +91,11 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
     setShowConfirm(true);
   };
 
-  // [NEW] Wrapper to handle Edit requests from CaptionFeed
   const handleEditRequest = (id, text) => {
     setPendingEdit({ id, text });
     setShowConfirm(true);
   };
 
-  // [CHANGED] Renamed/Updated to handle both Post and Edit confirmations
   const handleConfirmAction = async () => {
     setShowConfirm(false);
     setSubmitting(true);
@@ -196,15 +197,29 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         onOpenInvite={() => setShowInvitePopup(true)} 
       />
 
-      {/* Winner Modal displayed if daily_rank exists */}
+      {/* Daily Winner Modal */}
       {showWinnerModal && session && (
         <WinnerModal 
            rank={userProfile.daily_rank} 
            userId={session.user.id}
            onClose={() => {
               setShowWinnerModal(false);
-              setSpinAllowed(true); // NOW allow spin to run
-              fetchData(); // Refresh to ensure rank is cleared in local state
+              setSpinAllowed(true); 
+              fetchData(); 
+           }} 
+        />
+      )}
+
+      {/* Monthly Winner Modal */}
+      {showMonthlyModal && session && (
+        <MonthlyWinnerModal 
+           rank={userProfile.cosmetics.monthly_rank} 
+           reward={userProfile.cosmetics.monthly_reward}
+           userId={session.user.id}
+           onClose={() => {
+              setShowMonthlyModal(false);
+              setSpinAllowed(true); 
+              fetchData(); 
            }} 
         />
       )}
@@ -421,9 +436,9 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                 onShare={shareCaption}
                 onReport={reportCaption}
                 onReply={submitReply}
-                onEdit={handleEditRequest} // Pass wrapper
-                editingId={editingId}      // Pass state
-                setEditingId={setEditingId}// Pass setter
+                onEdit={handleEditRequest} 
+                editingId={editingId}      
+                setEditingId={setEditingId}
               />
             </>
           )}
