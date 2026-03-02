@@ -7,9 +7,9 @@ import { Resend } from 'resend';
 const SERVER_ITEMS = {
     "effect_fire": { cost: 100, name: "Ring of Fire", type: "meme_bound" },
     "effect_pin": { cost: 200, name: "Thumbtack of Glory", type: "meme_bound" }, 
-    // Removed badge_verified and border_gold as requested
     "consumable_edit": { cost: 150, name: "The Mulligan", type: "consumable" }, 
     "consumable_double": { cost: 250, name: "Double Barrel", type: "consumable" },
+    "consumable_cut_mic": { cost: 2000, name: "Cut the Mic", type: "consumable_stackable" },
     "prize_amazon_5": { cost: 2500, name: "$5 Amazon Card", type: "prize" },
     "prize_amazon_10": { cost: 5000, name: "$10 Amazon Card", type: "prize" },
     "prize_amazon_25": { cost: 15000, name: "$25 Amazon Card", type: "prize" }
@@ -120,9 +120,14 @@ export async function POST(req) {
              };
         }
     }
+    else if (item.type === 'consumable_stackable') {
+         const currentCount = currentCosmetics[`${itemId}_count`] || 0;
+         updateData.cosmetics = { 
+            ...currentCosmetics, 
+            [`${itemId}_count`]: currentCount + 1 
+         };
+    }
     else if (item.type === 'cosmetic') {
-        // Since we removed badges/borders, this block is technically unused now,
-        // but safe to keep for future expansion.
         if (currentCosmetics[itemId]) return NextResponse.json({ error: "Item already owned" }, { status: 400 });
         updateData.cosmetics = { ...currentCosmetics, [itemId]: true };
     }
