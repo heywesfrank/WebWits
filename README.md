@@ -34,10 +34,15 @@ create table public.profiles (
   cosmetics jsonb null default '{}'::jsonb,
   daily_rank integer null,
   social_link text null,
+  sound_enabled boolean null default true,
   constraint profiles_pkey primary key (id),
   constraint profiles_username_key unique (username),
   constraint profiles_id_fkey foreign KEY (id) references auth.users (id)
 ) TABLESPACE pg_default;
+
+create index IF not exists idx_profiles_monthly_points on public.profiles using btree (monthly_points desc) TABLESPACE pg_default;
+
+create index IF not exists idx_profiles_total_points on public.profiles using btree (total_points desc) TABLESPACE pg_default;
 
 create index IF not exists idx_profiles_monthly_points on public.profiles using btree (monthly_points desc) TABLESPACE pg_default;
 
