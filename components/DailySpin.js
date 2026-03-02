@@ -41,10 +41,14 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
     if (isSpinning) return;
     setIsSpinning(true);
 
+    const playSound = userProfile?.sound_enabled !== false;
+
     // Play wheel spinning sound
-    try {
-      new Audio('/sounds/wheel.wav').play().catch(e => console.warn("Audio play failed:", e));
-    } catch(e) {}
+    if (playSound) {
+      try {
+        new Audio('/sounds/wheel.wav').play().catch(e => console.warn("Audio play failed:", e));
+      } catch(e) {}
+    }
 
     try {
       const res = await fetch('/api/daily-spin', {
@@ -84,9 +88,11 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
           setIsSpinning(false);
           
           // Play coins sound
-          try {
-            new Audio('/sounds/coins.wav').play().catch(e => console.warn("Audio play failed:", e));
-          } catch(e) {}
+          if (playSound) {
+            try {
+              new Audio('/sounds/coins.wav').play().catch(e => console.warn("Audio play failed:", e));
+            } catch(e) {}
+          }
 
           // Generate Casino-Style Firework Coins
           const numCoins = data.prize === 500 ? 120 : 50;
