@@ -184,9 +184,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   const currentMeme = viewMode === 'active' ? activeMeme : selectedMeme;
 
   // Gatekeeper Logic: Must vote before commenting (unless you are the first)
-  // [!code change] FIXED LOGIC: We calculate how many captions are NOT ours.
-  // If `votableCaptions` is 0, it means the arena is empty OR only contains my own captions.
-  // In both cases, I shouldn't be blocked from posting.
   const votableCaptions = captions.filter(c => c.user_id !== session?.user?.id);
   const needsToVote = viewMode === 'active' && votableCaptions.length > 0 && !hasVotedOnAny;
 
@@ -342,9 +339,9 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
               </button>
             </div>
             
-            {/* Timer / Winner Badge pushed to the right */}
+            {/* Timer / Winner Badge centered on mobile, pushed to the right on desktop */}
             {viewMode !== 'archive' && (
-              <div className="flex w-full md:w-auto justify-end md:ml-auto">
+              <div className="flex w-full md:w-auto justify-center md:justify-end md:ml-auto">
                 {viewMode === 'active' ? (
                   <CountdownTimer />
                 ) : (
