@@ -10,6 +10,7 @@ const SERVER_ITEMS = {
     "consumable_edit": { cost: 150, name: "The Mulligan", type: "consumable" }, 
     "consumable_double": { cost: 250, name: "Double Barrel", type: "consumable" },
     "consumable_cut_mic": { cost: 2000, name: "Cut the Mic", type: "consumable_stackable" },
+    "consumable_squeezal": { cost: 2000, name: "Squeezal", type: "consumable_stackable" },
     "prize_amazon_5": { cost: 2500, name: "$5 Amazon Card", type: "prize" },
     "prize_amazon_10": { cost: 5000, name: "$10 Amazon Card", type: "prize" },
     "prize_amazon_25": { cost: 15000, name: "$25 Amazon Card", type: "prize" }
