@@ -21,7 +21,7 @@ export default function CountdownTimer() {
   }, []);
 
   return (
-    <div className="absolute top-4 right-4 bg-black/70 backdrop-blur text-white text-xs font-mono py-1 px-3 rounded-full border border-white/10 flex items-center gap-2 z-10">
+    <div className="bg-black/70 backdrop-blur text-white text-xs font-mono py-1 px-3 rounded-full border border-white/10 flex items-center gap-2 z-10 w-fit">
       <Clock size={12} className="text-yellow-400" /> 
       <span>Ends in: {timeLeft}</span>
     </div>
