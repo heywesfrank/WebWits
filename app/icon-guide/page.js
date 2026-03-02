@@ -145,6 +145,19 @@ export default function IconGuide() {
                  </div>
             </div>
 
+            {/* Squeezal */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
+                 <div className="w-16 h-16 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-purple-100">
+                    <img src="/squeezal.png" alt="Squeezal" className="w-10 h-10 object-contain drop-shadow-sm" />
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-bold mb-2">Squeezal</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                        Shrinks a rival's caption so small it requires zooming in to read. Lasts for 6 hours. (Purchased from Store).
+                    </p>
+                 </div>
+            </div>
+
         </div>
       </div>
     </div>
