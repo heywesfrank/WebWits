@@ -78,20 +78,35 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
           setPrize(data.prize);
           setIsSpinning(false);
           
-          // Generate Random Coins for the animation
-          // Jackpot drops 100 coins, regular drops 40
-          const numCoins = data.prize === 500 ? 100 : 40;
-          const newCoins = Array.from({ length: numCoins }).map((_, i) => ({
-            id: i,
-            left: Math.random() * 100, // 0 to 100vw
-            delay: Math.random() * (data.prize === 500 ? 0.8 : 0.4), // Staggered drop longer for jackpot
-            duration: 1.5 + Math.random() * 2, // 1.5s to 3.5s fall time
-            scale: 0.5 + Math.random() * 0.7, // Random size
-            rotateStart: Math.random() * 360,
-            rotateEnd: Math.random() * 360 + 360 * (Math.random() > 0.5 ? 1 : -1), // Spin direction
-            rotateYStart: Math.random() > 0.5 ? 180 : 0, // Flipping
-            rotateYEnd: Math.random() > 0.5 ? 360 : -180
-          }));
+          // Generate Casino-Style Firework Coins
+          const numCoins = data.prize === 500 ? 120 : 50;
+          const newCoins = Array.from({ length: numCoins }).map((_, i) => {
+            const isLeft = i % 2 === 0; // Split evenly between left and right sides
+            
+            // Start slightly off-screen on the bottom left/right
+            const startLeft = isLeft ? Math.random() * 10 - 5 : 95 + Math.random() * 10; 
+            // Arc inwards towards the center
+            const peakLeft = isLeft ? 10 + Math.random() * 30 : 60 + Math.random() * 30;
+            const endLeft = isLeft ? 20 + Math.random() * 50 : 30 + Math.random() * 50;
+            
+            // Shoot up to 10%-50% of the screen height
+            const peakTop = 10 + Math.random() * 40; 
+
+            return {
+              id: i,
+              delay: Math.random() * (data.prize === 500 ? 1.0 : 0.4), 
+              duration: 2.5 + Math.random() * 1.5, // Total flight time
+              scale: 0.5 + Math.random() * 0.8,
+              rotateStart: Math.random() * 360,
+              rotateEnd: Math.random() * 360 + 720 * (Math.random() > 0.5 ? 1 : -1),
+              rotateYStart: Math.random() > 0.5 ? 180 : 0,
+              rotateYEnd: Math.random() > 0.5 ? 720 : -720,
+              // Keyframes for the arc
+              topPath: ['110%', `${peakTop}%`, '120%'],
+              leftPath: [`${startLeft}%`, `${peakLeft}%`, `${endLeft}%`]
+            };
+          });
+          
           setCoinDrops(newCoins);
           setShowCoins(true);
 
@@ -130,7 +145,7 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
       {isOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-md p-4">
           
-          {/* Falling Coins Animation Layer */}
+          {/* Firework Coins Animation Layer */}
           {showCoins && (
             <div className="fixed inset-0 pointer-events-none z-[110] overflow-hidden">
               {coinDrops.map((coin) => (
@@ -138,21 +153,23 @@ export default function DailySpin({ session, userProfile, onSpinComplete, canSpi
                   key={coin.id}
                   src="/coin.png"
                   initial={{ 
-                    top: '-10%', 
-                    left: `${coin.left}vw`, 
+                    top: coin.topPath[0], 
+                    left: coin.leftPath[0], 
                     scale: coin.scale,
                     rotate: coin.rotateStart,
                     rotateY: coin.rotateYStart
                   }}
                   animate={{ 
-                    top: '110%',
+                    top: coin.topPath,
+                    left: coin.leftPath,
                     rotate: coin.rotateEnd,
                     rotateY: coin.rotateYEnd
                   }}
                   transition={{ 
                     duration: coin.duration, 
-                    delay: coin.delay, 
-                    ease: "linear" 
+                    delay: coin.delay,
+                    times: [0, 0.4, 1], // Keyframe timing: 40% time spent shooting up, 60% falling down
+                    ease: ["easeOut", "easeIn"] // Shoot out fast, accelerate while falling
                   }}
                   className="absolute w-12 h-12 md:w-16 md:h-16 object-contain filter drop-shadow-lg"
                   aria-hidden="true"
