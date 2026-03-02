@@ -121,6 +121,10 @@ export default function HowItWorks() {
                         name="Double Barrel" 
                         desc="One joke not enough? Unlock a second caption slot for the daily battle." 
                     />
+                    <PowerUp 
+                        name="Cut the Mic" 
+                        desc="Silence a rival. Find an opponent's caption and lock it so they can't get votes for 6 hours." 
+                    />
                 </div>
             </div>
             
@@ -140,7 +144,6 @@ export default function HowItWorks() {
                 </li>
                 <li className="flex gap-3">
                     <span className="text-yellow-500 font-bold">•</span>
-                    {/* [!code ++] NEW RULE ADDED HERE */}
                     <span><strong>Pay the toll.</strong> You must vote on at least one caption to unlock the ability to post (unless you are the first to arrive).</span>
                 </li>
                 <li className="flex gap-3">
