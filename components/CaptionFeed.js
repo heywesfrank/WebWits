@@ -197,7 +197,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                 ${isWinner ? 'bg-yellow-50/30' : ''}
                 ${hasRingOfFire && !isMicCut ? 'ring-of-fire' : (isWinner ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-gray-200')}
                 ${hasPin && !isMicCut ? 'border-red-200 bg-red-50/10' : ''}
-                ${isMicCut ? 'opacity-40 bg-gray-50 grayscale border-gray-100 pointer-events-none' : ''}
+                ${isMicCut ? 'bg-gray-50 border-gray-200 shadow-none' : ''} 
             `}
           >
             {hasPin && (
@@ -238,8 +238,8 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                   />
                 )}
 
-                {/* Avatar gets a heavy blur if the mic is cut */}
-                <div className={`h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm transition-all ${isMicCut ? 'blur-[2px] opacity-50' : ''}`}>
+                {/* Avatar gets a subtle fade and blur if mic is cut */}
+                <div className={`h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm transition-all ${isMicCut ? 'opacity-50 grayscale blur-[1px]' : ''}`}>
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={username} className="h-full w-full object-cover" />
                   ) : (
@@ -250,26 +250,27 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                 </div>
 
                 {isInfluencer && (
-                  <img src="/badge.png" alt="Influencer" className="absolute -bottom-1 -left-1 w-4 h-4 object-contain z-20 filter drop-shadow-sm" />
+                  <img src="/badge.png" alt="Influencer" className={`absolute -bottom-1 -left-1 w-4 h-4 object-contain z-20 filter drop-shadow-sm ${isMicCut ? 'opacity-50 grayscale' : ''}`} />
                 )}
 
                 {countryCode && (
-                  <img src={`https://flagcdn.com/w20/${countryCode}.png`} alt={caption.profiles.country} className="absolute -bottom-1 -right-1 w-4 h-3 rounded-[2px] shadow-sm border border-white object-cover" />
+                  <img src={`https://flagcdn.com/w20/${countryCode}.png`} alt={caption.profiles.country} className={`absolute -bottom-1 -right-1 w-4 h-3 rounded-[2px] shadow-sm border border-white object-cover ${isMicCut ? 'opacity-50 grayscale' : ''}`} />
                 )}
               </div>
             </div>
 
-            {/* Added pointer-events-auto so the text itself handles clicks, while the container background ignores them */}
             <div className="flex-1 min-w-0 pointer-events-auto">
               
+              {/* SHARP, 100% OPAQUE BADGE */}
               {isMicCut && (
-                <div className="flex items-center gap-2 bg-red-100 text-red-700 text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg mb-2 w-fit border border-red-200 shadow-sm relative z-10">
-                    <MicOff size={14} />
+                <div className="flex items-center gap-2 bg-red-100 text-red-700 text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg mb-3 w-fit border border-red-200 shadow-sm relative z-10 opacity-100">
+                    <MicOff size={14} className="text-red-600" />
                     <span>Mic cut by @{caption.cutter?.username || 'Unknown'}</span>
                 </div>
               )}
 
-              <div className={`flex items-center gap-2 mb-1 ${isMicCut ? 'blur-[1px] opacity-70' : ''}`}>
+              {/* Softer fade on the username header */}
+              <div className={`flex items-center gap-2 mb-1 transition-all ${isMicCut ? 'opacity-60' : ''}`}>
                 <SocialUsername 
                     username={username} 
                     isInfluencer={isInfluencer} 
@@ -301,20 +302,21 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                       </div>
                   </div>
                ) : (
-                  // Heavy blur on the actual text when Mic is cut
-                  <p className={`text-base leading-snug font-medium break-words transition-all ${isMicCut ? 'text-gray-400 blur-[2.5px] select-none pointer-events-none' : 'text-gray-800'}`}>
+                  // Softer fade and subtle 1px blur on the actual text 
+                  <p className={`text-base leading-snug font-medium break-words transition-all ${isMicCut ? 'text-gray-500 blur-[1px] opacity-70 select-none' : 'text-gray-800'}`}>
                       {caption.content}
                   </p>
                )}
               
-              <div className="flex gap-4 mt-3 items-center flex-wrap">
+              {/* Fade out the action buttons entirely */}
+              <div className={`flex gap-4 mt-3 items-center flex-wrap transition-all ${isMicCut ? 'opacity-40 grayscale pointer-events-none' : ''}`}>
                 <button 
                   onClick={() => handleShareClick(caption, index)} 
                   disabled={isMicCut}
                   className={`flex items-center gap-1 text-xs transition font-bold ${
                     copiedId === caption.id 
                       ? "text-green-600 bg-green-50 px-2 py-1 rounded-md" 
-                      : (isMicCut ? "text-gray-300 cursor-not-allowed" : "text-gray-400 hover:text-yellow-600")
+                      : (isMicCut ? "text-gray-400 cursor-not-allowed" : "text-gray-400 hover:text-yellow-600")
                   }`}
                 >
                   {copiedId === caption.id ? <Check size={12} /> : <Share2 size={12} />}
@@ -323,7 +325,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                 
                 {viewMode === 'active' && (
                   <>
-                    <button onClick={() => onReport(caption.id)} disabled={isMicCut} className={`flex items-center gap-1 text-xs transition font-bold ${isMicCut ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'}`}>
+                    <button onClick={() => onReport(caption.id)} disabled={isMicCut} className={`flex items-center gap-1 text-xs transition font-bold text-gray-400 hover:text-red-500`}>
                       <Flag size={12} /> Report
                     </button>
 
@@ -339,6 +341,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                         </button>
                     )}
                     
+                    {/* The Cut Mic button doesn't show if the mic is ALREADY cut */}
                     {!isOwnComment && hasCutPower && !isMicCut && (
                         <button 
                            onClick={() => setConfirmCutId(confirmCutId === caption.id ? null : caption.id)}
@@ -385,9 +388,9 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                   </div>
               )}
 
-              {/* Replies Section */}
+              {/* Replies Section - also faded if the mic is cut */}
               {(caption.replies?.length > 0 || activeReplyId === caption.id) && (
-                <div className={`mt-4 space-y-3 ${isMicCut ? 'opacity-50 blur-[2px] pointer-events-none select-none' : ''}`}>
+                <div className={`mt-4 space-y-3 transition-all ${isMicCut ? 'opacity-60 blur-[1px] grayscale pointer-events-none select-none' : ''}`}>
                   {caption.replies?.map((reply) => {
                      const replyCountryCode = getCountryCode(reply.profiles?.country);
                      const isReplyInfluencer = reply.profiles?.influencer;
@@ -470,7 +473,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
               whileTap={viewMode === 'active' && !isMicCut ? { scale: 0.9 } : {}}
               onClick={() => onVote(caption.id)}
               disabled={viewMode === 'archive-detail' || isMicCut} 
-              className={`flex flex-col items-center justify-center gap-1 p-2 h-fit rounded-lg transition-colors pointer-events-auto ${caption.hasVoted ? 'text-yellow-500' : viewMode === 'archive-detail' || isMicCut ? 'text-gray-400 cursor-default' : 'text-gray-400 hover:text-yellow-500'}`}
+              className={`flex flex-col items-center justify-center gap-1 p-2 h-fit rounded-lg transition-colors pointer-events-auto ${caption.hasVoted && !isMicCut ? 'text-yellow-500' : viewMode === 'archive-detail' || isMicCut ? 'text-gray-400 cursor-not-allowed opacity-40 grayscale' : 'text-gray-400 hover:text-yellow-500'}`}
             >
               {isWinner ? <Trophy size={24} className="fill-yellow-400 text-yellow-600" /> : <ThumbsUp size={24} className={`transition-all ${caption.vote_count > 0 && !isMicCut ? 'fill-yellow-100' : ''}`} />}
               <span className={`font-bold text-sm ${isWinner ? 'text-yellow-700' : ''}`}>{caption.vote_count}</span>
