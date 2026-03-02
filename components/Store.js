@@ -2,35 +2,8 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Wallet, Pin, Edit3, Gift, Loader2, MicOff } from "lucide-react";
+import { Wallet, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-// Custom Icon for Ring of Fire
-const RingOfFireIcon = ({ size = 24, className }) => (
-    <svg 
-      xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <circle cx="12" cy="12" r="10" />
-      <circle cx="12" cy="12" r="6" />
-      <path d="M12 2v2" />
-      <path d="M12 20v2" />
-      <path d="m4.93 4.93 1.41 1.41" />
-      <path d="m17.66 17.66 1.41 1.41" />
-      <path d="M2 12h2" />
-      <path d="M20 12h2" />
-      <path d="m6.34 17.66-1.41 1.41" />
-      <path d="m19.07 4.93-1.41 1.41" />
-    </svg>
-);
 
 // Define Store Items Configuration
 const ITEMS = [
@@ -40,8 +13,7 @@ const ITEMS = [
         name: "Ring of Fire",
         description: "Ignite your active caption. Burns until the battle ends.",
         cost: 100,
-        icon: <RingOfFireIcon size={24} className="text-orange-500" />,
-        color: "orange"
+        image: "/ringoffire.png"
     },
     {
         id: "consumable_edit",
@@ -49,8 +21,7 @@ const ITEMS = [
         name: "The Mulligan",
         description: "We all make mistakes. Fix yours. Grants one caption edit.",
         cost: 150,
-        icon: <Edit3 size={24} className="text-blue-500" />,
-        color: "blue"
+        image: "/mulligan.png"
     },
     {
         id: "effect_pin",
@@ -58,8 +29,7 @@ const ITEMS = [
         name: "Thumbtack of Glory",
         description: "Glue your wit to the ceiling. Stays on top for the full battle.", 
         cost: 200,
-        icon: <Pin size={24} className="text-red-500 fill-red-500" />,
-        color: "red"
+        image: "/thumbtackofglory.png"
     },
     {
         id: "consumable_double",
@@ -67,8 +37,7 @@ const ITEMS = [
         name: "Double Barrel",
         description: "One joke wasn't enough? Reload and fire a second caption today.",
         cost: 250,
-        icon: <img src="/shotgun.png" alt="Double Barrel" className="w-8 h-8 object-contain" />,
-        color: "purple"
+        image: "/doublebarrel.png"
     },
     {
         id: "consumable_cut_mic",
@@ -76,8 +45,7 @@ const ITEMS = [
         name: "Cut the Mic",
         description: "Silence a rival. Prevents a specific comment from receiving votes for 6 hours.",
         cost: 2000,
-        icon: <MicOff size={24} className="text-red-500" />,
-        color: "red"
+        image: "/cutthemic.png"
     },
     {
         id: "prize_amazon_25",
@@ -85,8 +53,7 @@ const ITEMS = [
         name: "The Payday",
         description: "$25 Amazon Gift Card. Jeff Bezos' money, now yours.",
         cost: 15000, 
-        icon: <Gift size={24} className="text-green-600" />,
-        color: "green"
+        image: "/payday.png"
     }
 ];
 
@@ -303,14 +270,6 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory, activeMemeId 
     const countKey = `${item.id}_count`;
     const count = inventory[countKey] || 0;
 
-    const bgColors = {
-        orange: "bg-orange-50 text-orange-600",
-        red: "bg-red-50 text-red-600",
-        blue: "bg-blue-50 text-blue-600",
-        purple: "bg-purple-50 text-purple-600",
-        green: "bg-green-50 text-green-600"
-    };
-
     return (
         <div className={`bg-white border-2 rounded-2xl p-6 flex flex-col transition-all relative overflow-hidden group ${isActive ? 'border-yellow-400 shadow-lg shadow-yellow-100' : 'border-gray-100 hover:border-gray-300 hover:shadow-xl'}`}>
             
@@ -321,14 +280,17 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory, activeMemeId 
             )}
             
             {count > 0 && item.type === 'consumable_stackable' && (
-                <div className="absolute top-3 right-3 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                <div className="absolute top-3 right-3 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-full z-10">
                     x{count} OWNED
                 </div>
             )}
 
-            <div className={`w-14 h-14 rounded-2xl flex items-center justify-center mb-5 ${bgColors[item.color] || 'bg-gray-100'}`}>
-                {item.icon}
-            </div>
+            {/* Replaced Icon + Background Wrapper with PNG rendering */}
+            <img 
+                src={item.image} 
+                alt={item.name} 
+                className="w-16 h-16 object-contain mb-5 drop-shadow-sm transition-transform duration-300 group-hover:scale-110 group-hover:rotate-3" 
+            />
             
             <h3 className="font-bold text-xl text-gray-900 font-display leading-none mb-2">{item.name}</h3>
             <p className="text-gray-500 text-sm mb-6 flex-1 leading-relaxed">{item.description}</p>
