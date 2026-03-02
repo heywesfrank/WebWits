@@ -1,9 +1,10 @@
+// app/profile/page.js
 "use client";
 import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Camera, Loader2, Link as LinkIcon, Save } from "lucide-react";
+import { ArrowLeft, Camera, Loader2, Link as LinkIcon, Save, Volume2, VolumeX } from "lucide-react";
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -19,6 +20,9 @@ export default function ProfilePage() {
   // Social Link State
   const [socialLink, setSocialLink] = useState("");
   const [savingLink, setSavingLink] = useState(false);
+
+  // Sound Settings State
+  const [soundEnabled, setSoundEnabled] = useState(true);
 
   const router = useRouter();
   const fileInputRef = useRef(null);
@@ -45,8 +49,11 @@ export default function ProfilePage() {
           .single();
 
         if (error) throw error;
+        
         setProfile(data);
         if (data.social_link) setSocialLink(data.social_link);
+        setSoundEnabled(data.sound_enabled !== false); // Default to true if null
+        
       } catch (error) {
         console.error('Error loading profile:', error);
       } finally {
@@ -126,6 +133,21 @@ export default function ProfilePage() {
       alert('Error saving link: ' + error.message);
     } finally {
       setSavingLink(false);
+    }
+  };
+
+  const toggleSound = async () => {
+    const newVal = !soundEnabled;
+    setSoundEnabled(newVal);
+    setProfile(prev => ({ ...prev, sound_enabled: newVal }));
+    
+    try {
+      await supabase
+        .from('profiles')
+        .update({ sound_enabled: newVal })
+        .eq('id', session.user.id);
+    } catch (error) {
+      console.error('Error saving sound preference:', error);
     }
   };
 
@@ -212,9 +234,28 @@ export default function ProfilePage() {
             </p>
           </div>
 
+          {/* App Settings Section */}
+          <div className="mt-8 pt-6 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-2">
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 text-left">
+              App Settings
+            </label>
+            <div className="flex items-center justify-between p-3.5 bg-gray-50 border border-gray-200 rounded-xl">
+              <div className="flex items-center gap-3">
+                {soundEnabled ? <Volume2 size={20} className="text-gray-600" /> : <VolumeX size={20} className="text-gray-400" />}
+                <span className="text-sm font-medium text-gray-700 font-bold">Sound Effects</span>
+              </div>
+              <button
+                onClick={toggleSound}
+                className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${soundEnabled ? 'bg-yellow-400' : 'bg-gray-300'}`}
+              >
+                <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${soundEnabled ? 'translate-x-6' : 'translate-x-1'}`} />
+              </button>
+            </div>
+          </div>
+
           {/* Influencer Social Link Section */}
           {profile?.influencer && (
-            <div className="mt-8 pt-6 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-2">
+            <div className="mt-6 pt-6 border-t border-gray-100 animate-in fade-in slide-in-from-bottom-2">
               <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 text-left">
                 Your Social Link (Influencer)
               </label>
