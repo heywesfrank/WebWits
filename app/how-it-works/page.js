@@ -154,6 +154,10 @@ export default function HowItWorks() {
                         name="Cut the Mic" 
                         desc="Silence a rival. Find an opponent's caption and lock it so they can't get votes for 6 hours." 
                     />
+                    <PowerUp 
+                        name="Squeezal" 
+                        desc="Make a rival's joke so small they'll need a microscope to read it. Lasts 6 hours." 
+                    />
                 </div>
             </div>
             
