@@ -2,13 +2,13 @@
 "use client";
 import { useState, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { Wallet, Pin, Edit3, Gift, Loader2 } from "lucide-react";
+import { Wallet, Pin, Edit3, Gift, Loader2, MicOff } from "lucide-react";
 import { useRouter } from "next/navigation";
 
 // Custom Icon for Ring of Fire
 const RingOfFireIcon = ({ size = 24, className }) => (
     <svg 
-      xmlns="http://www.w3.org/2000/svg" 
+      xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" 
       width={size} 
       height={size} 
       viewBox="0 0 24 24" 
@@ -69,6 +69,15 @@ const ITEMS = [
         cost: 250,
         icon: <img src="/shotgun.png" alt="Double Barrel" className="w-8 h-8 object-contain" />,
         color: "purple"
+    },
+    {
+        id: "consumable_cut_mic",
+        type: "consumable_stackable",
+        name: "Cut the Mic",
+        description: "Silence a rival. Prevents a specific comment from receiving votes for 6 hours.",
+        cost: 2000,
+        icon: <MicOff size={24} className="text-red-500" />,
+        color: "red"
     },
     {
         id: "prize_amazon_25",
@@ -137,7 +146,6 @@ export default function Store() {
                  setMessage({ type: 'error', text: "You must post a caption first to pin it!" });
                  return;
             }
-            // Check conflicts
             if (profile.cosmetics?.effect_fire_meme_id === activeMemeId) {
                  setMessage({ type: 'error', text: "Cannot pin: You already used Ring of Fire!" });
                  return;
@@ -160,7 +168,6 @@ export default function Store() {
                  setMessage({ type: 'error', text: "You must post a caption first to edit it!" });
                  return;
             }
-            // Cannot edit if powered up
             const hasFire = profile.cosmetics?.effect_fire_meme_id === activeMemeId;
             const hasPin = profile.cosmetics?.effect_pin_meme_id === activeMemeId;
 
@@ -175,7 +182,6 @@ export default function Store() {
                  setMessage({ type: 'error', text: "Fire your first shot before reloading!" });
                  return;
             }
-            // Check if already owned/active for this meme
             if (profile.cosmetics?.consumable_double_meme_id === activeMemeId) {
                  setMessage({ type: 'error', text: "You're already locked and loaded." });
                  return;
@@ -212,6 +218,8 @@ export default function Store() {
             if (data.success) {
                 if (item.type === 'prize') {
                     setMessage({ type: 'success', text: "Bag secured! 💰 We've alerted the admins. Watch your email for the goods." });
+                } else if (item.id === "consumable_cut_mic") {
+                    setMessage({ type: 'success', text: "Mic Cut purchased! ✂️ Find a comment to silence in the arena." });
                 } else {
                     setMessage({ type: 'success', text: `Purchased: ${item.name}!` });
                 }
@@ -284,18 +292,12 @@ export default function Store() {
 function StoreCard({ item, userCredits, onBuy, loading, inventory, activeMemeId }) {
     const canAfford = userCredits >= item.cost;
     
-    // Check Status based on Type
     let isActive = false;
     
-    // FIXED LOGIC:
-    // Only mark as active if the saved meme ID matches the CURRENT active meme ID.
-    // If it's a new day (new meme ID), this check fails, and the button unlocks.
     if (item.type === 'meme_bound' || item.id === 'consumable_edit' || item.id === 'consumable_double') {
          isActive = inventory[`${item.id}_meme_id`] === activeMemeId;
-    } else if (item.type === 'duration') {
-         // Legacy support or for other items
-         const expiryKey = `${item.id}_expires`;
-         isActive = inventory[expiryKey] && new Date(inventory[expiryKey]) > new Date();
+    } else if (item.type === 'consumable_stackable') {
+         isActive = false; // Always allows repurchasing
     }
     
     const countKey = `${item.id}_count`;
@@ -317,7 +319,8 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory, activeMemeId 
                     {item.id === 'consumable_edit' ? 'READY' : (item.id === 'consumable_double' ? 'LOADED' : 'ACTIVE')}
                 </div>
             )}
-             {count > 0 && item.type === 'consumable' && item.id !== 'consumable_edit' && item.id !== 'consumable_double' && (
+            
+            {count > 0 && item.type === 'consumable_stackable' && (
                 <div className="absolute top-3 right-3 bg-gray-900 text-white text-[10px] font-bold px-2 py-1 rounded-full">
                     x{count} OWNED
                 </div>
