@@ -140,14 +140,6 @@ export async function GET(request) {
       .eq('status', 'active');
 
     if (activeMemes && activeMemes.length > 0) {
-      
-      // A. MONTHLY RESET CHECK
-      const currentDay = new Date().getDate();
-      if (currentDay === 1) {
-         await supabase.from('profiles').update({ monthly_points: 0 }).neq('id', '00000000-0000-0000-0000-000000000000');
-         console.log("First of the month: Monthly points reset.");
-      }
-
       for (const meme of activeMemes) {
         let winningCaption = null;
 
@@ -254,6 +246,48 @@ export async function GET(request) {
           })
           .eq('id', meme.id);
       }
+    }
+
+    // --- A. MONTHLY RESET CHECK (Runs after the last day's meme is scored) ---
+    const currentDay = new Date().getDate();
+    if (currentDay === 1) {
+         // 1. Fetch top 3 users for the month
+         const { data: topMonthlyUsers } = await supabase
+            .from('profiles')
+            .select('id, monthly_points, credits, cosmetics')
+            .order('monthly_points', { ascending: false })
+            .limit(3);
+            
+         if (topMonthlyUsers && topMonthlyUsers.length > 0) {
+            const monthlyRewards = [1500, 1000, 500];
+            
+            for (let i = 0; i < topMonthlyUsers.length; i++) {
+                const user = topMonthlyUsers[i];
+                if (user.monthly_points > 0) {
+                    const newCosmetics = { 
+                        ...(user.cosmetics || {}), 
+                        monthly_rank: i + 1, 
+                        monthly_reward: monthlyRewards[i] 
+                    };
+                    
+                    await supabase.from('profiles').update({
+                        credits: (user.credits || 0) + monthlyRewards[i],
+                        cosmetics: newCosmetics
+                    }).eq('id', user.id);
+                    
+                    // Send Push Notification
+                    await sendNotificationToUser(user.id, {
+                        title: "🏆 MONTHLY CHAMPION!",
+                        body: `You finished #${i + 1} this month! You earned ${monthlyRewards[i]} credits.`,
+                        url: "https://itswebwits.com"
+                    });
+                }
+            }
+         }
+
+         // Reset all monthly points back to 0
+         await supabase.from('profiles').update({ monthly_points: 0 }).neq('id', '00000000-0000-0000-0000-000000000000');
+         console.log("First of the month: Monthly points reset and rewards distributed.");
     }
 
     // --- STEP 3: Insert the New Meme ---
