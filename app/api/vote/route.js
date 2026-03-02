@@ -17,12 +17,17 @@ export async function POST(req) {
     // 1. Fetch the target comment first to check ownership and meme context
     const { data: targetComment, error: commentError } = await supabase
       .from('comments')
-      .select('id, user_id, meme_id')
+      .select('id, user_id, meme_id, mic_cut_until')
       .eq('id', commentId)
       .single();
 
     if (commentError || !targetComment) {
        return NextResponse.json({ error: "Comment not found" }, { status: 404 });
+    }
+
+    // CHECK: Is Mic Cut?
+    if (targetComment.mic_cut_until && new Date(targetComment.mic_cut_until) > new Date()) {
+       return NextResponse.json({ error: "This user's mic is currently cut. No votes allowed." }, { status: 403 });
     }
 
     // 2. CHECK: No Self-Voting
@@ -58,7 +63,6 @@ export async function POST(req) {
     // --- END NEW CHECKS ---
 
     // 4. Perform the Vote (Toggle)
-    // We assume the RPC 'toggle_vote' exists as per your original hook
     const { error: voteError } = await supabase.rpc('toggle_vote', { 
       vote_comment_id: commentId, 
       vote_user_id: userId 
@@ -76,15 +80,10 @@ export async function POST(req) {
     if (fetchError) throw fetchError;
 
     // 6. Check for Milestones (1, 5, 10, 25, 50)
-    // Note: To strictly prevent duplicate alerts (e.g. going 5->4->5), 
-    // you would ideally add a 'last_milestone' column to your comments table.
-    // This implementation simply checks the current count.
     const milestones = [1, 5, 10, 25, 50]; 
     
     if (milestones.includes(comment.vote_count)) {
-      // Don't notify if the voter is the author (self-vote) - redundant now due to check #2 but safe to keep
       if (comment.user_id !== userId) {
-        
         let title = "🔥 You're on fire!";
         let body = `Your caption just hit ${comment.vote_count} votes! "${comment.content.substring(0, 20)}..."`;
 
@@ -96,7 +95,7 @@ export async function POST(req) {
         await sendNotificationToUser(comment.user_id, {
           title: title, 
           body: body,   
-          url: "https://itswebwits.com"
+          url: "[https://itswebwits.com](https://itswebwits.com)"
         });
       }
     }
