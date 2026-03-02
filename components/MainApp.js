@@ -46,15 +46,15 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, setViewMode, toasts, setToasts, submitReply,
     showOnboarding, setShowOnboarding, hasCommented, hasVotedOnAny, fetchData,
-    handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption, editCaption
+    handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption, editCaption, cutMic
   } = useGameLogic(session, initialMeme, initialLeaderboard);
 
   const [newCaption, setNewCaption] = useState("");
   const [submitting, setSubmitting] = useState(false);
   
-  // [NEW] Lifted Editing State for Mulligan Confirmation
+  // Lifted Editing State for Mulligan Confirmation
   const [editingId, setEditingId] = useState(null);
-  const [pendingEdit, setPendingEdit] = useState(null); // { id, text }
+  const [pendingEdit, setPendingEdit] = useState(null); 
 
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showLeaderboardModal, setShowLeaderboardModal] = useState(false);
@@ -67,12 +67,11 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   // New State for Winner Modal & Spin Control
   const [showWinnerModal, setShowWinnerModal] = useState(false);
   const [showMonthlyModal, setShowMonthlyModal] = useState(false);
-  const [spinAllowed, setSpinAllowed] = useState(false); // Defaults to false
+  const [spinAllowed, setSpinAllowed] = useState(false); 
 
   // Effect to check rank on load and block spin
   useEffect(() => {
     if (userProfile) {
-        // Daily Rank takes priority over Monthly Rank if they happen to both be triggered
         if (userProfile.daily_rank && userProfile.daily_rank > 0) {
            setShowWinnerModal(true);
            setSpinAllowed(false); 
@@ -101,19 +100,15 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
     setSubmitting(true);
 
     if (pendingEdit) {
-       // --- Handle Edit Confirmation ---
        const success = await editCaption(pendingEdit.id, pendingEdit.text);
        if (success) {
           setPendingEdit(null);
-          setEditingId(null); // Close the edit box in CaptionFeed
+          setEditingId(null); 
        }
     } else {
-       // --- Handle New Post Confirmation ---
        const success = await submitCaption(newCaption);
        if (success) {
          setNewCaption("");
-
-         // Start: Check for First-Time Invite Popup
          if (userProfile && !userProfile.has_seen_invite_popup) {
             setShowInvitePopup(true);
             
@@ -136,19 +131,18 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
     const shareData = {
         title: 'WebWits',
         text: "I just dropped a caption on WebWits. Come beat me if you can.",
-        url: 'https://itswebwits.com'
+        url: '[https://itswebwits.com](https://itswebwits.com)'
     };
 
     if (navigator.share) {
         try { await navigator.share(shareData); } catch (err) {}
     } else {
-        navigator.clipboard.writeText('https://itswebwits.com');
+        navigator.clipboard.writeText('[https://itswebwits.com](https://itswebwits.com)');
         setToasts(prev => [...prev, { id: Date.now(), msg: "Link copied! Send it.", type: "success" }]);
     }
     setShowInvitePopup(false);
   };
 
-  // Notification Check Logic
   useEffect(() => {
     const checkNotificationStatus = async () => {
       if (!session?.user || showOnboarding) return;
@@ -183,8 +177,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   }, [session, showOnboarding]);
 
   const currentMeme = viewMode === 'active' ? activeMeme : selectedMeme;
-
-  // Gatekeeper Logic: Must vote before commenting (unless you are the first)
   const votableCaptions = captions.filter(c => c.user_id !== session?.user?.id);
   const needsToVote = viewMode === 'active' && votableCaptions.length > 0 && !hasVotedOnAny;
 
@@ -197,7 +189,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         onOpenInvite={() => setShowInvitePopup(true)} 
       />
 
-      {/* Daily Winner Modal */}
       {showWinnerModal && session && (
         <WinnerModal 
            rank={userProfile.daily_rank} 
@@ -210,7 +201,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         />
       )}
 
-      {/* Monthly Winner Modal */}
       {showMonthlyModal && session && (
         <MonthlyWinnerModal 
            rank={userProfile.cosmetics.monthly_rank} 
@@ -224,7 +214,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
         />
       )}
       
-      {/* Daily Spin controlled by spinAllowed */}
       <DailySpin 
         session={session} 
         userProfile={userProfile} 
@@ -354,7 +343,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
               </button>
             </div>
             
-            {/* Timer / Winner Badge centered on mobile, pushed to the right on desktop */}
             {viewMode !== 'archive' && (
               <div className="flex w-full md:w-auto justify-center md:justify-end md:ml-auto">
                 {viewMode === 'active' ? (
@@ -393,7 +381,6 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                             <span>You've fired your shot today! Check back tomorrow.</span>
                         </div>
                     ) : needsToVote ? (
-                         // THE "MUST VOTE" TOLL BOOTH
                         <div className="p-6 bg-gray-50 border-t border-gray-200 flex flex-col items-center text-center animate-in fade-in duration-300">
                            <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center mb-2">
                               <Gavel size={20} className="text-yellow-600" />
@@ -431,6 +418,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                 captions={captions}
                 meme={currentMeme} 
                 session={session} 
+                userProfile={userProfile}
                 viewMode={viewMode}
                 onVote={castVote}
                 onShare={shareCaption}
@@ -439,6 +427,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                 onEdit={handleEditRequest} 
                 editingId={editingId}      
                 setEditingId={setEditingId}
+                onCutMic={cutMic}
               />
             </>
           )}
