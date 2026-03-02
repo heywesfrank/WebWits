@@ -41,6 +41,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         *, 
         profiles!comments_user_id_fkey(username, avatar_url, country, influencer, cosmetics, social_link),
         cutter:profiles!comments_mic_cut_by_fkey(username),
+        squeezer:profiles!comments_squeezed_by_fkey(username),
         replies(
           id, content, created_at, user_id,
           profiles(username, avatar_url, country, influencer, social_link) 
@@ -165,7 +166,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     if (!session?.user || !activeMeme) return false;
     
     if (hasCommented) {
-      addToast("You've already hit your caption limit! 🚫", "error");
+      addToast("You've already hit your caption limit! 🛑", "error");
       return false;
     }
 
@@ -188,7 +189,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
         })
       }).catch(err => console.error("Notification trigger failed", err));
 
-      if (cleanText !== text) addToast("Caption polished & submitted! 🧼", "success");
+      if (cleanText !== text) addToast("Caption polished & submitted! ✨", "success");
       else addToast("Caption submitted!", "success");
       
       const comments = await fetchMemeComments(activeMeme.id);
@@ -313,7 +314,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
 
-      addToast("Caption updated! Mulligan consumed. 🎭", "success");
+      addToast("Caption updated! Mulligan consumed. ⛳", "success");
       fetchData();
       return true;
 
@@ -340,7 +341,7 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       const data = await res.json();
       if (!data.success) throw new Error(data.error);
 
-      addToast("Mic successfully cut! 🤫", "success");
+      addToast("Mic successfully cut! 🤐", "success");
       fetchData();
       return true;
 
@@ -351,11 +352,38 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     }
   };
 
+  const squeezeComment = async (commentId) => {
+    if (!session?.user) return false;
+
+    try {
+      const res = await fetch('/api/comment/squeeze', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          commentId,
+          userId: session.user.id
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      addToast("Comment successfully squeezed! 🤏", "success");
+      fetchData();
+      return true;
+
+    } catch (err) {
+      console.error("Squeeze failed:", err);
+      addToast(err.message || "Failed to squeeze comment", "error");
+      return false;
+    }
+  };
+
   return {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, toasts, showOnboarding, hasCommented, hasVotedOnAny,
     setViewMode, setToasts, setShowOnboarding, fetchData,
     handleArchiveSelect, handleBackToArena, 
-    submitCaption, submitReply, castVote, shareCaption, reportCaption, editCaption, cutMic
+    submitCaption, submitReply, castVote, shareCaption, reportCaption, editCaption, cutMic, squeezeComment
   };
 }
