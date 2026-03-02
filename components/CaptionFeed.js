@@ -1,7 +1,7 @@
 // components/CaptionFeed.js
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X } from "lucide-react"; 
+import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X, MicOff } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -39,7 +39,7 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     return <span className={className}>@{username}</span>;
 };
 
-export default function CaptionFeed({ captions, meme, session, viewMode, onVote, onShare, onReport, onReply, onEdit, editingId, setEditingId }) {
+export default function CaptionFeed({ captions, meme, session, userProfile, viewMode, onVote, onShare, onReport, onReply, onEdit, editingId, setEditingId, onCutMic }) {
   const [sortBy, setSortBy] = useState("top");
   
   // Reply State
@@ -49,6 +49,10 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
   
   // Edit State
   const [editText, setEditText] = useState("");
+
+  // Cut Mic State
+  const [confirmCutId, setConfirmCutId] = useState(null);
+  const [cuttingId, setCuttingId] = useState(null);
 
   // Track which specific caption was just copied
   const [copiedId, setCopiedId] = useState(null);
@@ -123,6 +127,13 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
     await onEdit(commentId, editText);
   };
 
+  const handleCutMicSubmit = async (commentId) => {
+    setCuttingId(commentId);
+    await onCutMic(commentId);
+    setCuttingId(null);
+    setConfirmCutId(null);
+  };
+
   return (
     <div className="space-y-4">
        <style>{`
@@ -152,7 +163,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
       {sortedCaptions.map((caption, index) => {
         const isWinner = viewMode === 'archive-detail' && index === 0 && sortBy === 'top';
-        const isTopRanked = index === 0 && sortBy === 'top' && viewMode === 'archive-detail'; // Crown condition
+        const isTopRanked = index === 0 && sortBy === 'top' && viewMode === 'archive-detail'; 
         
         const rank = index + 1;
         const showFire = viewMode === 'active' && sortBy === 'top' && rank <= 3;
@@ -170,7 +181,13 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
         const hasPin = pinMemeId && meme && pinMemeId === meme.id;
         const doubleMemeId = caption.profiles?.cosmetics?.consumable_double_meme_id;
         const hasDoubleBarrel = doubleMemeId && meme && doubleMemeId === meme.id;
-        const hasMulligan = session?.user?.id === caption.user_id && caption.profiles?.cosmetics?.consumable_edit_meme_id === meme?.id;
+        
+        const isOwnComment = session?.user?.id === caption.user_id;
+        const hasMulligan = isOwnComment && caption.profiles?.cosmetics?.consumable_edit_meme_id === meme?.id;
+        
+        // Cut the Mic checks
+        const isMicCut = caption.mic_cut_until && new Date(caption.mic_cut_until) > new Date();
+        const hasCutPower = userProfile?.cosmetics?.consumable_cut_mic_count > 0;
 
         return (
           <div 
@@ -178,8 +195,9 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             className={`
                 relative bg-white border p-4 rounded-xl shadow-sm flex gap-4 transition hover:border-gray-300 group
                 ${isWinner ? 'bg-yellow-50/30' : ''}
-                ${hasRingOfFire ? 'ring-of-fire' : (isWinner ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-gray-200')}
-                ${hasPin ? 'border-red-200 bg-red-50/10' : ''}
+                ${hasRingOfFire && !isMicCut ? 'ring-of-fire' : (isWinner ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-gray-200')}
+                ${hasPin && !isMicCut ? 'border-red-200 bg-red-50/10' : ''}
+                ${isMicCut ? 'opacity-75 bg-gray-100 grayscale-[0.3]' : ''}
             `}
           >
             {hasPin && (
@@ -212,7 +230,6 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
 
             <div className="flex-shrink-0 pt-1">
               <div className="relative inline-block">
-                {/* 👑 The Crown renders for the top caption in the archive view, regardless of powerups */}
                 {isTopRanked && (
                   <img 
                     src="/crown.png" 
@@ -242,6 +259,14 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             </div>
 
             <div className="flex-1 min-w-0">
+              
+              {isMicCut && (
+                <div className="flex items-center gap-2 bg-red-100 text-red-700 text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg mb-2 w-fit border border-red-200">
+                    <MicOff size={14} />
+                    <span>Mic cut by @{caption.cutter?.username || 'Unknown'}</span>
+                </div>
+              )}
+
               <div className="flex items-center gap-2 mb-1">
                 <SocialUsername 
                     username={username} 
@@ -250,7 +275,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                     className={`font-bold text-xs ${isWinner ? 'text-black' : 'text-gray-500'}`} 
                 />
 
-                {session && caption.user_id === session.user.id && (
+                {session && isOwnComment && (
                   <span className="bg-yellow-100 text-yellow-700 text-[10px] px-1.5 py-0.5 rounded border border-yellow-200 font-bold">YOU</span>
                 )}
                 <span className="text-[10px] text-gray-400">{timeAgo(caption.created_at)}</span>
@@ -277,7 +302,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                   <p className="text-base text-gray-800 leading-snug font-medium break-words">{caption.content}</p>
                )}
               
-              <div className="flex gap-4 mt-3 items-center">
+              <div className="flex gap-4 mt-3 items-center flex-wrap">
                 <button 
                   onClick={() => handleShareClick(caption, index)} 
                   className={`flex items-center gap-1 text-xs transition font-bold ${
@@ -296,7 +321,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                       <Flag size={12} /> Report
                     </button>
 
-                    {hasMulligan && !editingId && !hasPin && (
+                    {hasMulligan && !editingId && !hasPin && !isMicCut && (
                         <button 
                             onClick={() => {
                                 setEditingId(caption.id);
@@ -308,7 +333,16 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                         </button>
                     )}
                     
-                    {session && (
+                    {!isOwnComment && hasCutPower && !isMicCut && (
+                        <button 
+                           onClick={() => setConfirmCutId(confirmCutId === caption.id ? null : caption.id)}
+                           className="flex items-center gap-1 text-xs text-red-500 hover:text-red-700 transition font-bold bg-red-50 px-2 py-1 rounded-md"
+                        >
+                           <MicOff size={12} /> Cut Mic
+                        </button>
+                    )}
+                    
+                    {session && !isMicCut && (
                       <button 
                         onClick={() => {
                            setActiveReplyId(activeReplyId === caption.id ? null : caption.id);
@@ -322,6 +356,28 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                   </>
                 )}
               </div>
+
+              {/* Confirmation UI for Cutting Mic */}
+              {confirmCutId === caption.id && (
+                  <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1">
+                      <span className="text-xs font-bold text-red-700">Use "Cut the Mic" on this user?</span>
+                      <div className="flex gap-2">
+                          <button 
+                             onClick={() => setConfirmCutId(null)}
+                             className="px-3 py-1.5 bg-white border border-red-200 text-gray-600 rounded text-xs font-bold hover:bg-gray-50 transition-colors"
+                          >
+                             Cancel
+                          </button>
+                          <button 
+                             onClick={() => handleCutMicSubmit(caption.id)}
+                             disabled={cuttingId === caption.id}
+                             className="px-3 py-1.5 bg-red-500 text-white rounded text-xs font-bold hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-1"
+                          >
+                             {cuttingId === caption.id ? 'Cutting...' : 'Cut It ✂️'}
+                          </button>
+                      </div>
+                  </div>
+              )}
 
               {/* Replies Section */}
               {(caption.replies?.length > 0 || activeReplyId === caption.id) && (
@@ -363,7 +419,7 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
                               </div>
                               <div className="flex gap-3 mt-1">
                                  <span className="text-[10px] text-gray-400 font-medium">{timeAgo(reply.created_at)}</span>
-                                 {session && viewMode === 'active' && (
+                                 {session && viewMode === 'active' && !isMicCut && (
                                    <button 
                                      onClick={() => {
                                        setActiveReplyId(caption.id);
@@ -404,16 +460,16 @@ export default function CaptionFeed({ captions, meme, session, viewMode, onVote,
             </div>
             
             <motion.button
-              whileHover={viewMode === 'active' ? { scale: 1.1 } : {}}
-              whileTap={viewMode === 'active' ? { scale: 0.9 } : {}}
+              whileHover={viewMode === 'active' && !isMicCut ? { scale: 1.1 } : {}}
+              whileTap={viewMode === 'active' && !isMicCut ? { scale: 0.9 } : {}}
               onClick={() => onVote(caption.id)}
-              disabled={viewMode === 'archive-detail'} 
-              className={`flex flex-col items-center justify-center gap-1 p-2 h-fit rounded-lg transition-colors ${caption.hasVoted ? 'text-yellow-500' : viewMode === 'archive-detail' ? 'text-gray-400 cursor-default' : 'text-gray-400 hover:text-yellow-500'}`}
+              disabled={viewMode === 'archive-detail' || isMicCut} 
+              className={`flex flex-col items-center justify-center gap-1 p-2 h-fit rounded-lg transition-colors ${caption.hasVoted ? 'text-yellow-500' : viewMode === 'archive-detail' || isMicCut ? 'text-gray-400 cursor-default' : 'text-gray-400 hover:text-yellow-500'}`}
             >
-              {isWinner ? <Trophy size={24} className="fill-yellow-400 text-yellow-600" /> : <ThumbsUp size={24} className={`transition-all ${caption.vote_count > 0 ? 'fill-yellow-100' : ''}`} />}
+              {isWinner ? <Trophy size={24} className="fill-yellow-400 text-yellow-600" /> : <ThumbsUp size={24} className={`transition-all ${caption.vote_count > 0 && !isMicCut ? 'fill-yellow-100' : ''}`} />}
               <span className={`font-bold text-sm ${isWinner ? 'text-yellow-700' : ''}`}>{caption.vote_count}</span>
               
-              {showFire && (
+              {showFire && !isMicCut && (
                 <div className="flex -space-x-1 mt-0.5">
                   {Array.from({ length: fireCount }).map((_, i) => (
                     <motion.span
