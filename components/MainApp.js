@@ -46,7 +46,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
     activeMeme, selectedMeme, captions, leaderboard, archivedMemes, userProfile,
     loading, viewMode, setViewMode, toasts, setToasts, submitReply,
     showOnboarding, setShowOnboarding, hasCommented, hasVotedOnAny, fetchData,
-    handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption, editCaption, cutMic
+    handleArchiveSelect, handleBackToArena, submitCaption, castVote, shareCaption, reportCaption, editCaption, cutMic, squeezeComment
   } = useGameLogic(session, initialMeme, initialLeaderboard);
 
   const [newCaption, setNewCaption] = useState("");
@@ -428,6 +428,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
                 editingId={editingId}      
                 setEditingId={setEditingId}
                 onCutMic={cutMic}
+                onSqueeze={squeezeComment}
               />
             </>
           )}
