@@ -1,7 +1,7 @@
 // components/CaptionFeed.js
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X, MicOff } from "lucide-react"; 
+import { Share2, Flag, Trophy, ThumbsUp, Check, MessageCircle, Flame, Edit3, X, MicOff, Shrink } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 
 function getCountryCode(countryName) {
@@ -39,7 +39,7 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     return <span className={className}>@{username}</span>;
 };
 
-export default function CaptionFeed({ captions, meme, session, userProfile, viewMode, onVote, onShare, onReport, onReply, onEdit, editingId, setEditingId, onCutMic }) {
+export default function CaptionFeed({ captions, meme, session, userProfile, viewMode, onVote, onShare, onReport, onReply, onEdit, editingId, setEditingId, onCutMic, onSqueeze }) {
   const [sortBy, setSortBy] = useState("top");
   
   // Reply State
@@ -53,6 +53,10 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
   // Cut Mic State
   const [confirmCutId, setConfirmCutId] = useState(null);
   const [cuttingId, setCuttingId] = useState(null);
+
+  // Squeezal State
+  const [confirmSqueezeId, setConfirmSqueezeId] = useState(null);
+  const [squeezingId, setSqueezingId] = useState(null);
 
   // Track which specific caption was just copied
   const [copiedId, setCopiedId] = useState(null);
@@ -134,6 +138,13 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
     setConfirmCutId(null);
   };
 
+  const handleSqueezeSubmit = async (commentId) => {
+    setSqueezingId(commentId);
+    await onSqueeze(commentId);
+    setSqueezingId(null);
+    setConfirmSqueezeId(null);
+  };
+
   return (
     <div className="space-y-4">
        <style>{`
@@ -188,6 +199,10 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
         // Cut the Mic checks
         const isMicCut = caption.mic_cut_until && new Date(caption.mic_cut_until) > new Date();
         const hasCutPower = userProfile?.cosmetics?.consumable_cut_mic_count > 0;
+
+        // Squeezal checks
+        const isSqueezed = caption.squeezed_until && new Date(caption.squeezed_until) > new Date();
+        const hasSqueezePower = userProfile?.cosmetics?.consumable_squeezal_count > 0;
 
         return (
           <div 
@@ -269,6 +284,13 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                 </div>
               )}
 
+              {isSqueezed && (
+                <div className="flex items-center gap-2 bg-purple-100 text-purple-700 text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg mb-3 w-fit border border-purple-200 shadow-sm relative z-10 opacity-100">
+                    <Shrink size={14} className="text-purple-600" />
+                    <span>Squeezed by @{caption.squeezer?.username || 'Unknown'}</span>
+                </div>
+              )}
+
               {/* Softer fade on the username header */}
               <div className={`flex items-center gap-2 mb-1 transition-all ${isMicCut ? 'opacity-60' : ''}`}>
                 <SocialUsername 
@@ -302,8 +324,8 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                       </div>
                   </div>
                ) : (
-                  // Softer fade and subtle 1px blur on the actual text 
-                  <p className={`text-base leading-snug font-medium break-words transition-all ${isMicCut ? 'text-gray-500 blur-[1px] opacity-70 select-none' : 'text-gray-800'}`}>
+                  // Squeezal shrinks the text, Cut Mic blurs it 
+                  <p className={`leading-snug font-medium break-words transition-all ${isMicCut ? 'text-base text-gray-500 blur-[1px] opacity-70 select-none' : (isSqueezed ? 'text-[8px] leading-[10px] text-gray-600' : 'text-base text-gray-800')}`}>
                       {caption.content}
                   </p>
                )}
@@ -350,6 +372,16 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                            <MicOff size={12} /> Cut Mic
                         </button>
                     )}
+
+                    {/* The Squeeze button */}
+                    {!isOwnComment && hasSqueezePower && !isSqueezed && (
+                        <button 
+                           onClick={() => setConfirmSqueezeId(confirmSqueezeId === caption.id ? null : caption.id)}
+                           className="flex items-center gap-1 text-xs text-purple-500 hover:text-purple-700 transition font-bold bg-purple-50 px-2 py-1 rounded-md"
+                        >
+                           <Shrink size={12} /> Squeeze
+                        </button>
+                    )}
                     
                     {session && !isMicCut && (
                       <button 
@@ -383,6 +415,28 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                              className="px-3 py-1.5 bg-red-500 text-white rounded text-xs font-bold hover:bg-red-600 disabled:opacity-50 transition-colors flex items-center gap-1"
                           >
                              {cuttingId === caption.id ? 'Cutting...' : 'Cut It ✂️'}
+                          </button>
+                      </div>
+                  </div>
+              )}
+
+              {/* Confirmation UI for Squeezal */}
+              {confirmSqueezeId === caption.id && (
+                  <div className="mt-3 p-3 bg-purple-50 border border-purple-200 rounded-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 animate-in fade-in slide-in-from-top-1">
+                      <span className="text-xs font-bold text-purple-700">Use "Squeezal" on this user?</span>
+                      <div className="flex gap-2">
+                          <button 
+                             onClick={() => setConfirmSqueezeId(null)}
+                             className="px-3 py-1.5 bg-white border border-purple-200 text-gray-600 rounded text-xs font-bold hover:bg-gray-50 transition-colors"
+                          >
+                             Cancel
+                          </button>
+                          <button 
+                             onClick={() => handleSqueezeSubmit(caption.id)}
+                             disabled={squeezingId === caption.id}
+                             className="px-3 py-1.5 bg-purple-500 text-white rounded text-xs font-bold hover:bg-purple-600 disabled:opacity-50 transition-colors flex items-center gap-1"
+                          >
+                             {squeezingId === caption.id ? 'Squeezing...' : 'Squeeze It 🤏'}
                           </button>
                       </div>
                   </div>
