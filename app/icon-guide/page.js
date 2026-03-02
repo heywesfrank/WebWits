@@ -1,32 +1,6 @@
+// app/icon-guide/page.js
 import Link from "next/link";
-import { ArrowLeft, Flame, Edit3, Pin, MicOff } from "lucide-react";
-
-// Custom Icon for Ring of Fire
-const RingOfFireIcon = ({ size = 24, className }) => (
-    <svg 
-      xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2" 
-      strokeLinecap="round" 
-      strokeLinejoin="round" 
-      className={className}
-    >
-      <circle cx="12" cy="12" r="10" />
-      <circle cx="12" cy="12" r="6" />
-      <path d="M12 2v2" />
-      <path d="M12 20v2" />
-      <path d="m4.93 4.93 1.41 1.41" />
-      <path d="m17.66 17.66 1.41 1.41" />
-      <path d="M2 12h2" />
-      <path d="M20 12h2" />
-      <path d="m6.34 17.66-1.41 1.41" />
-      <path d="m19.07 4.93-1.41 1.41" />
-    </svg>
-);
+import { ArrowLeft } from "lucide-react";
 
 export default function IconGuide() {
   return (
@@ -57,7 +31,7 @@ export default function IconGuide() {
             {/* Country Flag */}
             <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
                  <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-gray-100">
-                    <img src="[https://flagcdn.com/w40/ca.png](https://flagcdn.com/w40/ca.png)" alt="Flag" className="w-10 h-auto rounded shadow-sm opacity-80" />
+                    <img src="https://flagcdn.com/w40/ca.png" alt="Flag" className="w-10 h-auto rounded shadow-sm opacity-80" />
                  </div>
                  <div>
                     <h3 className="text-xl font-bold mb-2">Country Flag</h3>
@@ -96,7 +70,7 @@ export default function IconGuide() {
             {/* Fire */}
             <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
                  <div className="w-16 h-16 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-orange-100">
-                    <Flame size={32} className="text-orange-500 fill-orange-500" />
+                    <img src="/fire.png" alt="On Fire" className="w-10 h-10 object-contain drop-shadow-sm" />
                  </div>
                  <div>
                     <h3 className="text-xl font-bold mb-2">On Fire</h3>
@@ -109,7 +83,7 @@ export default function IconGuide() {
             {/* Ring of Fire */}
             <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
                  <div className="w-16 h-16 bg-orange-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-orange-100">
-                    <RingOfFireIcon size={32} className="text-orange-500" />
+                    <img src="/ringoffire.png" alt="Ring of Fire" className="w-10 h-10 object-contain drop-shadow-sm" />
                  </div>
                  <div>
                     <h3 className="text-xl font-bold mb-2">Ring of Fire</h3>
@@ -122,7 +96,7 @@ export default function IconGuide() {
             {/* Thumbtack of Glory */}
             <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
                  <div className="w-16 h-16 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-red-100">
-                    <Pin size={32} className="text-red-500 fill-red-500" />
+                    <img src="/thumbtackofglory.png" alt="Thumbtack of Glory" className="w-10 h-10 object-contain drop-shadow-sm" />
                  </div>
                  <div>
                     <h3 className="text-xl font-bold mb-2">Thumbtack of Glory</h3>
@@ -135,7 +109,7 @@ export default function IconGuide() {
             {/* The Mulligan */}
             <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
                  <div className="w-16 h-16 bg-blue-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-blue-100">
-                    <Edit3 size={32} className="text-blue-500" />
+                    <img src="/mulligan.png" alt="The Mulligan" className="w-10 h-10 object-contain drop-shadow-sm" />
                  </div>
                  <div>
                     <h3 className="text-xl font-bold mb-2">The Mulligan</h3>
@@ -148,7 +122,7 @@ export default function IconGuide() {
             {/* Double Barrel */}
             <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
                  <div className="w-16 h-16 bg-purple-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-purple-100">
-                    <img src="/shotgun.png" alt="Double Barrel" className="w-8 h-8 object-contain" />
+                    <img src="/doublebarrel.png" alt="Double Barrel" className="w-10 h-10 object-contain drop-shadow-sm" />
                  </div>
                  <div>
                     <h3 className="text-xl font-bold mb-2">Double Barrel</h3>
@@ -161,7 +135,7 @@ export default function IconGuide() {
             {/* Cut the Mic */}
             <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
                  <div className="w-16 h-16 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-red-100">
-                    <MicOff size={32} className="text-red-500" />
+                    <img src="/cutthemic.png" alt="Cut the Mic" className="w-10 h-10 object-contain drop-shadow-sm" />
                  </div>
                  <div>
                     <h3 className="text-xl font-bold mb-2">Cut the Mic</h3>
