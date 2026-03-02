@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { ArrowLeft, Flame, Edit3, Pin } from "lucide-react";
+import { ArrowLeft, Flame, Edit3, Pin, MicOff } from "lucide-react";
 
 // Custom Icon for Ring of Fire
 const RingOfFireIcon = ({ size = 24, className }) => (
     <svg 
-      xmlns="http://www.w3.org/2000/svg" 
+      xmlns="[http://www.w3.org/2000/svg](http://www.w3.org/2000/svg)" 
       width={size} 
       height={size} 
       viewBox="0 0 24 24" 
@@ -57,7 +57,7 @@ export default function IconGuide() {
             {/* Country Flag */}
             <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
                  <div className="w-16 h-16 bg-gray-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-gray-100">
-                    <img src="https://flagcdn.com/w40/ca.png" alt="Flag" className="w-10 h-auto rounded shadow-sm opacity-80" />
+                    <img src="[https://flagcdn.com/w40/ca.png](https://flagcdn.com/w40/ca.png)" alt="Flag" className="w-10 h-auto rounded shadow-sm opacity-80" />
                  </div>
                  <div>
                     <h3 className="text-xl font-bold mb-2">Country Flag</h3>
@@ -154,6 +154,19 @@ export default function IconGuide() {
                     <h3 className="text-xl font-bold mb-2">Double Barrel</h3>
                     <p className="text-gray-500 text-sm leading-relaxed">
                         One joke wasn't enough? Reload and fire a second caption today.
+                    </p>
+                 </div>
+            </div>
+
+            {/* Cut the Mic */}
+            <div className="bg-white p-8 rounded-2xl border border-gray-200 flex items-start gap-4 shadow-sm hover:border-gray-300 transition-colors">
+                 <div className="w-16 h-16 bg-red-50 rounded-xl flex items-center justify-center flex-shrink-0 border border-red-100">
+                    <MicOff size={32} className="text-red-500" />
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-bold mb-2">Cut the Mic</h3>
+                    <p className="text-gray-500 text-sm leading-relaxed">
+                        Silence a rival. Prevents their comment from receiving any votes for 6 hours. (Purchased from Store).
                     </p>
                  </div>
             </div>
