@@ -114,7 +114,7 @@ export default function IconGuide() {
                  <div>
                     <h3 className="text-xl font-bold mb-2">Ring of Fire</h3>
                     <p className="text-gray-500 text-sm leading-relaxed">
-                        Ignite your active caption. Burns until the battle ends. (Purchased from Store)
+                        Ignite your active caption. Burns until the battle ends.
                     </p>
                  </div>
             </div>
