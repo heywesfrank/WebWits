@@ -197,7 +197,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                 ${isWinner ? 'bg-yellow-50/30' : ''}
                 ${hasRingOfFire && !isMicCut ? 'ring-of-fire' : (isWinner ? 'border-yellow-400 ring-1 ring-yellow-400' : 'border-gray-200')}
                 ${hasPin && !isMicCut ? 'border-red-200 bg-red-50/10' : ''}
-                ${isMicCut ? 'opacity-75 bg-gray-100 grayscale-[0.3]' : ''}
+                ${isMicCut ? 'opacity-40 bg-gray-50 grayscale border-gray-100 pointer-events-none' : ''}
             `}
           >
             {hasPin && (
@@ -228,7 +228,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
               </div>
             )}
 
-            <div className="flex-shrink-0 pt-1">
+            <div className="flex-shrink-0 pt-1 pointer-events-auto">
               <div className="relative inline-block">
                 {isTopRanked && (
                   <img 
@@ -238,7 +238,8 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                   />
                 )}
 
-                <div className="h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm">
+                {/* Avatar gets a heavy blur if the mic is cut */}
+                <div className={`h-9 w-9 bg-gray-100 rounded-full overflow-hidden border border-gray-200 shadow-sm transition-all ${isMicCut ? 'blur-[2px] opacity-50' : ''}`}>
                   {avatarUrl ? (
                     <img src={avatarUrl} alt={username} className="h-full w-full object-cover" />
                   ) : (
@@ -258,16 +259,17 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
               </div>
             </div>
 
-            <div className="flex-1 min-w-0">
+            {/* Added pointer-events-auto so the text itself handles clicks, while the container background ignores them */}
+            <div className="flex-1 min-w-0 pointer-events-auto">
               
               {isMicCut && (
-                <div className="flex items-center gap-2 bg-red-100 text-red-700 text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg mb-2 w-fit border border-red-200">
+                <div className="flex items-center gap-2 bg-red-100 text-red-700 text-[10px] sm:text-xs font-bold px-3 py-1.5 rounded-lg mb-2 w-fit border border-red-200 shadow-sm relative z-10">
                     <MicOff size={14} />
                     <span>Mic cut by @{caption.cutter?.username || 'Unknown'}</span>
                 </div>
               )}
 
-              <div className="flex items-center gap-2 mb-1">
+              <div className={`flex items-center gap-2 mb-1 ${isMicCut ? 'blur-[1px] opacity-70' : ''}`}>
                 <SocialUsername 
                     username={username} 
                     isInfluencer={isInfluencer} 
@@ -299,16 +301,20 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                       </div>
                   </div>
                ) : (
-                  <p className="text-base text-gray-800 leading-snug font-medium break-words">{caption.content}</p>
+                  // Heavy blur on the actual text when Mic is cut
+                  <p className={`text-base leading-snug font-medium break-words transition-all ${isMicCut ? 'text-gray-400 blur-[2.5px] select-none pointer-events-none' : 'text-gray-800'}`}>
+                      {caption.content}
+                  </p>
                )}
               
               <div className="flex gap-4 mt-3 items-center flex-wrap">
                 <button 
                   onClick={() => handleShareClick(caption, index)} 
+                  disabled={isMicCut}
                   className={`flex items-center gap-1 text-xs transition font-bold ${
                     copiedId === caption.id 
                       ? "text-green-600 bg-green-50 px-2 py-1 rounded-md" 
-                      : "text-gray-400 hover:text-yellow-600"
+                      : (isMicCut ? "text-gray-300 cursor-not-allowed" : "text-gray-400 hover:text-yellow-600")
                   }`}
                 >
                   {copiedId === caption.id ? <Check size={12} /> : <Share2 size={12} />}
@@ -317,7 +323,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                 
                 {viewMode === 'active' && (
                   <>
-                    <button onClick={() => onReport(caption.id)} className="flex items-center gap-1 text-xs text-gray-400 hover:text-red-500 transition font-bold">
+                    <button onClick={() => onReport(caption.id)} disabled={isMicCut} className={`flex items-center gap-1 text-xs transition font-bold ${isMicCut ? 'text-gray-300 cursor-not-allowed' : 'text-gray-400 hover:text-red-500'}`}>
                       <Flag size={12} /> Report
                     </button>
 
@@ -381,7 +387,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
 
               {/* Replies Section */}
               {(caption.replies?.length > 0 || activeReplyId === caption.id) && (
-                <div className="mt-4 space-y-3">
+                <div className={`mt-4 space-y-3 ${isMicCut ? 'opacity-50 blur-[2px] pointer-events-none select-none' : ''}`}>
                   {caption.replies?.map((reply) => {
                      const replyCountryCode = getCountryCode(reply.profiles?.country);
                      const isReplyInfluencer = reply.profiles?.influencer;
@@ -436,7 +442,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                      );
                   })}
 
-                  {activeReplyId === caption.id && (
+                  {activeReplyId === caption.id && !isMicCut && (
                      <div className="flex gap-2 items-center pt-1 animate-in fade-in slide-in-from-top-1">
                         <input
                           id={`reply-input-${caption.id}`}
@@ -464,7 +470,7 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
               whileTap={viewMode === 'active' && !isMicCut ? { scale: 0.9 } : {}}
               onClick={() => onVote(caption.id)}
               disabled={viewMode === 'archive-detail' || isMicCut} 
-              className={`flex flex-col items-center justify-center gap-1 p-2 h-fit rounded-lg transition-colors ${caption.hasVoted ? 'text-yellow-500' : viewMode === 'archive-detail' || isMicCut ? 'text-gray-400 cursor-default' : 'text-gray-400 hover:text-yellow-500'}`}
+              className={`flex flex-col items-center justify-center gap-1 p-2 h-fit rounded-lg transition-colors pointer-events-auto ${caption.hasVoted ? 'text-yellow-500' : viewMode === 'archive-detail' || isMicCut ? 'text-gray-400 cursor-default' : 'text-gray-400 hover:text-yellow-500'}`}
             >
               {isWinner ? <Trophy size={24} className="fill-yellow-400 text-yellow-600" /> : <ThumbsUp size={24} className={`transition-all ${caption.vote_count > 0 && !isMicCut ? 'fill-yellow-100' : ''}`} />}
               <span className={`font-bold text-sm ${isWinner ? 'text-yellow-700' : ''}`}>{caption.vote_count}</span>
