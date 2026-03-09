@@ -56,7 +56,7 @@ export async function GET(request) {
     // Strategy A: Trending
     try {
         const trendingRes = await fetch(
-            `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=50&rating=pg-13`,
+            `https://api.giphy.com/v1/gifs/trending?api_key=${GIPHY_API_KEY}&limit=50&rating=r`,
             { cache: 'no-store' }
         );
         const trendingData = await trendingRes.json();
@@ -78,7 +78,7 @@ export async function GET(request) {
             const offset = Math.floor(Math.random() * 500);
             try {
                 const searchRes = await fetch(
-                    `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${q}&limit=50&offset=${offset}&rating=pg-13`,
+                    `https://api.giphy.com/v1/gifs/search?api_key=${GIPHY_API_KEY}&q=${q}&limit=50&offset=${offset}&rating=r`,
                     { cache: 'no-store' }
                 );
                 const searchData = await searchRes.json();
@@ -98,7 +98,7 @@ export async function GET(request) {
         for (let attempts = 0; attempts < 5; attempts++) {
             try {
                 const randomRes = await fetch(
-                    `https://api.giphy.com/v1/gifs/random?api_key=${GIPHY_API_KEY}&tag=funny&rating=pg-13`,
+                    `https://api.giphy.com/v1/gifs/random?api_key=${GIPHY_API_KEY}&tag=funny&rating=r`,
                     { cache: 'no-store' }
                 );
                 const randomData = await randomRes.json();
@@ -119,7 +119,7 @@ export async function GET(request) {
         } else {
              try {
                 const randomRes = await fetch(
-                    `https://api.giphy.com/v1/gifs/random?api_key=${GIPHY_API_KEY}&tag=funny&rating=pg-13`,
+                    `https://api.giphy.com/v1/gifs/random?api_key=${GIPHY_API_KEY}&tag=funny&rating=r`,
                     { cache: 'no-store' }
                 );
                 const randomData = await randomRes.json();
