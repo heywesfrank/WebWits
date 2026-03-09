@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { supabase } from "@/lib/supabase";
-import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X, Users, Copy, ShoppingBag, Gavel } from "lucide-react";
+import { Send, Loader2, Flame, History, Trophy, ArrowLeft, Gift, BookOpen, AlertTriangle, X, Users, Copy, ShoppingBag, Gavel, ArrowUp } from "lucide-react";
 
 // Components
 import Header from "./Header";
@@ -28,6 +28,7 @@ import { useGameLogic } from "@/hooks/useGameLogic";
 export default function MainApp({ initialMeme, initialLeaderboard }) {
   // 1. Handle Session State locally
   const [session, setSession] = useState(null);
+  const [showScrollTop, setShowScrollTop] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -40,6 +41,24 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  // Track scroll position to show/hide the "scroll to top" button
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 400) {
+        setShowScrollTop(true);
+      } else {
+        setShowScrollTop(false);
+      }
+    };
+
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
 
   // 2. Pass initial data
   const {
@@ -181,7 +200,7 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
   const needsToVote = viewMode === 'active' && votableCaptions.length > 0 && !hasVotedOnAny;
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-24 md:pb-0">
+    <div className="min-h-screen bg-white text-gray-900 font-sans selection:bg-yellow-200 selection:text-black pb-24 md:pb-0 relative">
       <Header 
         session={session} 
         profile={userProfile} 
@@ -330,6 +349,17 @@ export default function MainApp({ initialMeme, initialLeaderboard }) {
       <UserProfileModal user={session?.user} profile={userProfile} isOpen={showProfileModal} onClose={() => setShowProfileModal(false)} />
       
       <LeaderboardModal leaderboard={leaderboard} isOpen={showLeaderboardModal} onClose={() => setShowLeaderboardModal(false)} />
+
+      {/* Scroll to Top Button */}
+      <button
+        onClick={scrollToTop}
+        className={`fixed bottom-24 md:bottom-8 right-4 md:right-8 z-[45] bg-black/40 hover:bg-black/60 backdrop-blur-sm text-white p-3 rounded-full shadow-lg transition-all duration-300 ${
+          showScrollTop ? "opacity-100 translate-y-0 pointer-events-auto" : "opacity-0 translate-y-4 pointer-events-none"
+        }`}
+        aria-label="Scroll to top"
+      >
+        <ArrowUp size={24} />
+      </button>
 
       <div className="max-w-4xl mx-auto p-4 grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="md:col-span-2 space-y-6">
