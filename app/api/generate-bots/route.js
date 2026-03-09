@@ -58,7 +58,7 @@ export async function GET(request) {
                 content: [
                     {
                         type: "input_text",
-                        text: "You are playing a witty internet meme caption game. Look at this image and generate 15 hilarious, highly original, and punchy captions for it. IMPORTANT: Do NOT use any colons (:), semi-colons (;), or hyphens (-) in your captions. Return ONLY a valid JSON array of exactly 15 strings. Do not include markdown formatting like ```json."
+                        text: "You are playing a ruthless and highly competitive internet meme caption game. Look at this image and generate 15 hilarious, highly original, harsh, and punchy captions for it. The humor must be witty, sharp, cynical, and mature—avoid simple, kiddy, or generic jokes. Think edgy internet roasts and dark comedy. IMPORTANT: Do NOT use any colons (:), semi-colons (;), or hyphens (-) in your captions. Return ONLY a valid JSON array of exactly 15 strings. Do not include markdown formatting like ```json."
                     },
                     {
                         type: "input_image",
