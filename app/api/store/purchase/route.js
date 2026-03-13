@@ -13,7 +13,7 @@ const SERVER_ITEMS = {
     "consumable_squeezal": { cost: 2000, name: "Squeezal", type: "consumable_stackable" },
     "prize_amazon_5": { cost: 2500, name: "$5 Amazon Card", type: "prize" },
     "prize_amazon_10": { cost: 5000, name: "$10 Amazon Card", type: "prize" },
-    "prize_amazon_25": { cost: 20000, name: "$25 Amazon Card", type: "prize" }
+    "prize_amazon_100": { cost: 100000, name: "$100 Amazon Card", type: "prize" }
 };
 
 export async function POST(req) {
