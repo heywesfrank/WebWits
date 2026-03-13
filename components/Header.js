@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState, useRef, useEffect } from "react";
 import { supabase } from "@/lib/supabase";
-import { LogOut, User, ChevronDown, BookOpen, Info, Facebook, Instagram, Smile, Wallet, ShoppingBag, Star, X, Mail, Users } from "lucide-react"; 
+import { LogOut, User, ChevronDown, BookOpen, Info, Facebook, Instagram, Smile, Wallet, Star, X, Mail, Users } from "lucide-react"; 
 import { COUNTRY_CODES } from "@/lib/countries";
 import InstallPrompt from "./InstallPrompt";
 
@@ -101,10 +101,9 @@ export default function Header({ session, profile, onOpenInvite }) {
                           <Wallet size={16} className="text-yellow-600 group-hover:scale-110 transition-transform" />
                           <span className="text-[10px] font-bold text-yellow-900 uppercase tracking-wider group-hover:text-yellow-700">WitCoins/Store</span>
                        </div>
-                       <div className="flex items-center gap-2">
-                          <span className="font-display font-black text-lg text-yellow-600">{profile?.credits || 0}</span>
-                          <ShoppingBag size={14} className="text-yellow-400 opacity-0 group-hover:opacity-100 transition-opacity" />
-                       </div>
+                       <span className="font-display font-black text-sm text-yellow-600">
+                          {profile?.credits || 0}
+                       </span>
                     </Link>
 
                     <Link 
