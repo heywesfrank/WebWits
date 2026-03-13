@@ -12,7 +12,7 @@ const ITEMS = [
         type: "meme_bound", 
         name: "Ring of Fire",
         description: "Ignite your active caption. Burns until the battle ends.",
-        cost: 100,
+        cost: 500,
         image: "/ringoffire.png"
     },
     {
@@ -20,7 +20,7 @@ const ITEMS = [
         type: "consumable",
         name: "The Mulligan",
         description: "We all make mistakes. Fix yours. Grants one caption edit.",
-        cost: 150,
+        cost: 750,
         image: "/mulligan.png"
     },
     {
@@ -28,7 +28,7 @@ const ITEMS = [
         type: "meme_bound", 
         name: "Thumbtack of Glory",
         description: "Glue your wit to the ceiling. Stays on top for the full battle.", 
-        cost: 200,
+        cost: 1000,
         image: "/thumbtackofglory.png"
     },
     {
@@ -36,7 +36,7 @@ const ITEMS = [
         type: "consumable",
         name: "Double Barrel",
         description: "One joke wasn't enough? Reload and fire a second caption today.",
-        cost: 250,
+        cost: 1500,
         image: "/doublebarrel.png"
     },
     {
@@ -60,7 +60,7 @@ const ITEMS = [
         type: "prize",
         name: "The Payday",
         description: "$25 Amazon Gift Card. Jeff Bezos' money, now yours.",
-        cost: 15000, 
+        cost: 20000, 
         image: "/payday.png"
     }
 ];
