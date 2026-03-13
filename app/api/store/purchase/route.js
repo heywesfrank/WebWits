@@ -5,15 +5,15 @@ import { Resend } from 'resend';
 
 // Define server items
 const SERVER_ITEMS = {
-    "effect_fire": { cost: 100, name: "Ring of Fire", type: "meme_bound" },
-    "effect_pin": { cost: 200, name: "Thumbtack of Glory", type: "meme_bound" }, 
-    "consumable_edit": { cost: 150, name: "The Mulligan", type: "consumable" }, 
-    "consumable_double": { cost: 250, name: "Double Barrel", type: "consumable" },
+    "effect_fire": { cost: 500, name: "Ring of Fire", type: "meme_bound" },
+    "effect_pin": { cost: 1000, name: "Thumbtack of Glory", type: "meme_bound" }, 
+    "consumable_edit": { cost: 750, name: "The Mulligan", type: "consumable" }, 
+    "consumable_double": { cost: 1500, name: "Double Barrel", type: "consumable" },
     "consumable_cut_mic": { cost: 2000, name: "Cut the Mic", type: "consumable_stackable" },
     "consumable_squeezal": { cost: 2000, name: "Squeezal", type: "consumable_stackable" },
     "prize_amazon_5": { cost: 2500, name: "$5 Amazon Card", type: "prize" },
     "prize_amazon_10": { cost: 5000, name: "$10 Amazon Card", type: "prize" },
-    "prize_amazon_25": { cost: 15000, name: "$25 Amazon Card", type: "prize" }
+    "prize_amazon_25": { cost: 20000, name: "$25 Amazon Card", type: "prize" }
 };
 
 export async function POST(req) {
