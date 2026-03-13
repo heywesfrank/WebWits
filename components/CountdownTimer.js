@@ -8,7 +8,7 @@ export default function CountdownTimer() {
     const timer = setInterval(() => {
       const now = new Date();
       const target = new Date(now);
-      target.setUTCHours(5, 0, 0, 0); // 5:00 AM UTC
+      target.setUTCHours(4, 0, 0, 0);
       if (now > target) target.setDate(target.getDate() + 1);
       
       const diff = target - now;
