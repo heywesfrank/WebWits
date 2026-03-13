@@ -56,11 +56,11 @@ const ITEMS = [
         image: "/squeezal.png"
     },
     {
-        id: "prize_amazon_25",
+        id: "prize_amazon_100",
         type: "prize",
         name: "The Payday",
-        description: "$25 Amazon Gift Card. Jeff Bezos' money, now yours.",
-        cost: 20000, 
+        description: "$100 Amazon Gift Card. Jeff Bezos' money, now yours.",
+        cost: 100000, 
         image: "/payday.png"
     }
 ];
@@ -202,7 +202,7 @@ export default function Store() {
                         "consumable_double": "/sounds/shotgun.wav",
                         "consumable_cut_mic": "/sounds/cutthemic.wav",
                         "consumable_squeezal": "/sounds/squeezel.wav",
-                        "prize_amazon_25": "/sounds/payday.wav"
+                        "prize_amazon_100": "/sounds/payday.wav"
                     };
 
                     if (soundMap[item.id]) {
