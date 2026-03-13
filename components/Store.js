@@ -254,7 +254,7 @@ export default function Store() {
                         <Wallet className="text-yellow-400" />
                         <div>
                             <div className="text-xs text-gray-300 font-bold uppercase tracking-wider">WitCoins</div>
-                            <div className="text-2xl font-black text-white tracking-tight">{profile?.credits || 0}</div>
+                            <div className="text-2xl font-black text-white tracking-tight">{profile?.credits?.toLocaleString() || 0}</div>
                         </div>
                     </div>
                 </div>
@@ -316,7 +316,6 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory, activeMemeId 
                 </div>
             )}
 
-            {/* Replaced Icon + Background Wrapper with PNG rendering */}
             <img 
                 src={item.image} 
                 alt={item.name} 
@@ -341,7 +340,7 @@ function StoreCard({ item, userCredits, onBuy, loading, inventory, activeMemeId 
                     {loading ? <Loader2 className="animate-spin" size={20} /> : (
                         isActive ? (item.id === 'consumable_edit' ? "Ready to Use" : "Already Active") : (
                             <>
-                                <span>{item.cost}</span>
+                                <span>{item.cost.toLocaleString()}</span>
                                 <Wallet size={16} className={canAfford ? "text-yellow-400" : "text-gray-300"} />
                             </>
                         )
