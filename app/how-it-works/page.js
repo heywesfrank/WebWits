@@ -1,3 +1,4 @@
+// app/how-it-works/page.js
 import Link from "next/link";
 import { ArrowLeft, Trophy, Zap, Clock, Wallet, Flame, Crosshair } from "lucide-react";
 
@@ -103,19 +104,19 @@ export default function HowItWorks() {
              <div className="grid gap-4 grid-cols-1 md:grid-cols-3">
                 <PayoutCard 
                     rank="1st Place" 
-                    amount="1500" 
+                    amount="5000" 
                     sub="Monthly Emperor" 
                     color="yellow"
                 />
                 <PayoutCard 
                     rank="2nd Place" 
-                    amount="1000" 
+                    amount="3000" 
                     sub="Monthly Runner-up" 
                     color="gray"
                 />
                 <PayoutCard 
                     rank="3rd Place" 
-                    amount="500" 
+                    amount="1500" 
                     sub="Monthly Bronze" 
                     color="orange"
                 />
