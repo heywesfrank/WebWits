@@ -44,7 +44,7 @@ export default function PrizesPage() {
             <PrizeCard 
                 icon={<ShoppingBag size={32} />}
                 tier="In The Store"
-                reward="$25 Amazon Card"
+                reward="$100 Amazon Card"
                 desc="Save up your hard-earned credits and buy this directly from the shop. Jeff Bezos' money, now yours."
                 color="green"
             />
