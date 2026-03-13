@@ -259,7 +259,7 @@ export async function GET(request) {
             .limit(3);
             
          if (topMonthlyUsers && topMonthlyUsers.length > 0) {
-            const monthlyRewards = [1500, 1000, 500];
+            const monthlyRewards = [5000, 3000, 1500];
             
             for (let i = 0; i < topMonthlyUsers.length; i++) {
                 const user = topMonthlyUsers[i];
