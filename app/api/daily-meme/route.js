@@ -45,6 +45,32 @@ export async function GET(request) {
     const { data: existingMemes } = await supabase.from('memes').select('content_url');
     const usedUrls = existingMemes?.map(m => m.content_url).filter(Boolean) || [];
 
+    // Filter out childish/cutesy GIFs that don't fit the R-rated comedy vibe
+    const childishKeywords = [
+      'goodnight', 'good night', 'nighty night', 'sweet dreams', 'sleep tight',
+      'blowing kisses', 'blow kiss', 'kiss kiss', 'sending kisses', 'xoxo',
+      'i love you', 'love you', 'miss you', 'thinking of you',
+      'heart', 'hearts', 'love heart',
+      'hug', 'hugs', 'cuddle', 'cuddles', 'snuggle',
+      'cute', 'adorable', 'aww', 'precious',
+      'good morning', 'buenos dias', 'buenas noches', 'bonne nuit',
+      'get well', 'feel better', 'sending love', 'warm wishes',
+      'butterfly', 'butterflies', 'rainbow', 'sparkle', 'glitter',
+      'teddy bear', 'puppy love', 'kitten',
+      'happy birthday', 'birthday wishes', 'anniversary',
+      'thank you', 'grateful', 'blessed', 'blessings',
+      'angel', 'angels', 'heaven',
+      'flower', 'flowers', 'roses', 'bouquet',
+      'baby', 'newborn', 'pregnant',
+    ];
+
+    const isChildish = (gif) => {
+      const title = (gif.title || '').toLowerCase();
+      const slug = (gif.slug || '').toLowerCase();
+      const searchText = `${title} ${slug}`;
+      return childishKeywords.some(keyword => searchText.includes(keyword));
+    };
+
     const isUsed = (gif) => {
         const url = gif.images?.original?.mp4;
         if (!url) return true; // Skip if it doesn't even have an mp4
@@ -52,6 +78,8 @@ export async function GET(request) {
         // Giphy IDs are in the URL path, e.g., media.giphy.com/media/ID/giphy.mp4
         return usedUrls.some(u => u.includes(`/${gif.id}/`));
     };
+
+    const isEligible = (gif) => !isUsed(gif) && !isChildish(gif);
 
     // Strategy A: Trending
     try {
@@ -62,7 +90,7 @@ export async function GET(request) {
         const trendingData = await trendingRes.json();
         if (trendingData.data && trendingData.data.length > 0) {
             trendingPool = trendingData.data; // Save for emergency fallback
-            const availableTrending = trendingData.data.filter(gif => !isUsed(gif));
+            const availableTrending = trendingData.data.filter(gif => isEligible(gif));
             if (availableTrending.length > 0) {
                 // Pick a random one from the un-used trending pool
                 selectedGif = availableTrending[Math.floor(Math.random() * availableTrending.length)];
@@ -83,7 +111,7 @@ export async function GET(request) {
                 );
                 const searchData = await searchRes.json();
                 if (searchData.data && searchData.data.length > 0) {
-                    const availableSearch = searchData.data.filter(gif => !isUsed(gif));
+                    const availableSearch = searchData.data.filter(gif => isEligible(gif));
                     if (availableSearch.length > 0) {
                         selectedGif = availableSearch[Math.floor(Math.random() * availableSearch.length)];
                         break;
@@ -103,7 +131,7 @@ export async function GET(request) {
                 );
                 const randomData = await randomRes.json();
                 const gif = randomData.data;
-                if (gif && !isUsed(gif)) {
+                if (gif && isEligible(gif)) {
                     selectedGif = gif;
                     break;
                 }
@@ -111,11 +139,12 @@ export async function GET(request) {
         }
     }
 
-    // Strategy D: Emergency Force (Allow Repeats)
+    // Strategy D: Emergency Force (Allow Repeats, but still filter childish)
     if (!selectedGif) {
         console.warn("Could not find unique meme. Forcing a repeat to keep arena active.");
-        if (trendingPool.length > 0) {
-             selectedGif = trendingPool[Math.floor(Math.random() * trendingPool.length)];
+        const nonChildishTrending = trendingPool.filter(gif => !isChildish(gif));
+        if (nonChildishTrending.length > 0) {
+             selectedGif = nonChildishTrending[Math.floor(Math.random() * nonChildishTrending.length)];
         } else {
              try {
                 const randomRes = await fetch(
