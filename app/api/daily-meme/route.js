@@ -61,7 +61,7 @@ export async function GET(request) {
       'thank you', 'grateful', 'blessed', 'blessings',
       'angel', 'angels', 'heaven',
       'flower', 'flowers', 'roses', 'bouquet',
-      'baby', 'newborn', 'pregnant',
+      'baby', 'newborn', 'pregnant', 'love', 'kisses', 'kiss',
     ];
 
     const isChildish = (gif) => {
