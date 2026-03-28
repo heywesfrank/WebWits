@@ -24,13 +24,14 @@ function timeAgo(dateString) {
 
 const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     if (isInfluencer && socialLink) {
+        const isInstagram = /instagram\.com/i.test(socialLink);
         return (
-            <a 
-                href={socialLink} 
-                target="_blank" 
-                rel="noopener noreferrer" 
+            <a
+                href={socialLink}
+                target={isInstagram ? "_self" : "_blank"}
+                rel="noopener"
                 className={`hover:underline !text-blue-600 hover:!text-blue-800 ${className}`}
-                onClick={(e) => e.stopPropagation()} 
+                onClick={(e) => e.stopPropagation()}
             >
                 @{username}
             </a>
