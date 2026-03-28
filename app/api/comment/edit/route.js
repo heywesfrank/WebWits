@@ -2,6 +2,7 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { filterProfanity } from '@/lib/profanity';
+import { isEnglishText } from '@/lib/languageFilter';
 
 export async function POST(req) {
   try {
@@ -29,7 +30,12 @@ export async function POST(req) {
       return NextResponse.json({ error: "You need to buy a Mulligan to edit this." }, { status: 403 });
     }
 
-    // 3. Update Comment
+    // 3. Language check - English only
+    if (!isEnglishText(content)) {
+      return NextResponse.json({ error: "English only! Non-English text is not allowed." }, { status: 400 });
+    }
+
+    // 4. Update Comment
     const cleanText = filterProfanity(content);
     const { error: updateError } = await supabase
       .from('comments')

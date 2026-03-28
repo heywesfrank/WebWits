@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { filterProfanity } from "@/lib/profanity";
+import { isEnglishText, getRandomRejectionMessage } from "@/lib/languageFilter";
 
 export function useGameLogic(session, initialMeme = null, initialLeaderboard = []) {
   const [activeMeme, setActiveMeme] = useState(initialMeme);
@@ -170,6 +171,11 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
       return false;
     }
 
+    if (!isEnglishText(text)) {
+      addToast(getRandomRejectionMessage(), "error");
+      return false;
+    }
+
     const cleanText = filterProfanity(text);
 
     try {
@@ -204,6 +210,11 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
 
   const submitReply = async (commentId, text) => {
     if (!session?.user) return false;
+
+    if (!isEnglishText(text)) {
+      addToast(getRandomRejectionMessage(), "error");
+      return false;
+    }
 
     const cleanText = filterProfanity(text);
 
