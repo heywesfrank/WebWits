@@ -1,9 +1,14 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import { sendNotificationToUser } from '@/lib/sendPush';
+import { isEnglishText } from '@/lib/languageFilter';
 
 export async function POST(req) {
   const { commentId, content, userId } = await req.json();
+
+  if (!isEnglishText(content)) {
+    return NextResponse.json({ error: "English only! Non-English text is not allowed." }, { status: 400 });
+  }
   const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY);
 
   // 1. Insert Reply
