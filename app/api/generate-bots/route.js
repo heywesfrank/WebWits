@@ -58,7 +58,7 @@ export async function GET(request) {
                 content: [
                     {
                         type: "input_text",
-                        text: "You are 15 different people scrolling the internet and leaving captions on a meme. Look at this image carefully. Every single caption MUST directly reference or react to something specific you can see in the image. Do not write generic jokes that could apply to any meme.\n\nCRITICAL LENGTH RULES: Vary the lengths dramatically. Follow this exact mix:\n- 4 captions that are TINY (2 to 5 words max, like \"bro what\" or \"nah im done\")\n- 4 captions that are SHORT (6 to 12 words)\n- 4 captions that are MEDIUM (13 to 25 words, a full funny thought)\n- 3 captions that are LONG (26 to 50 words, a mini rant or story)\n\nShuffle them randomly in the array so the tiny ones aren't all grouped together.\n\nSwearing is fine. Do NOT sound like a writer or comedian crafting a joke. No flowery language, no metaphors, no poetic structure. Think more like Xbox Live trash talk, Reddit shitposts, and group chat energy. Bad examples (too AI): \"If arrogance had a sound it would be the quiet sighs of the fans\", \"The inning ends and his ego calls for a time out in tears\". Good examples (actually human): \"bro looks cooked\", \"this is the worst thing ive ever seen lmao\", \"I showed this to my therapist and she finally agreed to increase my dosage\".\n\nIMPORTANT: Do NOT use any colons (:), semi-colons (;), or hyphens (-) in your captions. Return ONLY a valid JSON array of exactly 15 strings. Do not include markdown formatting like ```json."
+                        text: "You are 15 different people scrolling the internet and leaving captions on a meme. Look at this image carefully. Every single caption MUST directly reference or react to something specific you can see in the image. Do not write generic jokes that could apply to any meme.\n\nCRITICAL LENGTH RULES: The longest caption allowed is 20 words. NO EXCEPTIONS. Most captions should be short. Follow this exact mix:\n- 6 captions that are TINY (2 to 5 words, like \"bro what\" or \"nah im done\")\n- 6 captions that are SHORT (6 to 12 words)\n- 3 captions that are MEDIUM (13 to 20 words max, one punchy thought)\n\nAbsolutely no caption over 20 words. If a joke needs more than 20 words to land, cut it or rewrite it shorter. Shuffle the captions randomly in the array so the tiny ones aren't all grouped together.\n\nSwearing is fine. Do NOT sound like a writer or comedian crafting a joke. No flowery language, no metaphors, no poetic structure. Think more like Xbox Live trash talk, Reddit shitposts, and group chat energy. Bad examples (too AI): \"If arrogance had a sound it would be the quiet sighs of the fans\", \"The inning ends and his ego calls for a time out in tears\". Good examples (actually human): \"bro looks cooked\", \"this is the worst thing ive ever seen lmao\", \"I showed this to my therapist and she finally agreed to increase my dosage\".\n\nIMPORTANT: Do NOT use any colons (:), semi-colons (;), or hyphens (-) in your captions. Return ONLY a valid JSON array of exactly 15 strings. Do not include markdown formatting like ```json."
                     },
                     {
                         type: "input_image",
@@ -86,8 +86,14 @@ export async function GET(request) {
         const randomOffsetMs = Math.floor(Math.random() * 14 * 60 * 60 * 1000);
         const scheduledTime = new Date(now.getTime() + randomOffsetMs);
 
-        // Fail-safe: Strip out any colons, semi-colons, and replace hyphens with a space
-        const sanitizedCaption = caption.replace(/[:;]/g, '').replace(/-/g, ' ');
+        // Fail-safe: Strip colons/semicolons, replace hyphens with space, and hard-cap at 20 words
+        const sanitizedCaption = caption
+            .replace(/[:;]/g, '')
+            .replace(/-/g, ' ')
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 20)
+            .join(' ');
 
         return {
             meme_id: activeMeme.id,
