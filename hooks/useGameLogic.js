@@ -308,6 +308,40 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     addToast("Reported. Thanks for keeping it clean.", "success");
   };
 
+  const editReply = async (replyId, newText) => {
+    if (!session?.user) return false;
+
+    if (!isEnglishText(newText)) {
+      addToast(getRandomRejectionMessage(), "error");
+      return false;
+    }
+
+    try {
+      const res = await fetch('/api/reply/edit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          replyId,
+          content: newText,
+          userId: session.user.id
+        })
+      });
+
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+
+      addToast("Reply updated! ✏️", "success");
+      const updatedComments = await fetchMemeComments(activeMeme?.id || selectedMeme?.id);
+      setCaptions(updatedComments);
+      return true;
+
+    } catch (err) {
+      console.error("Reply edit failed:", err);
+      addToast(err.message || "Failed to edit reply", "error");
+      return false;
+    }
+  };
+
   const editCaption = async (commentId, newText) => {
     if (!session?.user) return false;
 
@@ -395,6 +429,6 @@ export function useGameLogic(session, initialMeme = null, initialLeaderboard = [
     loading, viewMode, toasts, showOnboarding, hasCommented, hasVotedOnAny,
     setViewMode, setToasts, setShowOnboarding, fetchData,
     handleArchiveSelect, handleBackToArena, 
-    submitCaption, submitReply, castVote, shareCaption, reportCaption, editCaption, cutMic, squeezeComment
+    submitCaption, submitReply, castVote, shareCaption, reportCaption, editCaption, editReply, cutMic, squeezeComment
   };
 }
