@@ -40,16 +40,21 @@ const SocialUsername = ({ username, isInfluencer, socialLink, className }) => {
     return <span className={className}>@{username}</span>;
 };
 
-export default function CaptionFeed({ captions, meme, session, userProfile, viewMode, onVote, onShare, onReport, onReply, onEdit, editingId, setEditingId, onCutMic, onSqueeze }) {
+export default function CaptionFeed({ captions, meme, session, userProfile, viewMode, onVote, onShare, onReport, onReply, onEdit, onEditReply, editingId, setEditingId, onCutMic, onSqueeze }) {
   const [sortBy, setSortBy] = useState("top");
-  
+
   // Reply State
-  const [activeReplyId, setActiveReplyId] = useState(null); 
+  const [activeReplyId, setActiveReplyId] = useState(null);
   const [replyText, setReplyText] = useState("");
   const [submittingReply, setSubmittingReply] = useState(false);
-  
+
   // Edit State
   const [editText, setEditText] = useState("");
+
+  // Reply Edit State
+  const [editingReplyId, setEditingReplyId] = useState(null);
+  const [replyEditText, setReplyEditText] = useState("");
+  const [savingReplyEdit, setSavingReplyEdit] = useState(false);
 
   // Cut Mic State
   const [confirmCutId, setConfirmCutId] = useState(null);
@@ -130,6 +135,17 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
   const handleSaveEdit = async (commentId) => {
     if (!editText.trim()) return;
     await onEdit(commentId, editText);
+  };
+
+  const handleSaveReplyEdit = async (replyId) => {
+    if (!replyEditText.trim()) return;
+    setSavingReplyEdit(true);
+    const success = await onEditReply(replyId, replyEditText);
+    setSavingReplyEdit(false);
+    if (success) {
+      setEditingReplyId(null);
+      setReplyEditText("");
+    }
   };
 
   const handleCutMicSubmit = async (commentId) => {
@@ -450,6 +466,8 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                      const replyCountryCode = getCountryCode(reply.profiles?.country);
                      const isReplyInfluencer = reply.profiles?.influencer;
                      const replySocialLink = reply.profiles?.social_link;
+                     const isOwnReply = session?.user?.id === reply.user_id;
+                     const isEditingThisReply = editingReplyId === reply.id;
 
                      return (
                         <div key={reply.id} className="flex gap-3 items-start animate-in fade-in slide-in-from-top-1 duration-300">
@@ -470,21 +488,51 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                                 <img src={`https://flagcdn.com/w20/${replyCountryCode}.png`} className="absolute -bottom-0.5 -right-0.5 w-3 h-2 rounded-[1px] shadow-sm border border-white object-cover" />
                               )}
                            </div>
-                           
+
                            <div className="flex-1">
                               <div className="text-sm leading-snug">
-                                 <SocialUsername 
-                                    username={reply.profiles?.username} 
-                                    isInfluencer={isReplyInfluencer} 
+                                 <SocialUsername
+                                    username={reply.profiles?.username}
+                                    isInfluencer={isReplyInfluencer}
                                     socialLink={replySocialLink}
-                                    className="mr-2 font-bold text-xs text-gray-500" 
+                                    className="mr-2 font-bold text-xs text-gray-500"
                                  />
-                                 <span className="text-gray-700">{reply.content}</span>
+                                 {isEditingThisReply ? null : (
+                                   <span className="text-gray-700">{reply.content}</span>
+                                 )}
                               </div>
+
+                              {isEditingThisReply && (
+                                <div className="mt-1 animate-in fade-in">
+                                   <input
+                                     value={replyEditText}
+                                     onChange={(e) => setReplyEditText(e.target.value)}
+                                     onKeyDown={(e) => e.key === 'Enter' && handleSaveReplyEdit(reply.id)}
+                                     className="w-full p-2 border border-blue-400 rounded-lg bg-blue-50 text-gray-900 text-sm font-medium focus:ring-1 focus:ring-blue-500 outline-none"
+                                     autoFocus
+                                   />
+                                   <div className="flex gap-2 mt-2">
+                                      <button
+                                        onClick={() => handleSaveReplyEdit(reply.id)}
+                                        disabled={savingReplyEdit || !replyEditText.trim()}
+                                        className="px-3 py-1 bg-blue-500 text-white text-xs font-bold rounded-md hover:bg-blue-600 disabled:opacity-50 flex items-center gap-1"
+                                      >
+                                         <Check size={12} /> {savingReplyEdit ? 'Saving...' : 'Save'}
+                                      </button>
+                                      <button
+                                        onClick={() => { setEditingReplyId(null); setReplyEditText(""); }}
+                                        className="px-3 py-1 bg-gray-200 text-gray-700 text-xs font-bold rounded-md hover:bg-gray-300 flex items-center gap-1"
+                                      >
+                                         <X size={12} /> Cancel
+                                      </button>
+                                   </div>
+                                </div>
+                              )}
+
                               <div className="flex gap-3 mt-1">
                                  <span className="text-[10px] text-gray-400 font-medium">{timeAgo(reply.created_at)}</span>
-                                 {session && viewMode === 'active' && !isMicCut && (
-                                   <button 
+                                 {session && viewMode === 'active' && !isMicCut && !isEditingThisReply && (
+                                   <button
                                      onClick={() => {
                                        setActiveReplyId(caption.id);
                                        setTimeout(() => document.getElementById(`reply-input-${caption.id}`)?.focus(), 50);
@@ -492,6 +540,17 @@ export default function CaptionFeed({ captions, meme, session, userProfile, view
                                      className="text-[10px] text-gray-500 font-bold hover:text-gray-800"
                                    >
                                      Reply
+                                   </button>
+                                 )}
+                                 {session && viewMode === 'active' && !isMicCut && isOwnReply && !isEditingThisReply && (
+                                   <button
+                                     onClick={() => {
+                                       setEditingReplyId(reply.id);
+                                       setReplyEditText(reply.content);
+                                     }}
+                                     className="text-[10px] text-blue-500 font-bold hover:text-blue-700 flex items-center gap-1"
+                                   >
+                                     <Edit3 size={10} /> Edit
                                    </button>
                                  )}
                               </div>
